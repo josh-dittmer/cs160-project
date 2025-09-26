@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+html,
+body {
+    margin: 0;
+    height: 100%;
+}
+
+@keyframes fade-in-animation {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+.animate-fade-in {
+    animation: fade-in-animation 1s;
+    animation-fill-mode: forwards;
+}
+
+.light {
+    --bg-dark: rgb(226, 232, 240);
+    --bg-medium-dark: rgb(228, 232, 240);
+    --bg-medium: rgb(241, 245, 249);
+    --bg-light: rgb(255, 255, 255);
+    --bg-accent: #4ade80;
+
+    --fg-dark: rgb(0, 0, 0);
+    --fg-medium: rgb(107, 114, 128);
+    --fg-light: rgb(128, 128, 128);
+    --fg-accent: rgb(255, 255, 255);
+
+    background: var(--bg-light);
+}
+
+.dark {
+    --bg-dark: rgb(44, 44, 44);
+    --bg-medium-dark: rgb(50, 50, 50);
+    --bg-medium: rgb(58, 58, 58);
+    --bg-light: rgb(66, 65, 65);
+    --bg-accent: #16a34a;
+
+    --fg-dark: rgb(255, 255, 255);
+    --fg-medium: rgb(178, 178, 178);
+    --fg-light: rgb(152, 151, 151);
+    --fg-accent: rgb(255, 255, 255);
+
+    background: var(--bg-light);
+}
+
+@theme inline {
+    --color-bg-dark: var(--bg-dark);
+    --color-bg-medium-dark: var(--bg-medium-dark);
+    --color-bg-medium: var(--bg-medium);
+    --color-bg-light: var(--bg-light);
+    --color-bg-accent: var(--bg-accent);
+    --color-bg-accent-dark: var(--bg-accent-dark);
+    --color-fg-dark: var(--fg-dark);
+    --color-fg-medium: var(--fg-medium);
+    --color-fg-light: var(--fg-light);
+    --color-fg-accent: var(--fg-accent);
+    --font-sans: var(--font-geist-sans);
+    --font-mono: var(--font-geist-mono);
+}
