@@ -1,2 +1,10 @@
 .vscode/*
 !.vscode/settings.json
+
+.venv/
+__pycache__/
+*.pyc
+backend/sqlite.db
+backend/sqlite.db-journal
+
+
