@@ -12,6 +12,8 @@ export function SidebarItem({ title, href, Icon }: { title: string, href: string
 
     return (
         <motion.a
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.99 }}
             href={href}
             className={`flex items-center text-lg gap-2 text-fg-dark ${isSelected ? 'bg-bg-dark' : ''} hover:bg-bg-dark p-2 rounded-xl`}
         >

@@ -36,7 +36,7 @@ export default async function DashboardPage() {
             imageUrl: ''
         },
         {
-            id: '4',
+            id: '5',
             name: 'Test Item #4',
             description: 'Test description',
             category: 'Vegetables',
@@ -44,7 +44,7 @@ export default async function DashboardPage() {
             imageUrl: ''
         },
         {
-            id: '4',
+            id: '6',
             name: 'Test Item #4',
             description: 'Test description',
             category: 'Vegetables',
@@ -52,7 +52,7 @@ export default async function DashboardPage() {
             imageUrl: ''
         },
         {
-            id: '4',
+            id: '7',
             name: 'Test Item #4',
             description: 'Test description',
             category: 'Vegetables',
@@ -60,7 +60,7 @@ export default async function DashboardPage() {
             imageUrl: ''
         },
         {
-            id: '4',
+            id: '8',
             name: 'Test Item #4',
             description: 'Test description',
             category: 'Vegetables',
@@ -68,7 +68,7 @@ export default async function DashboardPage() {
             imageUrl: ''
         },
         {
-            id: '4',
+            id: '9',
             name: 'Test Item #4',
             description: 'Test description',
             category: 'Vegetables',
@@ -76,7 +76,7 @@ export default async function DashboardPage() {
             imageUrl: ''
         },
         {
-            id: '4',
+            id: '10',
             name: 'Test Item #4',
             description: 'Test description',
             category: 'Vegetables',

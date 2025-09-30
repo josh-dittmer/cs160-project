@@ -11,7 +11,6 @@ export default function ThemeToggle() {
     const switchTheme = () => {
         const nextTheme = theme?.theme.name === 'dark' ? 'light' : 'dark';
         theme?.setTheme({
-            shouldAnimate: true,
             name: nextTheme
         });
     };
