@@ -2,3 +2,8 @@
 !.vscode/settings.json
 auth_flow.txt
 .DS_Store
+.venv/
+__pycache__/
+*.pyc
+backend/sqlite.db
+backend/sqlite.db-journal
