@@ -9,12 +9,12 @@ export default function LoginPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Login attempt:", { email, password });
-    // Later: connect to backend API
+    // TODO: connect to backend API
   };
 
   const handleGoogleLogin = () => {
     console.log("Google login clicked");
-    // Later: redirect to Google OAuth flow
+    // TODO: redirect to Google OAuth flow
   };
 
   return (
