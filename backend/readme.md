@@ -1,5 +1,33 @@
 ## CS160 Project - Developer Guide
 
+## 🚀 Quick Start - Get Backend Running
+
+**To run the backend server in 4 steps:**
+
+```bash
+# 1. Create virtual environment and install dependencies
+cd cs160-project
+python3 -m venv .venv
+source .venv/bin/activate          # On Windows: .venv\Scripts\activate
+pip install -r backend/requirements.txt
+
+# 2. Seed the database
+PYTHONPATH=. python -m backend.app.seed
+
+# 3. Start the server
+PYTHONPATH=. uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
+
+# 4. Test it's working
+# Open http://localhost:8000/healthz in your browser
+# Or run: curl http://localhost:8000/healthz
+```
+
+**That's it!** The server is now running on `http://localhost:8000`
+
+For detailed setup, testing, and API documentation, see sections below. ⬇️
+
+---
+
 ### 1) Clone the repository
 
 ```bash
