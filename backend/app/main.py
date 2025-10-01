@@ -2,21 +2,23 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import Base, engine
 from .routers import items as items_router
+from .routers import auth as auth_router
 
 # Create tables if missing
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="OFS API", version="0.2.0")
+app = FastAPI(title="OFS API", version="0.3.0")
 
 # CORS: allow local Next.js dev server to call the API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
     allow_credentials=True,
-    allow_methods=["GET", "POST"],   # GET for browse, POST for review
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
     allow_headers=["*"],
 )
 
+app.include_router(auth_router.router)
 app.include_router(items_router.router)
 
 @app.get("/healthz")

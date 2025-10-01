@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, conint, constr
+from pydantic import BaseModel, conint, constr, EmailStr
 
 
 class ItemListOut(BaseModel):
@@ -42,3 +42,42 @@ class ReviewIn(BaseModel):
     rating: conint(ge=1, le=5)
     title: str | None = None
     body: constr(min_length=5)
+
+
+# ============ User & Auth Schemas ============
+
+class UserCreate(BaseModel):
+    """Schema for user registration"""
+    email: EmailStr
+    password: constr(min_length=8)
+    full_name: str | None = None
+
+
+class UserLogin(BaseModel):
+    """Schema for user login"""
+    email: EmailStr
+    password: str
+
+
+class UserOut(BaseModel):
+    """Schema for user output (public info)"""
+    id: int
+    email: str
+    full_name: str | None
+    is_active: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class Token(BaseModel):
+    """Schema for JWT token response"""
+    access_token: str
+    token_type: str = "bearer"
+    user: UserOut
+
+
+class GoogleAuthRequest(BaseModel):
+    """Schema for Google OAuth token"""
+    id_token: str
