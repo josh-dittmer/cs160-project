@@ -8,6 +8,7 @@ set -euo pipefail
 # Usage examples:
 #   ./scripts/backendctl.sh setup
 #   ./scripts/backendctl.sh start /tmp/cs160-backend
+#   ./scripts/backendctl.sh start
 #   ./scripts/backendctl.sh restart
 
 CMD=${1:-help}
