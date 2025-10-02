@@ -19,7 +19,7 @@ function Item({ item }: { item: ItemT }) {
                 </div>
                 <div className="flex items-center p-1">
                     <h1 className="text-md text-fg-dark grow">{item.name}</h1>
-                    <p className="text-fg-medium text-sm"><span className="font-bold">{item.price_cents}</span> in stock</p>
+                    <p className="text-fg-medium text-sm"><span className="font-bold">${item.price_cents / 100}</span></p>
                 </div>
             </div>
         </div>
