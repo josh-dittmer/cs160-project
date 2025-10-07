@@ -66,9 +66,20 @@ def signup(user_data: UserCreate, response: Response, db: Session = Depends(get_
     db.refresh(new_user)
     
     # create jwt and set cookie
-    token_cookie(new_user.id, response)
+    token_data = create_access_token(data={"sub": str(new_user.id)})
+    
+    response.set_cookie(
+        key="access_token",
+        value=token_data.encoded_jwt,
+        expires=token_data.expire,
+        samesite="strict"
+    )
 
-    return {"success": True}
+    return {
+        "access_token": token_data.encoded_jwt,
+        "token_type": "bearer",
+        "user": UserOut.model_validate(new_user)
+    }
 
 
 @router.post("/login", response_model=Token)
@@ -91,21 +102,122 @@ def login(credentials: UserLogin, response: Response, db: Session = Depends(get_
         )
     
     # create jwt and set cookie
-    token_cookie(user.id, response)
+    token_data = create_access_token(data={"sub": str(user.id)})
+    
+    response.set_cookie(
+        key="access_token",
+        value=token_data.encoded_jwt,
+        expires=token_data.expire,
+        samesite="strict"
+    )
 
-    return {"success": True}
+    return {
+        "access_token": token_data.encoded_jwt,
+        "token_type": "bearer",
+        "user": UserOut.model_validate(user)
+    }
 
 
 # ============ Google OAuth Endpoints ============
 
-# redirect user to google to log in
+@router.post("/google", response_model=Token)
+def google_auth(google_data: GoogleAuthRequest, response: Response, db: Session = Depends(get_db)):
+    """
+    Authenticate or register using Google ID token.
+    This is the modern client-side OAuth flow.
+    Returns JWT token and user info.
+    """
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="Google OAuth not configured",
+        )
+    
+    try:
+        # Verify the Google ID token
+        idinfo = id_token.verify_oauth2_token(
+            google_data.id_token,
+            google_requests.Request(),
+            GOOGLE_CLIENT_ID
+        )
+        
+        # Extract user info from token
+        google_user_id = idinfo.get('sub')
+        email = idinfo.get('email')
+        name = idinfo.get('name')
+        
+        if not google_user_id or not email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid Google token: missing required fields",
+            )
+        
+        # Check if user already exists
+        user = db.query(User).filter(
+            (User.google_id == google_user_id) | (User.email == email)
+        ).first()
+        
+        if user:
+            # User exists - link Google account if not already linked
+            if not user.google_id:
+                user.google_id = google_user_id
+                if not user.full_name and name:
+                    user.full_name = name
+                db.commit()
+                db.refresh(user)
+        else:
+            # Create new user
+            user = User(
+                email=email,
+                google_id=google_user_id,
+                full_name=name,
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        
+        # Check if user is active
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="User account is inactive",
+            )
+        
+        # Create JWT token
+        token_data = create_access_token(data={"sub": str(user.id)})
+        
+        response.set_cookie(
+            key="access_token",
+            value=token_data.encoded_jwt,
+            expires=token_data.expire,
+            samesite="strict"
+        )
+        
+        return {
+            "access_token": token_data.encoded_jwt,
+            "token_type": "bearer",
+            "user": UserOut.model_validate(user)
+        }
+        
+    except ValueError as e:
+        # Invalid token
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid Google token: {str(e)}",
+        )
+
+
+# redirect user to google to log in (legacy redirect-based flow)
 @router.get("/google/login")
 async def google_login(request: Request):
+    """Legacy redirect-based OAuth flow"""
     return await oauth.google.authorize_redirect(request, GOOGLE_REDIRECT_URI)
 
-# handle callback and create user in database if necessary
+
+# handle callback and create user in database if necessary (legacy redirect-based flow)
 @router.get("/google/callback")
 async def google_callback(request: Request, response: Response, db: Session = Depends(get_db)):
+    """Legacy redirect-based OAuth callback"""
     token = await oauth.google.authorize_access_token(request)
 
     userinfo = token.get("userinfo") # possibly included in request
@@ -153,7 +265,8 @@ async def google_callback(request: Request, response: Response, db: Session = De
     # create jwt and set cookie
     token_cookie(user.id, response)
 
-    return {"success": True}
+    # Redirect to frontend with success
+    return RedirectResponse(url=f"{os.getenv('FRONTEND_URL', 'http://localhost:3000')}/home/dashboard")
 
 
 # ============ User Info Endpoint ============

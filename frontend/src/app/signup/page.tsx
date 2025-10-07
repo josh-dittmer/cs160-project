@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signup } from "@/lib/api/auth";
+import { signup, googleAuth } from "@/lib/api/auth";
 import { useAuth } from "@/contexts/auth";
 import { Eye, EyeOff } from "lucide-react";
+import GoogleSignInButton from "@/components/google_signin_button/google_signin_button";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -38,6 +39,29 @@ export default function SignupPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleGoogleSuccess = async (credential: string) => {
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const response = await googleAuth(credential);
+
+      // Store token and user info in context
+      login(response.access_token, response.user);
+
+      // Redirect to home/dashboard
+      router.push("/home/dashboard");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Google sign up failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleError = (error: string) => {
+    setError(error);
   };
 
   return (
@@ -106,6 +130,25 @@ export default function SignupPage() {
             {isLoading ? "Creating Account..." : "Sign Up"}
           </button>
         </form>
+
+      {/* Divider */}
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-4 bg-white text-gray-500">Or continue with</span>
+        </div>
+      </div>
+
+      {/* Google Sign-In */}
+      <div className="mb-4 transform scale-110">
+        <GoogleSignInButton
+          onSuccess={handleGoogleSuccess}
+          onError={handleGoogleError}
+          text="signup_with"
+        />
+      </div>
 
       {/* Login Link */}
       <p className="text-sm text-center mt-6">
