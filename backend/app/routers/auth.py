@@ -3,6 +3,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
+from authlib.integrations.starlette_client import OAuth
+from starlette.requests import Request
+from starlette.responses import RedirectResponse, Response
 
 from ..database import get_db
 from ..models import User
@@ -12,19 +15,33 @@ from ..auth import (
     authenticate_user,
     create_access_token,
     get_current_user,
+    token_cookie,
     UserCtx,
+)
+
+# google oauth configuration
+
+GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "")
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
+
+# oauth client
+oauth = OAuth()
+
+oauth.register(
+    name="google",
+    client_id=GOOGLE_CLIENT_ID,
+    client_secret=GOOGLE_CLIENT_SECRET,
+    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+    client_kwargs={"scope": "openid email profile"}
 )
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
-# Google OAuth configuration
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
-
-
 # ============ Regular Auth Endpoints ============
 
 @router.post("/signup", response_model=Token, status_code=status.HTTP_201_CREATED)
-def signup(user_data: UserCreate, db: Session = Depends(get_db)):
+def signup(user_data: UserCreate, response: Response, db: Session = Depends(get_db)):
     """
     Register a new user with email and password.
     Returns JWT token and user info.
@@ -48,17 +65,14 @@ def signup(user_data: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
     
-    # Create access token
-    access_token = create_access_token(data={"sub": str(new_user.id)})
-    
-    return Token(
-        access_token=access_token,
-        user=UserOut.model_validate(new_user),
-    )
+    # create jwt and set cookie
+    token_cookie(new_user.id, response)
+
+    return {"success": True}
 
 
 @router.post("/login", response_model=Token)
-def login(credentials: UserLogin, db: Session = Depends(get_db)):
+def login(credentials: UserLogin, response: Response, db: Session = Depends(get_db)):
     """
     Login with email and password.
     Returns JWT token and user info.
@@ -76,93 +90,70 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
             detail="User account is inactive",
         )
     
-    # Create access token
-    access_token = create_access_token(data={"sub": str(user.id)})
-    
-    return Token(
-        access_token=access_token,
-        user=UserOut.model_validate(user),
-    )
+    # create jwt and set cookie
+    token_cookie(user.id, response)
+
+    return {"success": True}
 
 
 # ============ Google OAuth Endpoints ============
 
-@router.post("/google", response_model=Token)
-def google_auth(auth_data: GoogleAuthRequest, db: Session = Depends(get_db)):
-    """
-    Authenticate or register a user using Google OAuth.
-    Accepts a Google ID token and returns JWT token and user info.
-    
-    The ID token should be obtained from Google Sign-In on the client side.
-    """
-    if not GOOGLE_CLIENT_ID:
+# redirect user to google to log in
+@router.get("/google/login")
+async def google_login(request: Request):
+    return await oauth.google.authorize_redirect(request, GOOGLE_REDIRECT_URI)
+
+# handle callback and create user in database if necessary
+@router.get("/google/callback")
+async def google_callback(request: Request, response: Response, db: Session = Depends(get_db)):
+    token = await oauth.google.authorize_access_token(request)
+
+    userinfo = token.get("userinfo") # possibly included in request
+    if not userinfo:
+        # otherwise fetch manually
+        resp = await oauth.google.get("userinfo", token=token)
+        userinfo = resp.json()
+
+    if not userinfo.email or not userinfo.sub or not userinfo.name:
         raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="Google OAuth is not configured. Set GOOGLE_CLIENT_ID environment variable.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Missing required user info"
         )
     
-    try:
-        # Verify the Google ID token
-        idinfo = id_token.verify_oauth2_token(
-            auth_data.id_token,
-            google_requests.Request(),
-            GOOGLE_CLIENT_ID,
-        )
-        
-        # Extract user information from Google
-        google_user_id = idinfo["sub"]
-        email = idinfo.get("email")
-        full_name = idinfo.get("name")
-        
-        if not email:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email not provided by Google",
-            )
-        
-        # Check if user exists by google_id or email
-        user = db.query(User).filter(
-            (User.google_id == google_user_id) | (User.email == email)
-        ).first()
-        
-        if user:
-            # Update google_id if user signed up with email first
-            if not user.google_id:
-                user.google_id = google_user_id
-                db.commit()
-                db.refresh(user)
-        else:
-            # Create new user
-            user = User(
-                email=email,
-                google_id=google_user_id,
-                full_name=full_name,
-                hashed_password=None,  # No password for Google-only users
-            )
-            db.add(user)
+    # check if user already has associated account
+    user = db.query(User).filter(
+        (User.google_id == userinfo.sub) | (User.email == userinfo.email)
+    ).first()
+
+    if user:
+        # user signed up with email first, associate their google account
+        if not user.google_id:
+            user.google_id = userinfo.sub
             db.commit()
             db.refresh(user)
-        
-        if not user.is_active:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="User account is inactive",
-            )
-        
-        # Create access token
-        access_token = create_access_token(data={"sub": str(user.id)})
-        
-        return Token(
-            access_token=access_token,
-            user=UserOut.model_validate(user),
+    else:
+        # create new account
+        user = User(
+            email=userinfo.email,
+            google_id=userinfo.sub,
+            full_name=userinfo.name
+        )
+
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    # ensure user account is active
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User account is inactive",
         )
     
-    except ValueError as e:
-        # Invalid token
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid Google token: {str(e)}",
-        )
+    # create jwt and set cookie
+    token_cookie(user.id, response)
+
+    return {"success": True}
 
 
 # ============ User Info Endpoint ============

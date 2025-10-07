@@ -3,6 +3,7 @@ fastapi>=0.104.0
 uvicorn[standard]>=0.24.0
 sqlalchemy>=2.0.0
 pydantic[email]>=2.5.0
+authlib
 
 # Authentication dependencies
 bcrypt>=4.0.1
@@ -15,3 +16,6 @@ pydantic-settings>=2.0.0
 # Development/testing dependencies
 pytest>=7.4.0
 httpx>=0.25.0
+
+# for reading environment variables
+python-dotenv

@@ -1,6 +1,7 @@
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+from collections import namedtuple
 
 import bcrypt
 from fastapi import Depends, Header, HTTPException, status
@@ -8,6 +9,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from starlette.responses import Response
 
 from .database import get_db
 from .models import User
@@ -37,16 +39,33 @@ def get_password_hash(password: str) -> str:
 
 # ============ JWT Token Utilities ============
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+AccessTokenData = namedtuple("AccessTokenData", "encoded_jwt expire")
+
+def token_cookie(id: int, response: Response):
+    # create jwt
+    token_data = create_access_token(data={"sub": str(id)})
+
+    # set cookie
+    response.set_cookie(
+        key="access_token",
+        value=token_data.encoded_jwt,
+        expires=token_data.expire,
+        samesite="strict"
+    )
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> AccessTokenData:
     """Create a JWT access token"""
     to_encode = data.copy()
+
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+
+    return AccessTokenData(encoded_jwt, expire)
 
 
 def decode_access_token(token: str) -> dict:

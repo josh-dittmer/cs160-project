@@ -1,3 +1,3 @@
 export const Endpoints = {
-    mainApiInternal: 'http://localhost:8000'
+    mainApiInternal: 'http://localhost:8080'
 };

@@ -1,2 +1,1 @@
-# Makes `backend` importable as a package during tests and script runs.
-
+# Makes `backend` importable as a package during tests and script runs.from dotenv import load_dotenv
