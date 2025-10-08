@@ -90,3 +90,25 @@ export async function getCurrentUser(token: string): Promise<UserInfo> {
   return response.json();
 }
 
+/**
+ * Login with Google OAuth
+ */
+export async function googleAuth(idToken: string): Promise<AuthResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/google`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      id_token: idToken,
+    }),
+  });
+
+  if (!response.ok) {
+    const error: ErrorResponse = await response.json();
+    throw new Error(error.detail || 'Google authentication failed');
+  }
+
+  return response.json();
+}
+

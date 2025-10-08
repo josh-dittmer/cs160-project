@@ -15,7 +15,7 @@ pip install -r backend/requirements.txt
 PYTHONPATH=. python -m backend.app.seed
 
 # 3. Start the server
-PYTHONPATH=. uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
+PYTHONPATH=. uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8080
 
 # 4. Test it's working
 # Open http://localhost:8000/healthz in your browser

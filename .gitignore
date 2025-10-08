@@ -3,7 +3,9 @@
 auth_flow.txt
 .DS_Store
 .venv/
+venv/
 __pycache__/
 *.pyc
 backend/sqlite.db
 backend/sqlite.db-journal
+.env

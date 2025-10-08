@@ -4,10 +4,9 @@ export default function LoginLayout({ children }: { children: React.ReactNode })
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 flex flex-col items-center">
         {/* Logo */}
         <img
-        // TODO: Replace the logo
           src="/logo.png"
           alt="OFS Logo"
-          className="h-16 w-auto mb-6"
+          className="h-48 w-auto mb-6"
         />
 
         {/* Content (login form) */}

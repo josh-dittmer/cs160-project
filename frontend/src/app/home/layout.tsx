@@ -3,6 +3,7 @@ import CartIcon from "@/components/cart_icon/cart_icon";
 import SearchBar from "@/components/search_bar/search_bar";
 import Sidebar from "@/components/sidebar/sidebar";
 import ThemeToggle from "@/components/theme_toggle/theme_toggle";
+import AccountButton from "@/components/account_button/account_button";
 import { ReactNode } from "react";
 
 export default async function HomeLayout({ children }: { children: ReactNode }) {
@@ -15,6 +16,7 @@ export default async function HomeLayout({ children }: { children: ReactNode }) 
                 <div className="pr-5 flex items-center gap-4">
                     <SearchBar />
                     <AddressSelector />
+                    <AccountButton />
                     <ThemeToggle />
                     <CartIcon />
                 </div>
