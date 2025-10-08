@@ -14,12 +14,20 @@ function Item({ item }: { item: ItemT }) {
     return (
         <div className="flex justify-center">
             <div className="m-2 w-72">
-                <div className="flex items-center justify-center bg-bg-medium min-h-36 rounded-xl">
-                    <Image width={30} height={30} className="text-fg-dark" />
+                <div className="flex items-center justify-center bg-bg-medium min-h-36 rounded-xl overflow-hidden">
+                    {item.image_url ? (
+                        <img 
+                            src={item.image_url} 
+                            alt={item.name}
+                            className="w-full h-36 object-cover"
+                        />
+                    ) : (
+                        <Image width={30} height={30} className="text-fg-dark" />
+                    )}
                 </div>
                 <div className="flex items-center p-1">
                     <h1 className="text-md text-fg-dark grow">{item.name}</h1>
-                    <p className="text-fg-medium text-sm"><span className="font-bold">${item.price_cents / 100}</span></p>
+                    <p className="text-fg-medium text-sm"><span className="font-bold">${(item.price_cents / 100).toFixed(2)}</span></p>
                 </div>
             </div>
         </div>
@@ -64,6 +72,7 @@ export default function ItemSlider({ title, items }: { title: string, items: Ite
                     mousewheel={true}
                     modules={[Navigation, Mousewheel]}
                     cssMode={true}
+                    loop={true}
                     className="w-full"
                     onSwiper={(swiper) => (swiperRef.current = swiper)}
                 >

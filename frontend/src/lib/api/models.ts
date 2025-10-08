@@ -18,3 +18,4 @@ export type ItemT = t.TypeOf<typeof Item>;
 
 // responses
 export const ItemsListResponse = t.array(Item);
+export const ItemsByCategoryResponse = t.record(t.string, t.array(Item));

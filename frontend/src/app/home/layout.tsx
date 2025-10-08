@@ -11,7 +11,11 @@ export default async function HomeLayout({ children }: { children: ReactNode }) 
         <div className="w-svw h-svh grid grid-rows-[60px_auto_30px]">
             <div className="grid grid-cols-[auto_1fr] md:grid-cols-[200px_1fr] border-bg-dark border-b bg-bg-light">
                 <div className="pl-5 pr-5 flex items-center">
-                    <h1 className="text-fg-dark text-3xl font-bold grow">Logo</h1>
+                    <img 
+                        src="/logo.png" 
+                        alt="OFS Logo" 
+                        className="h-18 w-auto"
+                    />
                 </div>
                 <div className="pr-5 flex items-center gap-4">
                     <SearchBar />

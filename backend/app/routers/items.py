@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Dict, Union
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, update
@@ -9,29 +9,54 @@ from ..auth import require_user
 
 router = APIRouter(prefix="/api", tags=["items"])
 
-# --------- LIST VIEW ---------
-@router.get("/items", response_model=List[ItemListOut])
+# --------- LIST VIEW (flexible grouping) ---------
+@router.get("/items", response_model=Dict[str, List[ItemListOut]])
 def list_items(
-    q: Optional[str] = Query(None, min_length=1),
-    category: Optional[str] = None,
-    in_stock: Optional[bool] = None,
-    limit: int = Query(20, ge=1, le=100),
-    offset: int = Query(0, ge=0),
+    group_by: str = Query(..., description="Field to group items by (category, price, name, etc.)"),
     db: Session = Depends(get_db),
-):
-    stmt = select(Item).where(Item.is_active == True)
-    if q:
-        like = f"%{q}%"
-        stmt = stmt.where(Item.name.ilike(like))
-    if category:
-        stmt = stmt.where(Item.category == category)
-    if in_stock is True:
-        stmt = stmt.where(Item.stock_qty > 0)
-    elif in_stock is False:
-        stmt = stmt.where(Item.stock_qty <= 0)
-
-    stmt = stmt.order_by(Item.name).limit(limit).offset(offset)
-    return db.execute(stmt).scalars().all()
+) -> Dict[str, List[ItemListOut]]:
+    """
+    Returns all items grouped by the specified field.
+    Flexible endpoint that can group by any field: category, price, name, etc.
+    
+    Examples:
+    - /api/items?group_by=category -> groups by category
+    - /api/items?group_by=price -> groups by price
+    - /api/items?group_by=name -> groups by first letter of name
+    """
+    stmt = select(Item).where(Item.is_active == True).order_by(Item.name)
+    all_items = db.execute(stmt).scalars().all()
+    
+    # Group items by the specified field
+    grouped: Dict[str, List[ItemListOut]] = {}
+    
+    for item in all_items:
+        # Determine the grouping key based on group_by parameter
+        if group_by == "category":
+            key = item.category or "other"
+        elif group_by == "price":
+            # Group by price range
+            price_dollars = item.price_cents / 100
+            if price_dollars < 3:
+                key = "under_$3"
+            elif price_dollars < 5:
+                key = "$3_to_$5"
+            elif price_dollars < 10:
+                key = "$5_to_$10"
+            else:
+                key = "over_$10"
+        elif group_by == "name":
+            # Group by first letter
+            key = item.name[0].upper() if item.name else "other"
+        else:
+            # For any other field, try to get it from the item
+            key = str(getattr(item, group_by, "other"))
+        
+        if key not in grouped:
+            grouped[key] = []
+        grouped[key].append(ItemListOut.model_validate(item))
+    
+    return grouped
 
 
 # --------- ITEM DETAIL ---------
