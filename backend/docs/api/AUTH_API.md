@@ -171,7 +171,7 @@ Authorization: Bearer your-access-token-here
 
 ### Token Expiration
 
-- Tokens expire after 7 days
+- Tokens expire after 1 day (24 hours)
 - Expired tokens will return `401 Unauthorized`
 - User must login again to get a new token
 
@@ -244,8 +244,8 @@ SECRET_KEY=your-secret-key-here
 # Required for Google OAuth
 GOOGLE_CLIENT_ID=your-google-client-id
 
-# Optional: Token expiration (default: 7 days)
-# ACCESS_TOKEN_EXPIRE_MINUTES=10080
+# Optional: Token expiration (default: 1 day / 24 hours)
+# ACCESS_TOKEN_EXPIRE_MINUTES=1440
 ```
 
 ---

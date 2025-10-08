@@ -820,7 +820,7 @@ export default function LoginPage() {
 
 1. **HTTPS in Production**: Always use HTTPS to protect tokens
 2. **Token Storage**: Consider using httpOnly cookies instead of localStorage for enhanced security
-3. **Token Expiration**: Handle token expiration gracefully (tokens expire after 7 days)
+3. **Token Expiration**: Handle token expiration gracefully (tokens expire after 1 day / 24 hours)
 4. **CORS**: Backend already configured for `http://localhost:3000`
 5. **Environment Variables**: Never commit `.env.local` to version control
 6. **Input Validation**: Backend validates email format and password length
@@ -842,7 +842,7 @@ export default function LoginPage() {
 - Verify Authorization header format: `Bearer <token>`
 
 ### 401 Unauthorized errors
-- Token may have expired (7 days)
+- Token may have expired (1 day / 24 hours)
 - User needs to log in again
 - Check token is being sent correctly
 

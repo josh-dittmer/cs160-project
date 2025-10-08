@@ -86,7 +86,7 @@ Welcome to the OFS (Online Food Store) API documentation! This directory contain
 ### Items Endpoints
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/items` | GET | List/browse items with filters |
+| `/api/items?group_by={field}` | GET | List items grouped by field (category, price, name) |
 | `/api/items/{id}` | GET | Get item details |
 | `/api/items/{id}/reviews` | GET | Get item reviews |
 | `/api/items/{id}/reviews` | POST | Create/update review (auth required) |
@@ -119,9 +119,15 @@ const { access_token, user } = await response.json();
 ### Items Browsing
 
 ```typescript
-// Get items with pagination
-const response = await fetch('http://localhost:8000/api/items?limit=20&offset=0');
-const items = await response.json();
+// Get items grouped by category
+const response = await fetch('http://localhost:8000/api/items?group_by=category');
+const itemsByCategory = await response.json();
+// Returns: { "fruits": [...], "vegetables": [...], "meat": [...], "dairy": [...] }
+
+// Get items grouped by price
+const priceResponse = await fetch('http://localhost:8000/api/items?group_by=price');
+const itemsByPrice = await priceResponse.json();
+// Returns: { "under_$3": [...], "$3_to_$5": [...], "$5_to_$10": [...], "over_$10": [...] }
 
 // Get item details
 const detailResponse = await fetch('http://localhost:8000/api/items/1');

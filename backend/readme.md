@@ -1,28 +1,58 @@
 ## CS160 Project - Developer Guide
 
-## 🚀 Quick Start - Get Backend Running
+## 🚀 Quick Start - Run the Full Application
 
-**To run the backend server in 4 steps:**
+### Backend Setup (4 steps)
 
 ```bash
-# 1. Create virtual environment and install dependencies
+# 1. Navigate to project and create virtual environment
 cd cs160-project
 python3 -m venv .venv
 source .venv/bin/activate          # On Windows: .venv\Scripts\activate
+
+# 2. Install backend dependencies
 pip install -r backend/requirements.txt
 
-# 2. Seed the database
+# 3. Seed the database
 PYTHONPATH=. python -m backend.app.seed
 
-# 3. Start the server
+# 4. Start the backend server
 PYTHONPATH=. uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8080
-
-# 4. Test it's working
-# Open http://localhost:8000/healthz in your browser
-# Or run: curl http://localhost:8000/healthz
 ```
 
-**That's it!** The server is now running on `http://localhost:8000`
+**Backend is now running on `http://localhost:8080`** ✅
+
+Test it: Open `http://localhost:8080/healthz` or run `curl http://localhost:8080/healthz`
+
+---
+
+### Frontend Setup (3 steps)
+
+**Open a new terminal window** and run:
+
+```bash
+# 1. Navigate to frontend directory
+cd cs160-project/frontend
+
+# 2. Install dependencies (only needed first time)
+npm install
+
+# 3. Start the development server
+npm run dev
+```
+
+**Frontend is now running on `http://localhost:3000`** ✅
+
+Open `http://localhost:3000` in your browser to see the app!
+
+---
+
+### 📝 Summary
+
+**Backend:** `http://localhost:8080` (API server)  
+**Frontend:** `http://localhost:3000` (Web application)
+
+Both servers need to be running simultaneously for the full application to work.
 
 For detailed setup, testing, and API documentation, see sections below. ⬇️
 

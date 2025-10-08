@@ -51,8 +51,24 @@ export default function AccountButton() {
                         className="fixed inset-0 z-10"
                         onClick={() => setShowDropdown(false)}
                     />
-                    <div className="absolute right-0 mt-2 w-48 bg-bg-light border border-bg-dark rounded-md shadow-lg z-20">
+                    <div className="absolute right-0 mt-2 w-64 bg-bg-light border border-bg-dark rounded-md shadow-lg z-20">
                         <div className="py-2">
+                            {/* User Information Section */}
+                            <div className="px-4 py-3 border-b border-bg-dark">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <User size={24} className="text-fg-medium" />
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-semibold text-fg-dark">
+                                            {user?.full_name || "User"}
+                                        </span>
+                                        <span className="text-xs text-fg-medium">
+                                            {user?.email}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Menu Items */}
                             <Link
                                 href="/home/dashboard"
                                 className="block px-4 py-2 text-sm text-fg-dark hover:bg-bg-medium transition-colors"

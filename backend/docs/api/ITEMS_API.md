@@ -7,79 +7,116 @@ This document describes all the items-related endpoints for browsing products, v
 ## Overview
 
 The Items API provides endpoints for:
-- **Browsing Items**: List items with filtering, search, and pagination
+- **Browsing Items**: List items grouped by any field (category, price, name, etc.)
+- **Flexible Grouping**: Backend handles data organization for better architecture
 - **Item Details**: View complete information about a specific item
 - **Reviews**: Read and write product reviews
-- **Filtering**: Filter by category, stock status, and search queries
-- **Pagination**: Support for infinite scroll and pagination
 
 ---
 
 ## API Endpoints
 
-### 1. List Items (Browse/Scroll)
+### 1. List Items (Grouped by Field)
 
-Browse all items with optional filtering and pagination.
+Get all items grouped by a specified field. This flexible endpoint allows grouping by category, price range, alphabetically, or any other field.
 
 **Endpoint:** `GET /api/items`
 
 **Query Parameters:**
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `q` | string | - | Search query (searches in item name) |
-| `category` | string | - | Filter by category (e.g., "fruits", "vegetables") |
-| `in_stock` | boolean | - | Filter by stock availability (true/false) |
-| `limit` | integer | 20 | Number of items to return (1-100) |
-| `offset` | integer | 0 | Number of items to skip (for pagination) |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `group_by` | string | **Yes** | Field to group items by: `category`, `price`, `name`, or any item field |
+
+**Supported Grouping Options:**
+- **`category`**: Groups by product category (fruits, vegetables, meat, dairy)
+- **`price`**: Groups by price ranges (under_$3, $3_to_$5, $5_to_$10, over_$10)
+- **`name`**: Groups alphabetically by first letter (A, B, C, ...)
+- **Any other field**: Attempts to group by that field on the Item model
 
 **Example Requests:**
 ```bash
-# Get first 20 items
-GET /api/items
+# Group by category (most common - used by dashboard)
+GET /api/items?group_by=category
 
-# Get 10 items with pagination (page 2)
-GET /api/items?limit=10&offset=10
+# Group by price range
+GET /api/items?group_by=price
 
-# Search for "apple"
-GET /api/items?q=apple
-
-# Filter by category
-GET /api/items?category=fruits&limit=20
-
-# Get items in stock
-GET /api/items?in_stock=true
-
-# Combined filters
-GET /api/items?category=fruits&in_stock=true&limit=10
+# Group alphabetically
+GET /api/items?group_by=name
 ```
 
-**Success Response (200 OK):**
+**Success Response (200 OK) - Group by Category:**
 ```json
-[
-  {
-    "id": 1,
-    "name": "Organic Apples",
-    "price_cents": 399,
-    "weight_oz": 16,
-    "category": "fruits",
-    "image_url": "https://example.com/apples.jpg",
-    "avg_rating": 4.67,
-    "ratings_count": 3
-  },
-  {
-    "id": 2,
-    "name": "Fresh Bananas",
-    "price_cents": 299,
-    "weight_oz": 12,
-    "category": "fruits",
-    "image_url": "https://example.com/bananas.jpg",
-    "avg_rating": 4.5,
-    "ratings_count": 8
-  }
-]
+{
+  "fruits": [
+    {
+      "id": 1,
+      "name": "Organic Apples",
+      "price_cents": 399,
+      "weight_oz": 16,
+      "category": "fruits",
+      "image_url": "https://images.unsplash.com/photo-1568702846914-96b305d2aaeb",
+      "avg_rating": 4.5,
+      "ratings_count": 2
+    },
+    {
+      "id": 2,
+      "name": "Fresh Bananas",
+      "price_cents": 199,
+      "weight_oz": 24,
+      "category": "fruits",
+      "image_url": "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e",
+      "avg_rating": 0,
+      "ratings_count": 0
+    }
+  ],
+  "vegetables": [
+    {
+      "id": 7,
+      "name": "Organic Tomatoes",
+      "price_cents": 299,
+      "weight_oz": 12,
+      "category": "vegetables",
+      "image_url": "https://images.unsplash.com/photo-1546094096-0df4bcaaa337",
+      "avg_rating": 5.0,
+      "ratings_count": 1
+    }
+  ],
+  "meat": [...],
+  "dairy": [...]
+}
 ```
 
-**Response Fields (List View):**
+**Success Response (200 OK) - Group by Price:**
+```json
+{
+  "under_$3": [
+    {
+      "id": 2,
+      "name": "Fresh Bananas",
+      "price_cents": 199,
+      ...
+    }
+  ],
+  "$3_to_$5": [
+    {
+      "id": 1,
+      "name": "Organic Apples",
+      "price_cents": 399,
+      ...
+    }
+  ],
+  "$5_to_$10": [...],
+  "over_$10": [...]
+}
+```
+
+**Response Structure:**
+- Returns a dictionary/object where keys are the grouping values
+- Each key contains an array of items belonging to that group
+- Items include all standard list view fields
+
+**Response Fields (Per Item):**
 - `id` - Unique item identifier
 - `name` - Item name
 - `price_cents` - Price in cents (divide by 100 for dollars)

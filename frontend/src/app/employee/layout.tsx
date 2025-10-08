@@ -6,7 +6,13 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
     <div className="employee-container">
       {/* Sidebar */}
       <aside className="sidebar">
-        <div className="logo">Logo</div>
+        <div className="logo">
+          <img 
+            src="/logo.png" 
+            alt="OFS Logo" 
+            style={{ width: '100%', height: 'auto', maxWidth: '180px' }}
+          />
+        </div>
 
         {/* Main Section */}
         <div className="menu">
