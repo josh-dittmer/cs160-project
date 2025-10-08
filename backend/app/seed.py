@@ -15,7 +15,7 @@ SAMPLE_ITEMS = [
         description="Crisp organic apples. 1 lb bag.",
     ),
     dict(
-        name="Fresh Bananas",
+        name="Organic Fresh Bananas",
         price_cents=199,
         weight_oz=24,
         category="fruits",
@@ -24,7 +24,7 @@ SAMPLE_ITEMS = [
         description="Sweet ripe bananas. Perfect for smoothies and snacks.",
     ),
     dict(
-        name="Strawberries",
+        name="Organic Strawberries",
         price_cents=499,
         weight_oz=16,
         category="fruits",
@@ -33,7 +33,7 @@ SAMPLE_ITEMS = [
         description="Fresh organic strawberries. 1 lb container.",
     ),
     dict(
-        name="Navel Oranges",
+        name="Organic Navel Oranges",
         price_cents=349,
         weight_oz=32,
         category="fruits",
@@ -42,7 +42,7 @@ SAMPLE_ITEMS = [
         description="Juicy navel oranges. 2 lb bag.",
     ),
     dict(
-        name="Blueberries",
+        name="Organic Blueberries",
         price_cents=599,
         weight_oz=12,
         category="fruits",
@@ -62,7 +62,7 @@ SAMPLE_ITEMS = [
         description="Vine-ripened organic tomatoes. ~12 oz.",
     ),
     dict(
-        name="Romaine Lettuce",
+        name="Organic Romaine Lettuce",
         price_cents=249,
         weight_oz=10,
         category="vegetables",
@@ -71,7 +71,7 @@ SAMPLE_ITEMS = [
         description="Fresh organic romaine lettuce head.",
     ),
     dict(
-        name="Baby Carrots",
+        name="Organic Baby Carrots",
         price_cents=279,
         weight_oz=16,
         category="vegetables",
@@ -80,7 +80,7 @@ SAMPLE_ITEMS = [
         description="Sweet crunchy baby carrots. 1 lb bag.",
     ),
     dict(
-        name="Bell Peppers",
+        name="Organic Bell Peppers",
         price_cents=449,
         weight_oz=20,
         category="vegetables",
@@ -89,7 +89,7 @@ SAMPLE_ITEMS = [
         description="Colorful organic bell peppers. Mixed 3-pack.",
     ),
     dict(
-        name="Cucumber",
+        name="Organic Cucumber",
         price_cents=199,
         weight_oz=12,
         category="vegetables",
@@ -98,9 +98,9 @@ SAMPLE_ITEMS = [
         description="Fresh organic cucumbers. 2-pack.",
     ),
     
-    # Meat (5+ items)
+    # Meat (4 items)
     dict(
-        name="Chicken Breast",
+        name="Organic Chicken Breast",
         price_cents=899,
         weight_oz=16,
         category="meat",
@@ -109,7 +109,7 @@ SAMPLE_ITEMS = [
         description="Fresh boneless skinless chicken breast. 1 lb.",
     ),
     dict(
-        name="Salmon Fillet",
+        name="Organic Salmon Fillet",
         price_cents=1299,
         weight_oz=12,
         category="meat",
@@ -118,7 +118,7 @@ SAMPLE_ITEMS = [
         description="Fresh Atlantic salmon fillet. Wild-caught.",
     ),
     dict(
-        name="Pork Chops",
+        name="Organic Pork Chops",
         price_cents=949,
         weight_oz=16,
         category="meat",
@@ -127,16 +127,7 @@ SAMPLE_ITEMS = [
         description="Bone-in center-cut pork chops. 1 lb.",
     ),
     dict(
-        name="Turkey Breast",
-        price_cents=1099,
-        weight_oz=16,
-        category="meat",
-        stock_qty=22,
-        image_url="https://images.unsplash.com/photo-1626200419199-391ae4be7a41",
-        description="Fresh turkey breast cutlets. 1 lb.",
-    ),
-    dict(
-        name="Shrimp",
+        name="Organic Shrimp",
         price_cents=1499,
         weight_oz=16,
         category="meat",
@@ -145,7 +136,7 @@ SAMPLE_ITEMS = [
         description="Large frozen shrimp. Peeled and deveined. 1 lb.",
     ),
     
-    # Dairy (5+ items)
+    # Dairy (5 items)
     dict(
         name="Organic Milk",
         price_cents=549,
@@ -156,7 +147,7 @@ SAMPLE_ITEMS = [
         description="Organic whole milk. Half gallon.",
     ),
     dict(
-        name="Greek Yogurt",
+        name="Organic Greek Yogurt",
         price_cents=599,
         weight_oz=32,
         category="dairy",
@@ -165,7 +156,7 @@ SAMPLE_ITEMS = [
         description="Plain Greek yogurt. 32 oz container.",
     ),
     dict(
-        name="Cheddar Cheese",
+        name="Organic Cheddar Cheese",
         price_cents=699,
         weight_oz=16,
         category="dairy",
@@ -174,7 +165,7 @@ SAMPLE_ITEMS = [
         description="Sharp cheddar cheese block. 1 lb.",
     ),
     dict(
-        name="Butter",
+        name="Organic Butter",
         price_cents=449,
         weight_oz=16,
         category="dairy",
@@ -183,16 +174,7 @@ SAMPLE_ITEMS = [
         description="Unsalted butter. 1 lb (4 sticks).",
     ),
     dict(
-        name="Eggs",
-        price_cents=399,
-        weight_oz=24,
-        category="dairy",
-        stock_qty=70,
-        image_url="https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f",
-        description="Large organic eggs. Dozen.",
-    ),
-    dict(
-        name="Mozzarella Cheese",
+        name="Organic Mozzarella Cheese",
         price_cents=549,
         weight_oz=16,
         category="dairy",
