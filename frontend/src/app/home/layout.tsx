@@ -4,27 +4,13 @@ import SearchBar from "@/components/search_bar/search_bar";
 import Sidebar from "@/components/sidebar/sidebar";
 import ThemeToggle from "@/components/theme_toggle/theme_toggle";
 import AccountButton from "@/components/account_button/account_button";
+import TopBar from "@/components/top-bar/top-bar";
 import { ReactNode } from "react";
 
 export default async function HomeLayout({ children }: { children: ReactNode }) {
     return (
         <div className="w-svw h-svh grid grid-rows-[60px_auto_30px]">
-            <div className="grid grid-cols-[auto_1fr] md:grid-cols-[200px_1fr] border-bg-dark border-b bg-bg-light">
-                <div className="pl-5 pr-5 flex items-center">
-                    <img 
-                        src="/logo.png" 
-                        alt="OFS Logo" 
-                        className="h-18 w-auto"
-                    />
-                </div>
-                <div className="pr-5 flex items-center gap-4">
-                    <SearchBar />
-                    <AddressSelector />
-                    <AccountButton />
-                    <ThemeToggle />
-                    <CartIcon />
-                </div>
-            </div>
+            <TopBar></TopBar>
             <div className="grid grid-cols-[75px_auto] md:grid-cols-[200px_auto] overflow-hidden">
                 <div className="border-bg-dark border-r bg-bg-light p-3">
                     <Sidebar />
