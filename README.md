@@ -22,11 +22,23 @@ source .venv/bin/activate          # On Windows: .venv\Scripts\activate
 pip install -r backend/requirements.txt
 
 # 3. Seed the database
-PYTHONPATH=. python -m backend.app.seed
+PYTHONPATH=. python -m backend.app.seed 
+
+"""
+FOR WINDOWNS(powershell):
+$env:PYTHONPATH="."
+#python -m backend.app.seed
+"""
 
 # 4. Start the backend server
-PYTHONPATH=. uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8080
+PYTHONPATH=. uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8080 
+""" 
+FOR WINDOWS:
+$env:PYTHONPATH="."
+uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8080
+"""
 ```
+
 
 **Backend is now running on `http://localhost:8080`** ✅
 
