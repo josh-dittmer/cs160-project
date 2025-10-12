@@ -81,3 +81,16 @@ class Token(BaseModel):
 class GoogleAuthRequest(BaseModel):
     """Schema for Google OAuth token"""
     id_token: str
+
+
+class SearchSuggestion(BaseModel):
+    """Schema for search suggestions"""
+    id: int
+    name: str
+    category: str | None = None
+    image_url: str | None = None
+    price_cents: int
+    relevance_score: float  # 0-1 score for ranking results
+    
+    class Config:
+        from_attributes = True

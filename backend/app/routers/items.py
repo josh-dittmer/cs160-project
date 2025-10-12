@@ -2,12 +2,130 @@ from typing import List, Optional, Dict, Union
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, update
+from rapidfuzz import fuzz
 from ..database import get_db
 from ..models import Item, Review
-from ..schemas import ItemListOut, ItemDetailOut, ReviewOut, ReviewIn
+from ..schemas import ItemListOut, ItemDetailOut, ReviewOut, ReviewIn, SearchSuggestion
 from ..auth import require_user
 
 router = APIRouter(prefix="/api", tags=["items"])
+
+
+def calculate_similarity(query: str, target: str) -> float:
+    """
+    Calculate similarity score between query and target string using rapidfuzz.
+    Uses word-by-word matching to prevent false positives.
+    Returns a score between 0 and 1.
+    """
+    query_lower = query.lower().strip()
+    target_lower = target.lower().strip()
+    
+    # Exact match
+    if query_lower == target_lower:
+        return 1.0
+    
+    # Substring match (no typos)
+    if query_lower in target_lower:
+        return 0.9
+    
+    # Split into words
+    query_words = query_lower.split()
+    target_words = target_lower.split()
+    
+    # Single word query - must match at least one target word well
+    if len(query_words) == 1:
+        query_word = query_words[0]
+        best_score = 0.0
+        
+        for target_word in target_words:
+            # Check substring first
+            if query_word in target_word:
+                best_score = max(best_score, 0.85)
+            elif target_word in query_word:
+                best_score = max(best_score, 0.85)
+            else:
+                # Use fuzzy matching for typos
+                word_score = fuzz.ratio(query_word, target_word) / 100.0
+                best_score = max(best_score, word_score)
+        
+        # Strict threshold for single word: 0.75 (75%)
+        return best_score if best_score >= 0.75 else 0.0
+    
+    # Multi-word query - ALL query words must match
+    matched_scores = []
+    used_target_indices = set()
+    
+    for query_word in query_words:
+        best_word_score = 0.0
+        best_target_idx = -1
+        
+        for idx, target_word in enumerate(target_words):
+            if idx in used_target_indices:
+                continue
+            
+            # Check for substring match or fuzzy match
+            if query_word in target_word or target_word in query_word:
+                score = 0.9
+            else:
+                score = fuzz.ratio(query_word, target_word) / 100.0
+            
+            if score > best_word_score:
+                best_word_score = score
+                best_target_idx = idx
+        
+        # Each query word must have a match with score >= 0.7
+        if best_word_score >= 0.7:
+            matched_scores.append(best_word_score)
+            if best_target_idx != -1:
+                used_target_indices.add(best_target_idx)
+        else:
+            # If any query word doesn't match well enough, reject the result
+            return 0.0
+    
+    # All query words matched - calculate average score
+    if matched_scores and len(matched_scores) == len(query_words):
+        return sum(matched_scores) / len(matched_scores)
+    
+    return 0.0
+
+
+# --------- SEARCH WITH AUTOCOMPLETE ---------
+@router.get("/search", response_model=List[SearchSuggestion])
+def search_items(
+    q: str = Query(..., min_length=1, description="Search query"),
+    limit: int = Query(10, ge=1, le=50, description="Maximum number of results"),
+    db: Session = Depends(get_db),
+) -> List[SearchSuggestion]:
+    """
+    Search items by name with fuzzy matching for typo tolerance.
+    Returns suggestions ranked by relevance.
+    """
+    # Get all active items
+    stmt = select(Item).where(Item.is_active == True)
+    all_items = db.execute(stmt).scalars().all()
+    
+    # Calculate similarity scores for each item
+    results = []
+    for item in all_items:
+        score = calculate_similarity(q, item.name)
+        
+        # Only include items with meaningful similarity (score > 0)
+        if score > 0:
+            results.append({
+                "id": item.id,
+                "name": item.name,
+                "category": item.category,
+                "image_url": item.image_url,
+                "price_cents": item.price_cents,
+                "relevance_score": score
+            })
+    
+    # Sort by relevance score (highest first)
+    results.sort(key=lambda x: x["relevance_score"], reverse=True)
+    
+    # Return top results
+    return results[:limit]
+
 
 # --------- LIST VIEW (flexible grouping) ---------
 @router.get("/items", response_model=Dict[str, List[ItemListOut]])
