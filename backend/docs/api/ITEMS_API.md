@@ -7,6 +7,7 @@ This document describes all the items-related endpoints for browsing products, v
 ## Overview
 
 The Items API provides endpoints for:
+- **Search Items**: Search with autocomplete and fuzzy matching
 - **Browsing Items**: List items grouped by any field (category, price, name, etc.)
 - **Flexible Grouping**: Backend handles data organization for better architecture
 - **Item Details**: View complete information about a specific item
@@ -16,7 +17,94 @@ The Items API provides endpoints for:
 
 ## API Endpoints
 
-### 1. List Items (Grouped by Field)
+### 1. Search Items (Autocomplete)
+
+Search for items with intelligent fuzzy matching and typo tolerance. Returns ranked suggestions for autocomplete.
+
+**Endpoint:** `GET /api/search`
+
+**Query Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `q` | string | **Yes** | Search query (minimum 1 character) |
+| `limit` | integer | No | Maximum results to return (default: 10, max: 50) |
+
+**Features:**
+- ✅ Real-time autocomplete suggestions
+- ✅ Handles typos ("oganic aples" → "Organic Apples")
+- ✅ Word-by-word fuzzy matching (70% similarity threshold)
+- ✅ Results ranked by relevance score
+- ✅ Intelligent substring matching
+
+**Example Requests:**
+```bash
+# Basic search
+GET /api/search?q=apple
+
+# Search with typo
+GET /api/search?q=oganic%20aples
+
+# Limit results
+GET /api/search?q=organic&limit=5
+```
+
+**Success Response (200 OK):**
+```json
+[
+  {
+    "id": 1,
+    "name": "Organic Apples",
+    "category": "fruits",
+    "image_url": "https://images.unsplash.com/photo-1568702846914-96b305d2aaeb",
+    "price_cents": 399,
+    "relevance_score": 0.9
+  },
+  {
+    "id": 5,
+    "name": "Organic Blueberries",
+    "category": "fruits",
+    "image_url": "https://images.unsplash.com/photo-1498557850523-fd3d118b962e",
+    "price_cents": 599,
+    "relevance_score": 0.75
+  }
+]
+```
+
+**Response Fields:**
+- `id`: Item unique identifier
+- `name`: Item name
+- `category`: Product category (fruits, vegetables, meat, dairy)
+- `image_url`: Product image URL
+- `price_cents`: Price in cents (399 = $3.99)
+- `relevance_score`: Match quality (0-1, higher = better match)
+
+**Notes:**
+- Results are sorted by relevance_score (highest first)
+- Empty query returns no results
+- Uses RapidFuzz library for fuzzy string matching
+- Minimum 75% similarity required for single-word queries
+- Multi-word queries require all words to match with 70%+ similarity
+
+**Example Use Cases:**
+```javascript
+// Autocomplete search in React/Next.js
+const searchItems = async (query) => {
+  const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+  return await response.json();
+};
+
+// With debouncing (300ms)
+useEffect(() => {
+  const timer = setTimeout(() => {
+    searchItems(query).then(setSuggestions);
+  }, 300);
+  return () => clearTimeout(timer);
+}, [query]);
+```
+
+---
+
+### 2. List Items (Grouped by Field)
 
 Get all items grouped by a specified field. This flexible endpoint allows grouping by category, price range, alphabetically, or any other field.
 
