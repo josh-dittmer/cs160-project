@@ -111,6 +111,12 @@ cs160-project/
   - Google OAuth integration
   - JWT token-based authentication
 
+- **Smart Search**
+  - Real-time autocomplete suggestions
+  - Fuzzy matching with typo tolerance (handles "oganic aples" → "Organic Apples")
+  - Intelligent word-by-word matching
+  - Keyboard navigation support (Arrow keys, Enter, Escape)
+
 - **Food Browsing**
   - Browse items by category (Fruits, Vegetables, Meat, Dairy)
   - View item details with images
@@ -158,6 +164,7 @@ PYTHONPATH=. pytest tests/test_auth.py -v
 - Pydantic - Data validation
 - JWT - Authentication tokens
 - Google OAuth 2.0 - Social login
+- RapidFuzz - Fuzzy string matching for search
 
 **Frontend:**
 - Next.js 15 - React framework
