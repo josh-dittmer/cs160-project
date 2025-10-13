@@ -11,9 +11,16 @@ import 'swiper/css';
 import 'swiper/css/pagination';
 
 function Item({ item }: { item: ItemT }) {
+    const handleClick = () => {
+        window.location.href = `/home/item/${item.id}`;
+    };
+
     return (
         <div className="flex justify-center">
-            <div className="m-2 w-72">
+            <button 
+                onClick={handleClick}
+                className="m-2 w-72 text-left hover:opacity-80 transition-opacity cursor-pointer"
+            >
                 <div className="flex items-center justify-center bg-bg-medium min-h-36 rounded-xl overflow-hidden">
                     {item.image_url ? (
                         <img 
@@ -29,7 +36,7 @@ function Item({ item }: { item: ItemT }) {
                     <h1 className="text-md text-fg-dark grow">{item.name}</h1>
                     <p className="text-fg-medium text-sm"><span className="font-bold">${(item.price_cents / 100).toFixed(2)}</span></p>
                 </div>
-            </div>
+            </button>
         </div>
     )
 }
