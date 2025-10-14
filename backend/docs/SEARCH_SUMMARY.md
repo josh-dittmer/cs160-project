@@ -11,6 +11,7 @@ This document details the implementation of an intelligent search feature with a
 - Word-by-word intelligent matching to prevent false positives
 - Ranked results by relevance score
 - Keyboard navigation support (Arrow keys, Enter, Escape)
+- **Voice search** using Web Speech API with visual feedback
 
 ---
 
@@ -390,6 +391,141 @@ const nextConfig: NextConfig = {
 
 ---
 
+### 4. Voice Search Implementation
+
+**File:** `frontend/src/components/search_bar/search_bar.tsx`
+
+Voice search adds speech-to-text input using the browser's **Web Speech API**, providing an accessible alternative to typing.
+
+#### State Management
+
+```typescript
+const [isListening, setIsListening] = useState(false);
+const [isVoiceSupported, setIsVoiceSupported] = useState(false);
+const recognitionRef = useRef<any>(null);
+```
+
+#### Initialize Speech Recognition
+
+```typescript
+useEffect(() => {
+    if (typeof window !== 'undefined') {
+        // Check for browser support (Chrome, Edge, Safari)
+        const SpeechRecognition = (window as any).SpeechRecognition || 
+                                 (window as any).webkitSpeechRecognition;
+        
+        if (SpeechRecognition) {
+            setIsVoiceSupported(true);
+            
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;      // Stop after one result
+            recognition.interimResults = false;   // Only final results
+            recognition.lang = 'en-US';          // Language setting
+
+            // Handle successful transcription
+            recognition.onresult = (event: any) => {
+                const transcript = event.results[0][0].transcript;
+                setQuery(transcript);  // Feed into existing search
+                setIsListening(false);
+            };
+
+            // Handle errors
+            recognition.onerror = (event: any) => {
+                console.error('Speech recognition error:', event.error);
+                setIsListening(false);
+            };
+
+            // Clean up when stopped
+            recognition.onend = () => {
+                setIsListening(false);
+            };
+
+            recognitionRef.current = recognition;
+        }
+    }
+
+    return () => {
+        if (recognitionRef.current) {
+            recognitionRef.current.abort();
+        }
+    };
+}, []);
+```
+
+#### Toggle Voice Input
+
+```typescript
+const toggleVoiceSearch = () => {
+    if (!recognitionRef.current) {
+        alert('Voice search not supported in this browser. Use Chrome, Edge, or Safari.');
+        return;
+    }
+
+    if (isListening) {
+        recognitionRef.current.stop();
+        setIsListening(false);
+    } else {
+        try {
+            recognitionRef.current.start();
+            setIsListening(true);
+        } catch (error) {
+            console.error('Failed to start voice recognition:', error);
+            setIsListening(false);
+        }
+    }
+};
+```
+
+#### Microphone Button UI
+
+```tsx
+{isVoiceSupported && (
+    <button
+        onClick={toggleVoiceSearch}
+        className={`flex-shrink-0 p-2 rounded-full transition-all ${
+            isListening 
+                ? 'bg-red-500 text-white animate-pulse'  // Active: red + pulsing
+                : 'text-fg-medium hover:bg-bg-dark hover:text-fg-dark'  // Inactive
+        }`}
+        title={isListening ? "Stop listening" : "Start voice search"}
+        type="button"
+    >
+        {isListening ? <MicOff width={20} height={20} /> : <Mic width={20} height={20} />}
+    </button>
+)}
+```
+
+#### How It Works
+
+1. **User clicks microphone button** → `toggleVoiceSearch()` called
+2. **Browser prompts for mic permission** (first time only)
+3. **User speaks** → Browser processes audio
+4. **Speech-to-text conversion** → `onresult` event fires with transcript
+5. **Sets query state** → `setQuery(transcript)`
+6. **Existing search logic kicks in** → Debounce + API call + autocomplete dropdown
+
+**Key Points:**
+- ✅ **Zero backend changes required** - all processing done by browser
+- ✅ **Seamless integration** - voice input feeds into existing search flow
+- ✅ **Browser compatibility check** - gracefully degrades if unsupported
+- ✅ **Visual feedback** - button changes color and pulses while listening
+- ✅ **Accessibility benefit** - hands-free searching
+
+#### Browser Support
+
+| Browser | Support | Notes |
+|---------|---------|-------|
+| Chrome | ✅ Yes | Full support with `webkitSpeechRecognition` |
+| Edge | ✅ Yes | Full support (Chromium-based) |
+| Safari | ✅ Yes | Full support with `webkitSpeechRecognition` |
+| Firefox | ❌ No | Not yet implemented |
+| Mobile Chrome | ✅ Yes | Works on Android |
+| Mobile Safari | ✅ Yes | Works on iOS |
+
+**Note:** Button only appears if browser supports the API (`isVoiceSupported` check).
+
+---
+
 ## Performance Considerations
 
 ### Backend Performance
@@ -438,6 +574,8 @@ const nextConfig: NextConfig = {
 
 ### Manual Testing Scenarios
 
+#### Text Search Testing
+
 1. **Exact Match**
    - Input: "Organic Apples"
    - Expected: "Organic Apples" (score: 1.0)
@@ -466,6 +604,36 @@ const nextConfig: NextConfig = {
    - Input: "apples"
    - Expected: "Organic Apples" ✅
    - Not expected: "Organic Bell Peppers" ❌
+
+#### Voice Search Testing
+
+1. **Basic Voice Input**
+   - Say: "apples"
+   - Expected: Microphone button turns red, transcript appears in search box, results show
+
+2. **Clear Speech**
+   - Say: "organic bananas"
+   - Expected: Same results as typing "organic bananas"
+
+3. **With Accent/Noise**
+   - Say: "carrots" (with background noise)
+   - Expected: May get variations like "carrot", "carrots", "carrot's" - fuzzy search should handle it
+
+4. **Browser Compatibility**
+   - Chrome/Edge/Safari: Microphone button should appear
+   - Firefox: Microphone button should NOT appear
+
+5. **Permission Denied**
+   - Action: Click mic, deny permission
+   - Expected: Button resets, error logged to console
+
+6. **While Listening - Type**
+   - Action: Click mic, start typing before speaking
+   - Expected: Should work normally, both inputs valid
+
+7. **Multiple Activations**
+   - Action: Click mic → speak → click mic again → speak
+   - Expected: Each activation should work independently
 
 ### Automated Testing
 
@@ -602,6 +770,17 @@ useEffect(() => {
    - Consider adding indices if using database search
    - Profile `calculate_similarity` function
 
+6. **Voice search button not appearing**
+   - Check browser: must be Chrome, Edge, or Safari
+   - Firefox doesn't support Web Speech API yet
+   - Button only shows if `isVoiceSupported` is true
+
+7. **Voice search not working**
+   - Check microphone permissions in browser settings
+   - Ensure HTTPS (required for mic access in production)
+   - Check console for error messages
+   - Try speaking clearly and closer to microphone
+
 ---
 
 ## Conclusion
@@ -610,11 +789,13 @@ The search implementation provides:
 - ✅ Intelligent fuzzy matching with typo tolerance
 - ✅ Fast, responsive autocomplete experience
 - ✅ Accurate results without false positives
+- ✅ Voice search with Web Speech API integration
 - ✅ Clean, maintainable code using industry-standard libraries
 - ✅ Cross-platform compatibility (Windows, macOS, Linux)
+- ✅ Accessibility features (voice input, keyboard navigation)
 - ✅ Comprehensive documentation
 
-The system successfully handles various search patterns including exact matches, partial matches, typos, and multi-word queries while maintaining high precision.
+The system successfully handles various search patterns including exact matches, partial matches, typos, and multi-word queries while maintaining high precision. Voice search provides an accessible alternative input method without requiring backend modifications.
 
 ---
 
