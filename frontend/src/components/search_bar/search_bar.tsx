@@ -8,7 +8,7 @@ import { isRight } from "fp-ts/lib/Either";
 import Image from "next/image";
 
 // Sound effects using Web Audio API
-const playSound = (type: 'start' | 'success') => {
+const playSound = (type: 'start' | 'stop' | 'success') => {
     try {
         const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
         const oscillator = audioContext.createOscillator();
@@ -18,10 +18,20 @@ const playSound = (type: 'start' | 'success') => {
         gainNode.connect(audioContext.destination);
         
         if (type === 'start') {
-            // Rising "boop" sound for starting to listen
+            // Rising "boop" sound for starting to listen (400Hz → 600Hz)
             oscillator.type = 'sine';
             oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
             oscillator.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.1);
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.15);
+        } else if (type === 'stop') {
+            // Falling "boop" sound for stopping (600Hz → 400Hz) - exact reverse of start
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.1);
             gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
             
@@ -233,6 +243,8 @@ export default function SearchBar() {
         if (isListening) {
             recognitionRef.current.stop();
             setIsListening(false);
+            // Play stop sound when manually stopping (reverse of start)
+            playSound('stop');
         } else {
             try {
                 setVoiceError(null); // Clear any previous errors
