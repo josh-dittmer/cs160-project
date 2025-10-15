@@ -98,13 +98,13 @@ export default function SearchBar() {
 
                 if (isRight(decoded)) {
                     const results = decoded.right;
-                    
+
                     // If exactly 1 result, automatically navigate to it
                     if (results.length === 1) {
                         window.location.href = `/home/item/${results[0].id}`;
                         return;
                     }
-                    
+
                     // Show dropdown for 0 results (to display message) or 2+ results
                     setSuggestions(results);
                     setIsOpen(true);
@@ -292,8 +292,8 @@ export default function SearchBar() {
                     <button
                         onClick={toggleVoiceSearch}
                         className={`flex-shrink-0 p-1 rounded-full transition-all ${isListening
-                                ? 'bg-red-500 text-white animate-pulse'
-                                : 'text-fg-medium hover:bg-bg-dark hover:text-fg-dark'
+                            ? 'bg-red-500 text-white animate-pulse'
+                            : 'text-fg-medium hover:bg-bg-dark hover:text-fg-dark'
                             }`}
                         title={isListening ? "Stop listening" : "Start voice search"}
                         type="button"
@@ -317,42 +317,12 @@ export default function SearchBar() {
             {/* Autocomplete Dropdown */}
             {isOpen && (
                 <div className="absolute top-full mt-2 w-full bg-bg-light border border-bg-dark rounded-lg shadow-2xl overflow-hidden z-50 max-h-[400px] overflow-y-auto">
-<<<<<<< HEAD
-                    {suggestions.map((suggestion, index) => (
-                        <button
-                            key={suggestion.id}
-                            className={`w-full flex items-center gap-3 p-3 hover:bg-bg-medium transition-colors ${index === selectedIndex ? 'bg-bg-medium' : ''
-                                } ${index !== suggestions.length - 1 ? 'border-b border-bg-medium' : ''}`}
-                            onClick={() => handleSelectSuggestion(suggestion)}
-                            onMouseEnter={() => setSelectedIndex(index)}
-                        >
-                            {/* Image or Search Icon */}
-                            <div className="flex-shrink-0 w-10 h-10 rounded-md overflow-hidden bg-bg-medium flex items-center justify-center">
-                                {suggestion.image_url ? (
-                                    <Image
-                                        src={suggestion.image_url}
-                                        alt={suggestion.name}
-                                        width={40}
-                                        height={40}
-                                        className="object-cover"
-                                    />
-                                ) : (
-                                    <Search className="text-fg-medium" width={20} height={20} />
-                                )}
-                            </div>
-
-                            {/* Item Info */}
-                            <div className="flex-1 text-left">
-                                <div className="text-fg-dark font-medium">
-                                    {suggestion.name}
-=======
                     {suggestions.length > 0 ? (
                         suggestions.map((suggestion, index) => (
                             <button
                                 key={suggestion.id}
-                                className={`w-full flex items-center gap-3 p-3 hover:bg-bg-medium transition-colors ${
-                                    index === selectedIndex ? 'bg-bg-medium' : ''
-                                } ${index !== suggestions.length - 1 ? 'border-b border-bg-medium' : ''}`}
+                                className={`w-full flex items-center gap-3 p-3 hover:bg-bg-medium transition-colors ${index === selectedIndex ? 'bg-bg-medium' : ''
+                                    } ${index !== suggestions.length - 1 ? 'border-b border-bg-medium' : ''}`}
                                 onClick={() => handleSelectSuggestion(suggestion)}
                                 onMouseEnter={() => setSelectedIndex(index)}
                             >
@@ -369,7 +339,6 @@ export default function SearchBar() {
                                     ) : (
                                         <Search className="text-fg-medium" width={20} height={20} />
                                     )}
->>>>>>> main
                                 </div>
 
                                 {/* Item Info */}
