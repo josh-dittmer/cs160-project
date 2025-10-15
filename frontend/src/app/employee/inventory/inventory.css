@@ -1,0 +1,149 @@
+.filters-row{
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.search-wrap{position: relative;}
+
+.search-icon{
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #a1a1aa;
+    width:16px;
+    height:16px;
+}
+.search-input{ 
+    height: 40px; 
+    width: 240px; 
+    border-radius: 12px; 
+    border: 1px solid #e5e7eb; 
+    padding: 0 12px 0 36px; 
+    font-size: 14px; 
+    outline: none; 
+}
+.search-input:focus{ border-color: #d4d4d8; }
+
+.select-wrap{ position: relative; }
+
+.select{ 
+    height: 40px; 
+    width: 180px; 
+    border-radius: 12px; 
+    border: 1px solid #e5e7eb; 
+    padding: 0 12px; 
+    background: #fff; 
+    font-size: 14px; 
+}
+
+.table-card{ 
+    overflow: hidden; 
+    border: 1px solid #e5e7eb; 
+    border-radius: 16px; 
+    background: #fff; 
+}
+
+.table{ 
+    width: 100%; 
+    border-collapse: collapse; 
+    font-size: 14px; 
+}
+.table thead{ 
+    background: #f8fafc; 
+    color: #52525b; 
+}
+.table th, .table td{ 
+    padding: 12px 16px; 
+    border-bottom: 1px solid #f1f5f9; 
+    text-align: left; 
+}
+
+.table tr:hover td{ 
+    background: #fafafa; 
+}
+
+.product-cell{ 
+    display: flex; 
+    align-items: center; 
+    gap: 12px; 
+}
+
+.product-thumb{ 
+    width: 32px; 
+    height: 32px; 
+    border-radius: 8px; 
+    background: #f4f4f5; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+}
+
+.thumb-icon{ 
+    width: 16px; 
+    height: 16px; 
+    color: #737373; 
+}
+
+.product-name{ 
+    font-weight: 500; 
+    color: #111827; }
+
+.muted{ 
+    color: #525252; 
+}
+
+.qty-pill{ 
+    min-width: 32px; 
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center; 
+    border: 1px solid #e5e7eb; 
+    border-radius: 8px; 
+    padding: 2px 8px; 
+    font-size: 12px; 
+    font-weight: 500; 
+}
+
+/* Status badges */
+.status-badge{ 
+    display: inline-flex; 
+    align-items: center; 
+    border-radius: 999px; padding: 2px 8px; 
+    font-size: 12px; 
+    font-weight: 500; 
+}
+
+.status-green{ 
+    background: #DCFCE7; 
+    color: #047857; 
+}
+
+.status-red{ 
+    background: #FEE2E2; 
+    color: #B91C1C; 
+}
+
+.status-yellow{ 
+    background: #FEF3C7; 
+    color: #92400E; 
+}
+
+
+.kebab-btn{ 
+    border-radius: 8px; 
+    padding: 6px 8px; 
+    color: #6b7280; 
+}
+
+.kebab-btn:hover{ 
+    background: #f4f4f5; 
+}
+
+.kebab-icon{ 
+    width: 16px; 
+    height: 16px; 
+}

@@ -83,3 +83,13 @@
   padding: 40px;
   overflow-y: auto;
 }
+
+.page-title {
+    font-size: 56px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+   margin-bottom: 24px;
+}
+
+
+
