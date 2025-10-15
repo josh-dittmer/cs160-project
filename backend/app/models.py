@@ -12,7 +12,7 @@ from sqlalchemy import (
     CheckConstraint,
 )
 from sqlalchemy.sql import func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .database import Base
 
 
@@ -79,3 +79,14 @@ class Review(Base):
         UniqueConstraint("item_id", "user_id", name="uq_review_item_user"),
         CheckConstraint("rating BETWEEN 1 AND 5", name="ck_rating_range"),
     )
+
+class CartItem(Base):
+    __tablename__ = "cart_item"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    quantity: Mapped[int] = mapped_column(Integer)
+    item_id: Mapped[int] = mapped_column(ForeignKey("items.id"), index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+
+    item = relationship(Item)
+    user = relationship(User)

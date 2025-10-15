@@ -25,6 +25,9 @@ export default async function DashboardPage() {
             {itemsByCategory.dairy && itemsByCategory.dairy.length > 0 && (
                 <ItemSlider title="Dairy" items={itemsByCategory.dairy} />
             )}
+            {itemsByCategory.grains && itemsByCategory.grains.length > 0 && (
+                <ItemSlider title="Grains" items={itemsByCategory.grains} />
+            )}
         </div>
     )
 }

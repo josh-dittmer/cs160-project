@@ -10,33 +10,67 @@ An on-demand food delivery service built with FastAPI (backend) and Next.js (fro
 - Node.js 16+ and npm
 - Git
 
-### Backend Setup (4 steps)
+### Backend Setup
+
+#### 1. Navigate to project and create virtual environment
 
 ```bash
-# 1. Navigate to project and create virtual environment
 cd cs160-project
 python3 -m venv .venv
-source .venv/bin/activate          # On Windows: .venv\Scripts\activate
+source .venv/bin/activate
+```
 
-# 2. Install backend dependencies
+**Windows:**
+```powershell
+cd cs160-project
+python -m venv .venv
+.venv\Scripts\activate
+```
+
+#### 2. Install backend dependencies
+
+```bash
 pip install -r backend/requirements.txt
+```
 
-# 3. Seed the database
-PYTHONPATH=. python -m backend.app.seed 
+#### 2.5 Reset Database (Optional)
 
-"""
-FOR WINDOWNS(powershell):
+If you need to reseed with fresh data, delete the existing database first:
+
+**macOS/Linux:**
+```bash
+rm backend/sqlite.db
+```
+
+**Windows PowerShell:**
+```powershell
+Remove-Item backend\sqlite.db
+```
+
+#### 3. Seed the database
+
+**macOS/Linux:**
+```bash
+PYTHONPATH=. python -m backend.app.seed
+```
+
+**Windows PowerShell:**
+```powershell
 $env:PYTHONPATH="."
-#python -m backend.app.seed
-"""
+python -m backend.app.seed
+```
 
-# 4. Start the backend server
-PYTHONPATH=. uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8080 
-""" 
-FOR WINDOWS:
+#### 4. Start the backend server
+
+**macOS/Linux:**
+```bash
+PYTHONPATH=. uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8080
+```
+
+**Windows PowerShell:**
+```powershell
 $env:PYTHONPATH="."
 uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8080
-"""
 ```
 
 
@@ -46,18 +80,25 @@ Test it: Open `http://localhost:8080/healthz` or run `curl http://localhost:8080
 
 ---
 
-### Frontend Setup (3 steps)
+### Frontend Setup
 
 **Open a new terminal window** and run:
 
+#### 1. Navigate to frontend directory
+
 ```bash
-# 1. Navigate to frontend directory
 cd cs160-project/frontend
+```
 
-# 2. Install dependencies (only needed first time)
+#### 2. Install dependencies (only needed first time)
+
+```bash
 npm install
+```
 
-# 3. Start the development server
+#### 3. Start the development server
+
+```bash
 npm run dev
 ```
 
@@ -125,18 +166,6 @@ cs160-project/
 - **Modern UI**
   - Responsive design
   - Dark/light theme toggle
-  - Amazon-style account management
-
----
-
-## 📚 Documentation
-
-- **Backend API Documentation:** `backend/docs/`
-  - [Authentication API](backend/docs/api/AUTH_API.md)
-  - [Items API](backend/docs/api/ITEMS_API.md)
-  - [Frontend Integration Guide](backend/docs/api/FRONTEND_INTEGRATION.md)
-
-- **Backend Developer Guide:** `backend/readme.md`
 
 ---
 

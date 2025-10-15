@@ -14,7 +14,20 @@ export const Item = t.type({
 
 export type ItemT = t.TypeOf<typeof Item>;
 
+export const CartItem = t.type({
+    quantity: t.number,
+    item: Item
+});
+
+export type CartItemT = t.TypeOf<typeof CartItem>;
+
 // requests
+export const UpsertCartItemRequest = t.type({
+    item_id: t.number,
+    quantity: t.number
+});
+
+export type UpsertCartItemRequest = t.TypeOf<typeof UpsertCartItemRequest>;
 
 // search
 export const SearchSuggestion = t.type({
@@ -29,6 +42,13 @@ export const SearchSuggestion = t.type({
 export type SearchSuggestionT = t.TypeOf<typeof SearchSuggestion>;
 
 // responses
+export const GenericResponse = t.type({
+    ok: t.boolean
+});
+
+export type GenericResponseT = t.TypeOf<typeof GenericResponse>;
+
 export const ItemsListResponse = t.array(Item);
 export const ItemsByCategoryResponse = t.record(t.string, t.array(Item));
 export const SearchSuggestionsResponse = t.array(SearchSuggestion);
+export const CartItemListResponse = t.array(CartItem);

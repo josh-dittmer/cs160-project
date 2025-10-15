@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .database import Base, engine
 from .routers import items as items_router
 from .routers import auth as auth_router
+from .routers import cart as cart_router
 
 # Create tables if missing
 Base.metadata.create_all(bind=engine)
@@ -26,6 +27,7 @@ app.add_middleware(
 
 app.include_router(auth_router.router)
 app.include_router(items_router.router)
+app.include_router(cart_router.router)
 
 @app.get("/healthz")
 def healthz():

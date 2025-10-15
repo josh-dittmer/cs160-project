@@ -9,3 +9,4 @@ __pycache__/
 backend/sqlite.db
 backend/sqlite.db-journal
 .env
+temp/
