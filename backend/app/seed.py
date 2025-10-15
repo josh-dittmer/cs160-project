@@ -732,33 +732,33 @@ def seed():
             db.commit()
 
         # add a few reviews if none
-        if db.query(Review).count() == 0:
-            items = db.query(Item).order_by(Item.id).all()
-            for idx, user_id, rating, title, body in SAMPLE_REVIEWS:
-                db.add(
-                    Review(
-                        item_id=items[idx].id,
-                        user_id=user_id,
-                        rating=rating,
-                        title=title,
-                        body=body,
-                    )
-                )
-            db.commit()
+        # if db.query(Review).count() == 0:
+        #     items = db.query(Item).order_by(Item.id).all()
+        #     for idx, user_id, rating, title, body in SAMPLE_REVIEWS:
+        #         db.add(
+        #             Review(
+        #                 item_id=items[idx].id,
+        #                 user_id=user_id,
+        #                 rating=rating,
+        #                 title=title,
+        #                 body=body,
+        #             )
+        #         )
+        #     db.commit()
 
-            # recompute summaries
-            for it in items:
-                avg, cnt = db.execute(
-                    select(func.avg(Review.rating), func.count(Review.id)).where(
-                        Review.item_id == it.id
-                    )
-                ).one()
-                db.execute(
-                    update(Item)
-                    .where(Item.id == it.id)
-                    .values(avg_rating=float(avg or 0.0), ratings_count=int(cnt or 0))
-                )
-            db.commit()
+        #     # recompute summaries
+        #     for it in items:
+        #         avg, cnt = db.execute(
+        #             select(func.avg(Review.rating), func.count(Review.id)).where(
+        #                 Review.item_id == it.id
+        #             )
+        #         ).one()
+        #         db.execute(
+        #             update(Item)
+        #             .where(Item.id == it.id)
+        #             .values(avg_rating=float(avg or 0.0), ratings_count=int(cnt or 0))
+        #         )
+        #     db.commit()
     finally:
         db.close()
 

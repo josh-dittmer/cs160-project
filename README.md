@@ -21,6 +21,22 @@ source .venv/bin/activate          # On Windows: .venv\Scripts\activate
 # 2. Install backend dependencies
 pip install -r backend/requirements.txt
 
+# 2.5 Reset Database (Optional)
+
+If you need to reseed with fresh data, delete the existing database first:
+
+**macOS/Linux:**
+```bash
+rm backend/sqlite.db
+```
+
+**Windows PowerShell:**
+```powershell
+Remove-Item backend\sqlite.db
+```
+
+Then run step 3 to reseed.
+
 # 3. Seed the database
 PYTHONPATH=. python -m backend.app.seed 
 
