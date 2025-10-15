@@ -10,7 +10,6 @@ from ..auth import require_user
 
 router = APIRouter(prefix="/api", tags=["items"])
 
-
 def calculate_similarity(query: str, target: str) -> float:
     """
     Calculate similarity score between query and target string using rapidfuzz.

@@ -1,9 +1,10 @@
 'use client';
 
-import { CircleUserRound, HomeIcon, LucideProps, ReceiptText } from "lucide-react";
+import { HomeIcon, LucideProps, ReceiptText } from "lucide-react";
 import { motion } from "motion/react";
 import { usePathname } from "next/navigation";
 import { FC } from "react";
+import AccountButton from "../account_button/account_button";
 
 export function SidebarItem({ title, href, Icon }: { title: string, href: string, Icon: FC<LucideProps> }) {
     const pathname = usePathname();
@@ -31,7 +32,7 @@ export default function Sidebar() {
                 <SidebarItem title="Orders" href="/home/orders" Icon={ReceiptText} />
             </div>
             <div className="flex flex-col gap-2 md:w-full">
-                <SidebarItem title="Account" href="/home/account" Icon={CircleUserRound} />
+                <AccountButton />
             </div>
         </div>
     )

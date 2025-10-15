@@ -94,3 +94,11 @@ class SearchSuggestion(BaseModel):
     
     class Config:
         from_attributes = True
+
+class CartItemOut(BaseModel):
+    quantity: int
+    item: ItemListOut
+
+class CartItemIn(BaseModel):
+    item_id: int
+    quantity: int

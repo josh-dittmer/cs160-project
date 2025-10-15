@@ -1,11 +1,11 @@
 'use client';
 
-import { Search, Mic, MicOff } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
-import { SearchSuggestionT, SearchSuggestionsResponse } from "@/lib/api/models";
 import { Endpoints } from "@/lib/api/endpoints";
+import { SearchSuggestionT, SearchSuggestionsResponse } from "@/lib/api/models";
 import { isRight } from "fp-ts/lib/Either";
+import { Mic, MicOff, Search } from "lucide-react";
 import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 
 // Sound effects using Web Audio API
 const playSound = (type: 'start' | 'stop' | 'success') => {
@@ -13,10 +13,10 @@ const playSound = (type: 'start' | 'stop' | 'success') => {
         const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
-        
+
         oscillator.connect(gainNode);
         gainNode.connect(audioContext.destination);
-        
+
         if (type === 'start') {
             // Rising "boop" sound for starting to listen (400Hz → 600Hz)
             oscillator.type = 'sine';
@@ -24,7 +24,7 @@ const playSound = (type: 'start' | 'stop' | 'success') => {
             oscillator.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.1);
             gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
-            
+
             oscillator.start(audioContext.currentTime);
             oscillator.stop(audioContext.currentTime + 0.15);
         } else if (type === 'stop') {
@@ -34,7 +34,7 @@ const playSound = (type: 'start' | 'stop' | 'success') => {
             oscillator.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.1);
             gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
-            
+
             oscillator.start(audioContext.currentTime);
             oscillator.stop(audioContext.currentTime + 0.15);
         } else {
@@ -44,21 +44,21 @@ const playSound = (type: 'start' | 'stop' | 'success') => {
             oscillator.frequency.exponentialRampToValueAtTime(1000, audioContext.currentTime + 0.05);
             gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-            
+
             oscillator.start(audioContext.currentTime);
             oscillator.stop(audioContext.currentTime + 0.2);
-            
+
             // Add a second harmonic for a richer "ding"
             const oscillator2 = audioContext.createOscillator();
             const gainNode2 = audioContext.createGain();
             oscillator2.connect(gainNode2);
             gainNode2.connect(audioContext.destination);
-            
+
             oscillator2.type = 'sine';
             oscillator2.frequency.setValueAtTime(1200, audioContext.currentTime + 0.05);
             gainNode2.gain.setValueAtTime(0.15, audioContext.currentTime + 0.05);
             gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.25);
-            
+
             oscillator2.start(audioContext.currentTime + 0.05);
             oscillator2.stop(audioContext.currentTime + 0.25);
         }
@@ -95,7 +95,7 @@ export default function SearchBar() {
                 );
                 const data = await response.json();
                 const decoded = SearchSuggestionsResponse.decode(data);
-                
+
                 if (isRight(decoded)) {
                     setSuggestions(decoded.right);
                     setIsOpen(decoded.right.length > 0);
@@ -130,10 +130,10 @@ export default function SearchBar() {
         if (typeof window !== 'undefined') {
             // Check for browser support
             const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-            
+
             if (SpeechRecognition) {
                 setIsVoiceSupported(true);
-                
+
                 const recognition = new SpeechRecognition();
                 recognition.continuous = false;
                 recognition.interimResults = false;
@@ -150,7 +150,7 @@ export default function SearchBar() {
 
                 recognition.onerror = (event: any) => {
                     setIsListening(false);
-                    
+
                     // Handle different error types with user-friendly messages
                     switch (event.error) {
                         case 'network':
@@ -173,7 +173,7 @@ export default function SearchBar() {
                             console.error('Speech recognition error:', event.error);
                             setVoiceError('Voice search failed. Please try again.');
                     }
-                    
+
                     // Clear error message after 4 seconds
                     setTimeout(() => setVoiceError(null), 4000);
                 };
@@ -200,7 +200,7 @@ export default function SearchBar() {
         switch (e.key) {
             case "ArrowDown":
                 e.preventDefault();
-                setSelectedIndex(prev => 
+                setSelectedIndex(prev =>
                     prev < suggestions.length - 1 ? prev + 1 : prev
                 );
                 break;
@@ -282,11 +282,10 @@ export default function SearchBar() {
                 {isVoiceSupported && (
                     <button
                         onClick={toggleVoiceSearch}
-                        className={`flex-shrink-0 p-2 rounded-full transition-all ${
-                            isListening 
-                                ? 'bg-red-500 text-white animate-pulse' 
+                        className={`flex-shrink-0 p-1 rounded-full transition-all ${isListening
+                                ? 'bg-red-500 text-white animate-pulse'
                                 : 'text-fg-medium hover:bg-bg-dark hover:text-fg-dark'
-                        }`}
+                            }`}
                         title={isListening ? "Stop listening" : "Start voice search"}
                         type="button"
                     >
@@ -312,9 +311,8 @@ export default function SearchBar() {
                     {suggestions.map((suggestion, index) => (
                         <button
                             key={suggestion.id}
-                            className={`w-full flex items-center gap-3 p-3 hover:bg-bg-medium transition-colors ${
-                                index === selectedIndex ? 'bg-bg-medium' : ''
-                            } ${index !== suggestions.length - 1 ? 'border-b border-bg-medium' : ''}`}
+                            className={`w-full flex items-center gap-3 p-3 hover:bg-bg-medium transition-colors ${index === selectedIndex ? 'bg-bg-medium' : ''
+                                } ${index !== suggestions.length - 1 ? 'border-b border-bg-medium' : ''}`}
                             onClick={() => handleSelectSuggestion(suggestion)}
                             onMouseEnter={() => setSelectedIndex(index)}
                         >

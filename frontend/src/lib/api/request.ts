@@ -28,6 +28,27 @@ export function get<C extends t.Mixed>({ token, decoder }: { token?: string, dec
     return data;
 }
 
+export function post<C extends t.Mixed>({ token, decoder, payload }: { token?: string, decoder: C, payload: object }): RequestData<C> {
+    const headers = new Headers();
+    if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+    }
+    headers.set('Content-Type', 'application/json');
+
+    const init: RequestInit = {
+        method: 'post',
+        headers: headers,
+        body: JSON.stringify(payload)
+    };
+
+    const data: RequestData<C> = {
+        request: init,
+        decoder: decoder
+    };
+
+    return data;
+}
+
 export async function request<C extends t.Mixed>(path: string, data: RequestData<C>): Promise<t.TypeOf<typeof data.decoder>> {
     const url = Endpoints.mainApiInternal + path;
 
