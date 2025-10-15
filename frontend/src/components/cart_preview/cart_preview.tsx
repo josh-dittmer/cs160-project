@@ -65,9 +65,9 @@ export default function CartPreview() {
         <AnimatePresence>
             {cartContext?.visible && (
                 <motion.div
-                    initial={{ x: '100%' }}
-                    animate={{ x: 0 }}
-                    exit={{ x: '100%' }}
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
                     transition={{
                         x: {
                             type: 'spring',
@@ -87,7 +87,7 @@ export default function CartPreview() {
                         </motion.button>
                         <h1 className="text-fg-dark text-2xl">Cart</h1>
                     </div>
-                    <div className="mt-3 overflow-y-scroll">
+                    <div className="mt-3 mb-3 overflow-y-scroll">
                         {isPending && (
                             <p>Loading...</p>
                         )}

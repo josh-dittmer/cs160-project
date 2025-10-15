@@ -28,7 +28,7 @@ export default function TopBar() {
                 <ThemeToggle />
                 <CartIcon />
             </div>
-            <div className="absolute right-0 bottom-0 transform-[translateY(100%)] h-[calc(100svh-90px)] w-[calc(100svw-75px)] sm:w-[400px] z-8 pointer-events-none">
+            <div className="absolute right-0 bottom-0 transform-[translateY(100%)] h-[calc(100svh-90px)] w-[calc(100svw-74px)] sm:w-[400px] z-8 pointer-events-none">
                 <CartPreview />
             </div>
         </div>
