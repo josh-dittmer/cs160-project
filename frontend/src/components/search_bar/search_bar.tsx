@@ -97,8 +97,17 @@ export default function SearchBar() {
                 const decoded = SearchSuggestionsResponse.decode(data);
 
                 if (isRight(decoded)) {
-                    setSuggestions(decoded.right);
-                    setIsOpen(decoded.right.length > 0);
+                    const results = decoded.right;
+                    
+                    // If exactly 1 result, automatically navigate to it
+                    if (results.length === 1) {
+                        window.location.href = `/home/item/${results[0].id}`;
+                        return;
+                    }
+                    
+                    // Show dropdown for 0 results (to display message) or 2+ results
+                    setSuggestions(results);
+                    setIsOpen(true);
                 } else {
                     setSuggestions([]);
                     setIsOpen(false);
@@ -306,8 +315,9 @@ export default function SearchBar() {
             )}
 
             {/* Autocomplete Dropdown */}
-            {isOpen && suggestions.length > 0 && (
+            {isOpen && (
                 <div className="absolute top-full mt-2 w-full bg-bg-light border border-bg-dark rounded-lg shadow-2xl overflow-hidden z-50 max-h-[400px] overflow-y-auto">
+<<<<<<< HEAD
                     {suggestions.map((suggestion, index) => (
                         <button
                             key={suggestion.id}
@@ -335,20 +345,56 @@ export default function SearchBar() {
                             <div className="flex-1 text-left">
                                 <div className="text-fg-dark font-medium">
                                     {suggestion.name}
+=======
+                    {suggestions.length > 0 ? (
+                        suggestions.map((suggestion, index) => (
+                            <button
+                                key={suggestion.id}
+                                className={`w-full flex items-center gap-3 p-3 hover:bg-bg-medium transition-colors ${
+                                    index === selectedIndex ? 'bg-bg-medium' : ''
+                                } ${index !== suggestions.length - 1 ? 'border-b border-bg-medium' : ''}`}
+                                onClick={() => handleSelectSuggestion(suggestion)}
+                                onMouseEnter={() => setSelectedIndex(index)}
+                            >
+                                {/* Image or Search Icon */}
+                                <div className="flex-shrink-0 w-10 h-10 rounded-md overflow-hidden bg-bg-medium flex items-center justify-center">
+                                    {suggestion.image_url ? (
+                                        <Image
+                                            src={suggestion.image_url}
+                                            alt={suggestion.name}
+                                            width={40}
+                                            height={40}
+                                            className="object-cover"
+                                        />
+                                    ) : (
+                                        <Search className="text-fg-medium" width={20} height={20} />
+                                    )}
+>>>>>>> main
                                 </div>
-                                {suggestion.category && (
-                                    <div className="text-fg-medium text-sm capitalize">
-                                        {suggestion.category}
-                                    </div>
-                                )}
-                            </div>
 
-                            {/* Price */}
-                            <div className="text-fg-dark font-semibold">
-                                {formatPrice(suggestion.price_cents)}
-                            </div>
-                        </button>
-                    ))}
+                                {/* Item Info */}
+                                <div className="flex-1 text-left">
+                                    <div className="text-fg-dark font-medium">
+                                        {suggestion.name}
+                                    </div>
+                                    {suggestion.category && (
+                                        <div className="text-fg-medium text-sm capitalize">
+                                            {suggestion.category}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Price */}
+                                <div className="text-fg-dark font-semibold">
+                                    {formatPrice(suggestion.price_cents)}
+                                </div>
+                            </button>
+                        ))
+                    ) : (
+                        <div className="p-4 text-center text-fg-medium">
+                            No results found for &ldquo;{query}&rdquo;
+                        </div>
+                    )}
                 </div>
             )}
         </div>
