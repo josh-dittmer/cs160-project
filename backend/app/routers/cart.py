@@ -39,7 +39,10 @@ def update_cart(
     ).first()
 
     if cart_item:
-        cart_item.quantity = payload.quantity
+        if payload.quantity <= 0:
+            db.delete(cart_item)
+        else:
+            cart_item.quantity = payload.quantity
     else:
         db.add(CartItem(
             quantity=payload.quantity,

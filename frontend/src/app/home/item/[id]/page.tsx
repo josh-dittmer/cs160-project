@@ -1,8 +1,10 @@
-import { notFound } from 'next/navigation';
+import AddToCartButton from '@/components/add_to_cart_button/add_to_cart_button';
+import { ItemDetail, ItemDetailT } from '@/lib/api/models';
 import { get, request } from '@/lib/api/request';
 import * as t from 'io-ts';
-import Image from 'next/image';
 import { Package, TrendingUp } from 'lucide-react';
+import Image from 'next/image';
+import { notFound } from 'next/navigation';
 
 // Define the nutrition type
 const NutritionFact = t.partial({
@@ -42,22 +44,6 @@ const Nutrition = t.partial({
     phosphorus: NutritionFact,
 });
 
-const ItemDetail = t.type({
-    id: t.number,
-    name: t.string,
-    price_cents: t.number,
-    weight_oz: t.number,
-    category: t.union([t.string, t.null]),
-    image_url: t.union([t.string, t.null]),
-    description: t.union([t.string, t.null]),
-    nutrition_json: t.union([t.string, t.null]),
-    avg_rating: t.number,
-    ratings_count: t.number,
-    stock_qty: t.number,
-    is_active: t.boolean,
-});
-
-type ItemDetailT = t.TypeOf<typeof ItemDetail>;
 type NutritionT = t.TypeOf<typeof Nutrition>;
 
 function NutritionLabel({ nutrition }: { nutrition: NutritionT }) {
@@ -72,7 +58,7 @@ function NutritionLabel({ nutrition }: { nutrition: NutritionT }) {
                     <p className="font-bold">Serving size <span className="float-right">{nutrition.servingSize}</span></p>
                 )}
             </div>
-            
+
             {/* Calories */}
             {nutrition.calories !== undefined && (
                 <div className="border-b-4 border-black py-1">
@@ -82,11 +68,11 @@ function NutritionLabel({ nutrition }: { nutrition: NutritionT }) {
                     </p>
                 </div>
             )}
-            
+
             <div className="border-b-2 border-black py-1">
                 <p className="text-xs text-right font-bold">% Daily Value*</p>
             </div>
-            
+
             {/* Macronutrients */}
             {nutrition.totalFat && (
                 <div className="border-b border-gray-400 py-1">
@@ -97,7 +83,7 @@ function NutritionLabel({ nutrition }: { nutrition: NutritionT }) {
                     </p>
                 </div>
             )}
-            
+
             {nutrition.saturatedFat && (
                 <div className="border-b border-gray-400 py-1 pl-4">
                     <p>Saturated Fat {nutrition.saturatedFat.value}{nutrition.saturatedFat.unit}
@@ -107,13 +93,13 @@ function NutritionLabel({ nutrition }: { nutrition: NutritionT }) {
                     </p>
                 </div>
             )}
-            
+
             {nutrition.transFat && (
                 <div className="border-b border-gray-400 py-1 pl-4">
                     <p><span className="italic">Trans</span> Fat {nutrition.transFat.value}{nutrition.transFat.unit}</p>
                 </div>
             )}
-            
+
             {nutrition.cholesterol && (
                 <div className="border-b border-gray-400 py-1">
                     <p><span className="font-bold">Cholesterol</span> {nutrition.cholesterol.value}{nutrition.cholesterol.unit}
@@ -123,7 +109,7 @@ function NutritionLabel({ nutrition }: { nutrition: NutritionT }) {
                     </p>
                 </div>
             )}
-            
+
             {nutrition.sodium && (
                 <div className="border-b border-gray-400 py-1">
                     <p><span className="font-bold">Sodium</span> {nutrition.sodium.value}{nutrition.sodium.unit}
@@ -133,7 +119,7 @@ function NutritionLabel({ nutrition }: { nutrition: NutritionT }) {
                     </p>
                 </div>
             )}
-            
+
             {nutrition.totalCarbohydrate && (
                 <div className="border-b border-gray-400 py-1">
                     <p><span className="font-bold">Total Carbohydrate</span> {nutrition.totalCarbohydrate.value}{nutrition.totalCarbohydrate.unit}
@@ -143,7 +129,7 @@ function NutritionLabel({ nutrition }: { nutrition: NutritionT }) {
                     </p>
                 </div>
             )}
-            
+
             {nutrition.dietaryFiber && (
                 <div className="border-b border-gray-400 py-1 pl-4">
                     <p>Dietary Fiber {nutrition.dietaryFiber.value}{nutrition.dietaryFiber.unit}
@@ -153,19 +139,19 @@ function NutritionLabel({ nutrition }: { nutrition: NutritionT }) {
                     </p>
                 </div>
             )}
-            
+
             {nutrition.totalSugars && (
                 <div className="border-b border-gray-400 py-1 pl-4">
                     <p>Total Sugars {nutrition.totalSugars.value}{nutrition.totalSugars.unit}</p>
                 </div>
             )}
-            
+
             {nutrition.protein && (
                 <div className="border-b-8 border-black py-1">
                     <p><span className="font-bold">Protein</span> {nutrition.protein.value}{nutrition.protein.unit}</p>
                 </div>
             )}
-            
+
             {/* Vitamins and Minerals */}
             <div className="py-2 text-xs space-y-1">
                 {nutrition.vitaminD && (
@@ -239,7 +225,7 @@ function NutritionLabel({ nutrition }: { nutrition: NutritionT }) {
                     </p>
                 )}
             </div>
-            
+
             <div className="border-t-4 border-black pt-2 text-xs">
                 <p>* Percent Daily Values are based on a 2,000 calorie diet.</p>
             </div>
@@ -249,7 +235,11 @@ function NutritionLabel({ nutrition }: { nutrition: NutritionT }) {
 
 export default async function ItemDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    
+
+    const addToCart = () => {
+
+    };
+
     // Fetch item details
     let item: ItemDetailT;
     try {
@@ -257,7 +247,7 @@ export default async function ItemDetailPage({ params }: { params: Promise<{ id:
     } catch (error) {
         notFound();
     }
-    
+
     // Parse nutrition data
     let nutrition: NutritionT | null = null;
     if (item.nutrition_json) {
@@ -267,7 +257,7 @@ export default async function ItemDetailPage({ params }: { params: Promise<{ id:
             console.error('Failed to parse nutrition JSON:', e);
         }
     }
-    
+
     return (
         <div className="max-w-7xl mx-auto p-6 space-y-8">
             {/* Top Section - Image and Product Info Side by Side */}
@@ -287,58 +277,49 @@ export default async function ItemDetailPage({ params }: { params: Promise<{ id:
                         <Package className="w-32 h-32 text-fg-medium" />
                     )}
                 </div>
-                
+
                 {/* Product Info Card */}
                 <div className="bg-bg-light border border-bg-dark rounded-xl p-6 space-y-4">
-                        <div>
-                            <h1 className="text-3xl font-bold text-fg-dark mb-2">{item.name}</h1>
-                            {item.category && (
-                                <p className="text-fg-medium capitalize text-sm">
-                                    Category: <span className="font-semibold">{item.category}</span>
-                                </p>
-                            )}
-                        </div>
-                        
-                        {/* Price */}
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-4xl font-bold text-fg-dark">
-                                ${(item.price_cents / 100).toFixed(2)}
-                            </span>
-                            <span className="text-fg-medium text-sm">
-                                ({item.weight_oz} oz)
-                            </span>
-                        </div>
-                        
-                        {/* Stock Status */}
-                        <div className="flex items-center gap-2">
-                            <TrendingUp className={`w-5 h-5 ${item.stock_qty > 10 ? 'text-green-500' : 'text-orange-500'}`} />
-                            <span className={`font-semibold ${item.stock_qty > 10 ? 'text-green-600' : 'text-orange-600'}`}>
-                                {item.stock_qty > 0 ? `${item.stock_qty} in stock` : 'Out of stock'}
-                            </span>
-                        </div>
-                        
-                        {/* Description */}
-                        {item.description && (
-                            <div className="pt-4 border-t border-bg-medium">
-                                <h3 className="font-semibold text-fg-dark mb-2">Description</h3>
-                                <p className="text-fg-medium leading-relaxed">{item.description}</p>
-                            </div>
+                    <div>
+                        <h1 className="text-3xl font-bold text-fg-dark mb-2">{item.name}</h1>
+                        {item.category && (
+                            <p className="text-fg-medium capitalize text-sm">
+                                Category: <span className="font-semibold">{item.category}</span>
+                            </p>
                         )}
-                        
-                        {/* Add to Cart Button */}
-                        <button 
-                            disabled={item.stock_qty === 0}
-                            className={`w-full py-3 px-6 rounded-lg font-semibold text-white transition-colors ${
-                                item.stock_qty > 0
-                                    ? 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'
-                                    : 'bg-gray-400 cursor-not-allowed'
-                            }`}
-                        >
-                            {item.stock_qty > 0 ? 'Add to Cart' : 'Out of Stock'}
-                        </button>
+                    </div>
+
+                    {/* Price */}
+                    <div className="flex items-baseline gap-2">
+                        <span className="text-4xl font-bold text-fg-dark">
+                            ${(item.price_cents / 100).toFixed(2)}
+                        </span>
+                        <span className="text-fg-medium text-sm">
+                            ({item.weight_oz} oz)
+                        </span>
+                    </div>
+
+                    {/* Stock Status */}
+                    <div className="flex items-center gap-2">
+                        <TrendingUp className={`w-5 h-5 ${item.stock_qty > 10 ? 'text-green-500' : 'text-orange-500'}`} />
+                        <span className={`font-semibold ${item.stock_qty > 10 ? 'text-green-600' : 'text-orange-600'}`}>
+                            {item.stock_qty > 0 ? `${item.stock_qty} in stock` : 'Out of stock'}
+                        </span>
+                    </div>
+
+                    {/* Description */}
+                    {item.description && (
+                        <div className="pt-4 border-t border-bg-medium">
+                            <h3 className="font-semibold text-fg-dark mb-2">Description</h3>
+                            <p className="text-fg-medium leading-relaxed">{item.description}</p>
+                        </div>
+                    )}
+
+                    {/* Add to Cart Button */}
+                    <AddToCartButton item={item} />
                 </div>
             </div>
-            
+
             {/* Bottom Section - Nutrition Facts */}
             <div>
                 {nutrition ? (

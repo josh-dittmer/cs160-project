@@ -2,6 +2,7 @@
 
 import { CartContext } from "@/contexts/cart";
 import { CartItemT } from "@/lib/api/models";
+import { useUpsertCartItemMutation } from "@/lib/mutations/cart_item/upsert";
 import { useCartItemsQuery } from "@/lib/queries/cart_items";
 import { ImageDown, Plus, Trash, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -10,6 +11,22 @@ import { useRouter } from "next/navigation";
 import { useContext } from "react";
 
 function CartPreviewItem({ cartItem }: { cartItem: CartItemT }) {
+    const { mutate } = useUpsertCartItemMutation();
+
+    const increaseItemQuantity = () => {
+        mutate({
+            item_id: cartItem.item.id,
+            quantity: cartItem.quantity + 1
+        })
+    };
+
+    const decreaseItemQuantity = () => {
+        mutate({
+            item_id: cartItem.item.id,
+            quantity: cartItem.quantity - 1
+        })
+    };
+
     return (
         <div className="flex items-center gap-3 pb-4">
             <div className="">
@@ -32,13 +49,21 @@ function CartPreviewItem({ cartItem }: { cartItem: CartItemT }) {
             </div>
             <div className="grow flex items-center justify-end">
                 <div className="bg-bg-medium grid grid-cols-[1fr_1fr_1fr] w-25 rounded-full shadow-xl/20">
-                    <button className="bg-bg-light hover:bg-bg-dark p-2 rounded-full flex justify-center items-center">
+                    <motion.button
+                        whileTap={{ scale: 0.99 }}
+                        onClick={decreaseItemQuantity}
+                        className="bg-bg-light hover:bg-bg-dark p-2 rounded-full flex justify-center items-center"
+                    >
                         <Trash className="text-fg-dark" width={20} height={20} />
-                    </button>
+                    </motion.button>
                     <p className="text-fg-dark flex justify-center items-center text-xs font-bold">{cartItem.quantity}x</p>
-                    <button className="bg-bg-light hover:bg-bg-dark p-2 rounded-full flex justify-center items-center">
+                    <motion.button
+                        whileTap={{ scale: 0.99 }}
+                        onClick={increaseItemQuantity}
+                        className="bg-bg-light hover:bg-bg-dark p-2 rounded-full flex justify-center items-center"
+                    >
                         <Plus className="text-fg-dark" width={20} height={20} />
-                    </button>
+                    </motion.button>
                 </div>
             </div>
         </div>
@@ -60,6 +85,8 @@ export default function CartPreview() {
     const checkout = () => {
         router.push("/home/checkout");
     };
+
+    const empty: boolean = !data || data.length <= 0;
 
     return (
         <AnimatePresence>
@@ -87,23 +114,37 @@ export default function CartPreview() {
                         </motion.button>
                         <h1 className="text-fg-dark text-2xl">Cart</h1>
                     </div>
+
                     <div className="mt-3 mb-3 overflow-y-scroll">
                         {isPending && (
                             <p>Loading...</p>
                         )}
                         {!isPending && (
                             data?.map((cartItem) =>
-                                <CartPreviewItem key={cartItem.item.id} cartItem={cartItem} />
+                                <motion.div
+                                    initial={{ opacity: 0, x: 10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 10 }}
+                                    key={cartItem.item.id}
+                                >
+                                    <CartPreviewItem cartItem={cartItem} />
+                                </motion.div>
                             )
                         )}
                     </div>
                     <div className="flex items-center justify-center">
-                        <motion.button
-                            whileTap={{ scale: 0.99 }}
-                            className="bg-bg-dark hover:bg-bg-accent p-3 rounded-xl w-full"
-                        >
-                            <p className="text-fg-dark">Continue</p>
-                        </motion.button>
+                        {!empty && (
+                            <motion.button
+                                whileTap={{ scale: 0.99 }}
+                                disabled={empty}
+                                className={`bg-bg-dark hover:bg-bg-accent p-3 rounded-xl w-full`}
+                            >
+                                <p className="text-fg-dark">Continue</p>
+                            </motion.button>
+                        )}
+                        {empty && (
+                            <p className="text-fg-dark">Add some items to get started!</p>
+                        )}
                     </div>
                 </motion.div>
             )}

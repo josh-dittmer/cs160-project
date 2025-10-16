@@ -20,6 +20,7 @@ export default function AccountButton() {
             })
         } else {
             router.push("/login");
+            userWindowContext?.setVisible(false);
         }
     };
 

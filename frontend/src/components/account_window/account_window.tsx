@@ -69,7 +69,7 @@ export default function AccountWindow() {
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.99 }}
                                 onClick={handleLogout}
-                                className="flex items-center gap-2 p-2 hover:bg-bg-dark rounded-xl"
+                                className="flex items-center gap-2 p-2 hover:bg-bg-dark rounded-xl w-full"
                             >
                                 <LogOut className="text-fg-dark" width={20} height={20} />
                                 <p className="text-fg-dark">Sign out</p>

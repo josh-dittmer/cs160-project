@@ -14,6 +14,23 @@ export const Item = t.type({
 
 export type ItemT = t.TypeOf<typeof Item>;
 
+export const ItemDetail = t.type({
+    id: t.number,
+    name: t.string,
+    price_cents: t.number,
+    weight_oz: t.number,
+    category: t.union([t.string, t.null]),
+    image_url: t.union([t.string, t.null]),
+    description: t.union([t.string, t.null]),
+    nutrition_json: t.union([t.string, t.null]),
+    avg_rating: t.number,
+    ratings_count: t.number,
+    stock_qty: t.number,
+    is_active: t.boolean,
+});
+
+export type ItemDetailT = t.TypeOf<typeof ItemDetail>;
+
 export const CartItem = t.type({
     quantity: t.number,
     item: Item
