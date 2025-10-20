@@ -100,6 +100,7 @@ def authenticate_user(db: Session, email: str, password: str) -> Optional[User]:
 class UserCtx(BaseModel):
     id: int
     email: str
+    role: str
 
 
 def get_current_user(
@@ -147,7 +148,7 @@ def get_current_user(
             detail="Inactive user",
         )
     
-    return UserCtx(id=user.id, email=user.email)
+    return UserCtx(id=user.id, email=user.email, role=user.role)
 
 
 def require_user(x_user_id: int | None = Header(default=None, alias="X-User-Id")) -> UserCtx:
@@ -158,4 +159,36 @@ def require_user(x_user_id: int | None = Header(default=None, alias="X-User-Id")
     """
     if x_user_id is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_token")
-    return UserCtx(id=int(x_user_id), email="legacy@test.com")
+    return UserCtx(id=int(x_user_id), email="legacy@test.com", role="customer")
+
+
+# ============ Role-Based Access Control ============
+
+def require_admin(current_user: UserCtx = Depends(get_current_user)) -> UserCtx:
+    """
+    Dependency to require admin role.
+    Raises 403 if user is not an admin.
+    """
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+    return current_user
+
+
+def require_role(allowed_roles: list[str]):
+    """
+    Factory function to create a dependency that checks for specific roles.
+    
+    Usage:
+        @router.get("/endpoint", dependencies=[Depends(require_role(["admin", "manager"]))])
+    """
+    def role_checker(current_user: UserCtx = Depends(get_current_user)) -> UserCtx:
+        if current_user.role not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied. Required roles: {', '.join(allowed_roles)}",
+            )
+        return current_user
+    return role_checker

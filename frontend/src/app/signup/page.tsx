@@ -32,8 +32,12 @@ export default function SignupPage() {
       // Store token and user info in context
       login(response.access_token, response.user);
 
-      // Redirect to home/dashboard
-      router.push("/home/dashboard");
+      // Redirect based on user role
+      if (response.user.role === 'admin') {
+        router.push("/admin/dashboard");
+      } else {
+        router.push("/home/dashboard");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Signup failed");
     } finally {
@@ -51,8 +55,12 @@ export default function SignupPage() {
       // Store token and user info in context
       login(response.access_token, response.user);
 
-      // Redirect to home/dashboard
-      router.push("/home/dashboard");
+      // Redirect based on user role
+      if (response.user.role === 'admin') {
+        router.push("/admin/dashboard");
+      } else {
+        router.push("/home/dashboard");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Google sign up failed");
     } finally {
