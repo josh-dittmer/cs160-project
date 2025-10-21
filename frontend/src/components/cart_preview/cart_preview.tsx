@@ -4,7 +4,7 @@ import { CartContext } from "@/contexts/cart";
 import { CartItemT } from "@/lib/api/models";
 import { useUpsertCartItemMutation } from "@/lib/mutations/cart_item/upsert";
 import { useCartItemsQuery } from "@/lib/queries/cart_items";
-import { ImageDown, Plus, Trash, X } from "lucide-react";
+import { Dot, ImageDown, Plus, Scale, Trash, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -45,7 +45,13 @@ function CartPreviewItem({ cartItem }: { cartItem: CartItemT }) {
             </div>
             <div>
                 <p className="text-fg-dark text-md max-w-32 truncate">{cartItem.item.name}</p>
-                <p className="text-fg-medium text-sm">${cartItem.item.price_cents / 100}</p>
+                <div className="flex gap-1 items-center">
+                    <p className="text-fg-medium text-sm">${(cartItem.item.price_cents / 100).toFixed(2)}</p>
+                    <Dot width={15} height={15} className="text-fg-medium" />
+                    <div className="flex gap-1 items-center">
+                        <span className="text-fg-medium text-sm">{((cartItem.item.weight_oz * cartItem.quantity) / 16).toFixed(2)} lbs</span>
+                    </div>
+                </div>
             </div>
             <div className="grow flex items-center justify-end">
                 <div className="bg-bg-medium grid grid-cols-[1fr_1fr_1fr] w-25 rounded-full shadow-xl/20">
@@ -86,7 +92,7 @@ export default function CartPreview() {
         router.push("/home/checkout");
     };
 
-    const empty: boolean = !data || data.length <= 0;
+    const empty: boolean = !data || data.items.length <= 0;
 
     return (
         <AnimatePresence>
@@ -102,7 +108,7 @@ export default function CartPreview() {
                             duration: 0.25
                         }
                     }}
-                    className="grid grid-rows-[50px_1fr_50px] h-full bg-bg-light mt-[1px] border-l border-bg-dark p-5 pointer-events-auto">
+                    className="grid grid-rows-[50px_1fr_90px] h-full bg-bg-light mt-[1px] border-l border-bg-dark p-5 pointer-events-auto">
                     <div className="flex items-center gap-3">
                         <motion.button
                             whileHover={{ scale: 1.02 }}
@@ -120,7 +126,7 @@ export default function CartPreview() {
                             <p>Loading...</p>
                         )}
                         {!isPending && (
-                            data?.map((cartItem) =>
+                            data?.items.map((cartItem) =>
                                 <motion.div
                                     initial={{ opacity: 0, x: 10 }}
                                     animate={{ opacity: 1, x: 0 }}
@@ -133,14 +139,47 @@ export default function CartPreview() {
                         )}
                     </div>
                     <div className="flex items-center justify-center">
-                        {!empty && (
-                            <motion.button
-                                whileTap={{ scale: 0.99 }}
-                                disabled={empty}
-                                className={`bg-bg-dark hover:bg-bg-accent p-3 rounded-xl w-full`}
-                            >
-                                <p className="text-fg-dark">Continue</p>
-                            </motion.button>
+                        {!empty && data && (
+                            <div className="flex flex-col w-full gap-3">
+                                {!data.shipping_waived && (
+                                    <div>
+                                        <p className="font-bold text-fg-dark">${(data.total_cents / 100).toFixed(2)} total</p>
+                                        <div className="flex gap-1 items-center">
+                                            <Scale width={15} height={15} className="text-fg-medium" />
+                                            <p className="text-fg-medium text-sm">
+
+                                                {(data.total_weight_oz / 16).toFixed(2)} lbs
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                                {data.shipping_waived && (
+                                    <div>
+                                        <p className="font-bold text-fg-dark">
+                                            <span className="line-through italic text-fg-medium font-normal">${(data.total_cents / 100).toFixed(2)}</span>
+                                            <span className="ml-1 text-green-700">${(data.total_item_cents / 100).toFixed(2)} total</span>
+                                        </p>
+                                        <div className="flex gap-1 items-center">
+                                            <Scale width={15} height={15} className="text-fg-medium" />
+                                            <p className="text-fg-medium text-sm">
+
+                                                {(data.total_weight_oz / 16).toFixed(2)} lbs
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                                <motion.button
+                                    whileTap={{ scale: 0.99 }}
+                                    disabled={empty}
+                                    className={`bg-bg-dark hover:bg-bg-accent p-3 rounded-xl w-full`}
+                                    onClick={() => {
+                                        cartContext.setVisible(false);
+                                        router.push('/payment')
+                                    }}
+                                >
+                                    <p className="text-fg-dark">Continue</p>
+                                </motion.button>
+                            </div>
                         )}
                         {empty && (
                             <p className="text-fg-dark">Add some items to get started!</p>

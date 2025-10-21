@@ -78,7 +78,8 @@ def signup(user_data: UserCreate, response: Response, db: Session = Depends(get_
     return {
         "access_token": token_data.encoded_jwt,
         "token_type": "bearer",
-        "user": UserOut.model_validate(new_user)
+        "user": UserOut.model_validate(new_user),
+        "expires": int(token_data.expire.timestamp())
     }
 
 
@@ -114,7 +115,8 @@ def login(credentials: UserLogin, response: Response, db: Session = Depends(get_
     return {
         "access_token": token_data.encoded_jwt,
         "token_type": "bearer",
-        "user": UserOut.model_validate(user)
+        "user": UserOut.model_validate(user),
+        "expires": int(token_data.expire.timestamp())
     }
 
 
@@ -196,7 +198,8 @@ def google_auth(google_data: GoogleAuthRequest, response: Response, db: Session 
         return {
             "access_token": token_data.encoded_jwt,
             "token_type": "bearer",
-            "user": UserOut.model_validate(user)
+            "user": UserOut.model_validate(user),
+            "expires": int(token_data.expire.timestamp())
         }
         
     except ValueError as e:

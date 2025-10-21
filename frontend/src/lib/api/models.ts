@@ -65,7 +65,17 @@ export const GenericResponse = t.type({
 
 export type GenericResponseT = t.TypeOf<typeof GenericResponse>;
 
+export const CartItemsResponse = t.type({
+    items: t.array(CartItem),
+    total_item_cents: t.number,
+    total_shipping_cents: t.number,
+    total_cents: t.number,
+    total_weight_oz: t.number,
+    shipping_waived: t.boolean
+});
+
+export type CartItemsResponseT = t.TypeOf<typeof CartItemsResponse>;
+
 export const ItemsListResponse = t.array(Item);
 export const ItemsByCategoryResponse = t.record(t.string, t.array(Item));
 export const SearchSuggestionsResponse = t.array(SearchSuggestion);
-export const CartItemListResponse = t.array(CartItem);

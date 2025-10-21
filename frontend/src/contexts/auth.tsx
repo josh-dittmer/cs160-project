@@ -1,63 +1,72 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { UserInfo } from '@/lib/api/auth';
+import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 interface AuthContextType {
-  user: UserInfo | null;
-  token: string | null;
-  login: (token: string, user: UserInfo) => void;
-  logout: () => void;
-  isAuthenticated: boolean;
+    user: UserInfo | null;
+    token: string | null;
+    login: (token: string, user: UserInfo, expires: number) => void;
+    logout: () => void;
+    isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<UserInfo | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+    const [user, setUser] = useState<UserInfo | null>(null);
+    const [token, setToken] = useState<string | null>(null);
+    const [expires, setExpires] = useState<number | null>(null);
 
-  // Load auth state from localStorage on mount
-  useEffect(() => {
-    const storedToken = localStorage.getItem('auth_token');
-    const storedUser = localStorage.getItem('user_info');
-    
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
+    // Load auth state from localStorage on mount
+    useEffect(() => {
+        const storedToken = localStorage.getItem('auth_token');
+        const storedUser = localStorage.getItem('user_info');
+        const storedExpires = localStorage.getItem('auth_expires');
 
-  const login = (newToken: string, newUser: UserInfo) => {
-    setToken(newToken);
-    setUser(newUser);
-    localStorage.setItem('auth_token', newToken);
-    localStorage.setItem('user_info', JSON.stringify(newUser));
-  };
+        if (!storedExpires || parseInt(storedExpires, 10) > Date.now()) {
+            return;
+        }
 
-  const logout = () => {
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user_info');
-  };
+        if (storedToken && storedUser) {
+            setToken(storedToken);
+            setUser(JSON.parse(storedUser));
+        }
+    }, []);
 
-  const value = {
-    user,
-    token,
-    login,
-    logout,
-    isAuthenticated: !!token && !!user,
-  };
+    const login = (newToken: string, newUser: UserInfo, expires: number) => {
+        setToken(newToken);
+        setUser(newUser);
+        setExpires(expires);
+        localStorage.setItem('auth_token', newToken);
+        localStorage.setItem('user_info', JSON.stringify(newUser));
+        localStorage.setItem('auth_expires', expires.toString());
+    };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+    const logout = () => {
+        setToken(null);
+        setUser(null);
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_info');
+        localStorage.removeItem('auth_expires');
+    };
+
+    const value = {
+        user,
+        token,
+        login,
+        logout,
+        isAuthenticated: !!token && !!user,
+    };
+
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+    const context = useContext(AuthContext);
+    if (context === undefined) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
 }
 

@@ -76,6 +76,7 @@ class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserOut
+    expires: int
 
 
 class GoogleAuthRequest(BaseModel):
@@ -98,7 +99,24 @@ class SearchSuggestion(BaseModel):
 class CartItemOut(BaseModel):
     quantity: int
     item: ItemListOut
+    
+    class Config:
+        # allow constructing from SQLAlchemy model instances (attributes)
+        from_attributes = True
 
 class CartItemIn(BaseModel):
     item_id: int
     quantity: int
+
+
+class CartItemsResponse(BaseModel):
+    """Response shape for GET /api/cart used by the frontend.
+
+    Matches frontend `CartItemsResponse` (items, total_item_cents, total_shipping_cents, total_cents).
+    """
+    items: list[CartItemOut]
+    total_item_cents: int
+    total_shipping_cents: int
+    shipping_waived: bool
+    total_cents: int
+    total_weight_oz: int

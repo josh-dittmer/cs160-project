@@ -5,9 +5,8 @@ import { CartContext } from "@/contexts/cart";
 import { useCartItemsQuery } from "@/lib/queries/cart_items";
 import { ShoppingCart } from "lucide-react";
 import { motion } from "motion/react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useContext } from "react";
-import { usePathname} from "next/navigation";
 
 export default function CartIcon() {
     const cartContext = useContext(CartContext);
@@ -45,7 +44,12 @@ export default function CartIcon() {
         >
             <ShoppingCart width={15} height={15} className="" />
             <p className="text-sm">
-                {data ? data.length : ''}
+                {isAuthenticated ? (
+                    data ? data.items.length : 0
+                ) : (
+                    0
+                )}
+
             </p>
         </motion.button>
     );

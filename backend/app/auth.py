@@ -18,7 +18,7 @@ from .models import User
 
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 1 day (24 hours)
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 30
 
 security = HTTPBearer(auto_error=False)
 

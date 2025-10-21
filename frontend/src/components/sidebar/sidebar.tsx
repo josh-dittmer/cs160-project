@@ -1,6 +1,6 @@
 'use client';
 
-import { HomeIcon, LucideProps, ReceiptText } from "lucide-react";
+import { HomeIcon, LucideProps, ReceiptText, StarIcon } from "lucide-react";
 import { motion } from "motion/react";
 import { usePathname } from "next/navigation";
 import { FC } from "react";
@@ -29,6 +29,7 @@ export default function Sidebar() {
         <div className="flex flex-col h-full items-center md:items-start">
             <div className="flex flex-col gap-2 grow md:w-full">
                 <SidebarItem title="Menu" href="/home/dashboard" Icon={HomeIcon} />
+                <SidebarItem title="Favorites" href="/home/favorites" Icon={StarIcon} />
                 <SidebarItem title="Orders" href="/home/orders" Icon={ReceiptText} />
             </div>
             <div className="flex flex-col gap-2 md:w-full">

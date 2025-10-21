@@ -7,9 +7,9 @@ import Link from "next/link";
 import CartPreview from "../cart_preview/cart_preview";
 
 export default function TopBar() {
-    
+
     return (
-        <div className="relative grid grid-cols-[auto_1fr] md:grid-cols-[200px_1fr] border-bg-dark border-b bg-bg-light">
+        <div className="min-h-[60px] relative grid grid-cols-[auto_1fr] md:grid-cols-[200px_1fr] border-bg-dark border-b bg-bg-light">
             {/* Left Section: Logo */}
             <div className="pl-5 pr-5 flex items-center">
 
