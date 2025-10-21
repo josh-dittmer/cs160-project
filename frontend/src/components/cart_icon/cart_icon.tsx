@@ -7,11 +7,13 @@ import { ShoppingCart } from "lucide-react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useContext } from "react";
+import { usePathname} from "next/navigation";
 
 export default function CartIcon() {
     const cartContext = useContext(CartContext);
 
     const router = useRouter();
+    const pathname = usePathname();
 
     const { isAuthenticated } = useAuth();
     const { data } = useCartItemsQuery();
@@ -21,10 +23,16 @@ export default function CartIcon() {
             router.push("/login");
             return;
         }
+        // If the user is already on the payment page, refresh it
+        if (pathname === "/payment") {
+            // TODO: change the UI of alert later
+            alert("Please continue to checkout. Shopping cart is not available right now.");
+            router.refresh();
+            return;
+        }
 
-        cartContext?.setVisible((curr) => {
-            return !curr;
-        })
+        // Toggle the cart drawer
+        cartContext?.setVisible((curr) => !curr);
     };
 
     return (
