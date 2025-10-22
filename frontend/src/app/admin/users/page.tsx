@@ -3,12 +3,22 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth';
 import { listUsers, updateUserRole, blockUser, type UserAdmin } from '@/lib/api/admin';
+import { useSearchParams } from 'next/navigation';
 
 export default function UsersManagement() {
   const { token, user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserAdmin[]>([]);
   const [loading, setLoading] = useState(true);
+  const searchParams = useSearchParams();
   const [filter, setFilter] = useState<string>('all');
+
+  useEffect(() => {
+    // Set filter from URL parameter if present
+    const roleParam = searchParams.get('role');
+    if (roleParam) {
+      setFilter(roleParam);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!token) return;

@@ -74,10 +74,10 @@ export default function AdminDashboard() {
   ];
 
   const userRoleCards = [
-    { label: 'Admins', value: stats.adminCount, color: 'purple' },
-    { label: 'Employees', value: stats.employeeCount, color: 'indigo' },
-    { label: 'Managers', value: stats.managerCount, color: 'blue' },
-    { label: 'Customers', value: stats.customerCount, color: 'green' },
+    { label: 'Admins', value: stats.adminCount, color: 'purple', role: 'admin' },
+    { label: 'Employees', value: stats.employeeCount, color: 'indigo', role: 'employee' },
+    { label: 'Managers', value: stats.managerCount, color: 'blue', role: 'manager' },
+    { label: 'Customers', value: stats.customerCount, color: 'green', role: 'customer' },
   ];
 
   return (
@@ -119,15 +119,16 @@ export default function AdminDashboard() {
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {userRoleCards.map((stat) => (
-            <div
+            <Link
               key={stat.label}
-              className={`bg-white p-6 rounded-lg shadow border-l-4 border-${stat.color}-500`}
+              href={`/admin/users?role=${stat.role}`}
+              className={`bg-white p-6 rounded-lg shadow hover:shadow-lg transition-all hover:scale-105 border-l-4 border-${stat.color}-500 cursor-pointer`}
             >
               <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
               <p className={`text-3xl font-bold text-${stat.color}-600`}>
                 {stat.value}
               </p>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
