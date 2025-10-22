@@ -53,6 +53,9 @@ class User(Base):
     # Google OAuth fields
     google_id: Mapped[str | None] = mapped_column(String(255), unique=True, index=True, nullable=True)
     
+    # Role-based access control
+    role: Mapped[str] = mapped_column(String(20), default="customer", index=True)
+    
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

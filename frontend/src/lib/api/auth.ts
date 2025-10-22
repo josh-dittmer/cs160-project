@@ -17,6 +17,7 @@ export interface UserInfo {
     id: number;
     email: string;
     full_name: string | null;
+    role: string;
     is_active: boolean;
     created_at: string;
 }
