@@ -88,10 +88,10 @@ export default function InventoryManagement() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h2 className="text-2xl font-bold text-gray-900">
             Inventory Management
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-gray-600 mt-1">
             Manage product catalog
           </p>
         </div>
@@ -104,10 +104,10 @@ export default function InventoryManagement() {
       </div>
 
       {/* Filters and Search */}
-      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow space-y-4">
+      <div className="bg-white p-4 rounded-lg shadow space-y-4">
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Search
             </label>
             <div className="flex gap-2">
@@ -117,7 +117,7 @@ export default function InventoryManagement() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 placeholder="Search by name or description..."
-                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
               />
               <button
                 onClick={handleSearch}
@@ -128,13 +128,13 @@ export default function InventoryManagement() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Status
             </label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
             >
               <option value="active">Active Only</option>
               <option value="inactive">Inactive Only</option>
@@ -149,11 +149,11 @@ export default function InventoryManagement() {
         {items.map((item) => (
           <div
             key={item.id}
-            className={`bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden ${
+            className={`bg-white rounded-lg shadow overflow-hidden ${
               !item.is_active ? 'opacity-60' : ''
             }`}
           >
-            <div className="relative h-48 bg-gray-200 dark:bg-gray-700">
+            <div className="relative h-48 bg-gray-200">
               {item.image_url && (
                 <img
                   src={item.image_url}
@@ -173,34 +173,34 @@ export default function InventoryManagement() {
               )}
             </div>
             <div className="p-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+              <h3 className="font-semibold text-gray-900 mb-1">
                 {item.name}
               </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+              <p className="text-sm text-gray-600 mb-2">
                 {item.category || 'Uncategorized'}
               </p>
               <div className="grid grid-cols-2 gap-2 text-sm mb-3">
                 <div>
-                  <span className="text-gray-600 dark:text-gray-400">Price:</span>
-                  <span className="ml-1 font-medium text-gray-900 dark:text-white">
+                  <span className="text-gray-600">Price:</span>
+                  <span className="ml-1 font-medium text-gray-900">
                     ${(item.price_cents / 100).toFixed(2)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-gray-600 dark:text-gray-400">Stock:</span>
-                  <span className="ml-1 font-medium text-gray-900 dark:text-white">
+                  <span className="text-gray-600">Stock:</span>
+                  <span className="ml-1 font-medium text-gray-900">
                     {item.stock_qty}
                   </span>
                 </div>
                 <div>
-                  <span className="text-gray-600 dark:text-gray-400">Weight:</span>
-                  <span className="ml-1 font-medium text-gray-900 dark:text-white">
+                  <span className="text-gray-600">Weight:</span>
+                  <span className="ml-1 font-medium text-gray-900">
                     {item.weight_oz} oz
                   </span>
                 </div>
                 <div>
-                  <span className="text-gray-600 dark:text-gray-400">Rating:</span>
-                  <span className="ml-1 font-medium text-gray-900 dark:text-white">
+                  <span className="text-gray-600">Rating:</span>
+                  <span className="ml-1 font-medium text-gray-900">
                     {item.avg_rating.toFixed(1)} ({item.ratings_count})
                   </span>
                 </div>
@@ -234,7 +234,7 @@ export default function InventoryManagement() {
       </div>
 
       {items.length === 0 && (
-        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+        <div className="text-center py-12 text-gray-500">
           No items found
         </div>
       )}
@@ -309,14 +309,14 @@ function ItemFormModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+          <h3 className="text-xl font-bold text-gray-900 mb-4">
             {item ? 'Edit Item' : 'Create New Item'}
           </h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Name *
               </label>
               <input
@@ -324,13 +324,13 @@ function ItemFormModal({
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Price (cents) *
                 </label>
                 <input
@@ -339,11 +339,11 @@ function ItemFormModal({
                   min="0"
                   value={formData.price_cents}
                   onChange={(e) => setFormData({ ...formData, price_cents: parseInt(e.target.value) || 0 })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Weight (oz) *
                 </label>
                 <input
@@ -352,25 +352,25 @@ function ItemFormModal({
                   min="0"
                   value={formData.weight_oz}
                   onChange={(e) => setFormData({ ...formData, weight_oz: parseInt(e.target.value) || 0 })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Category
                 </label>
                 <input
                   type="text"
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Stock Quantity *
                 </label>
                 <input
@@ -379,37 +379,37 @@ function ItemFormModal({
                   min="0"
                   value={formData.stock_qty}
                   onChange={(e) => setFormData({ ...formData, stock_qty: parseInt(e.target.value) || 0 })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Image URL
               </label>
               <input
                 type="url"
                 value={formData.image_url}
                 onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Description
               </label>
               <textarea
                 rows={3}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Nutrition Information (JSON)
                 <span className="text-xs text-gray-500 ml-2">(Optional)</span>
               </label>
@@ -418,9 +418,9 @@ function ItemFormModal({
                 value={formData.nutrition_json}
                 onChange={(e) => setFormData({ ...formData, nutrition_json: e.target.value })}
                 placeholder='{"calories": 100, "protein": {"value": 5, "unit": "g"}, "totalFat": {"value": 2, "unit": "g"}}'
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 font-mono text-sm"
               />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-xs text-gray-500 mt-1">
                 Enter nutrition data as valid JSON format
               </p>
             </div>
@@ -433,7 +433,7 @@ function ItemFormModal({
                 onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
                 className="h-4 w-4 text-blue-600 rounded"
               />
-              <label htmlFor="is_active" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+              <label htmlFor="is_active" className="ml-2 text-sm text-gray-700">
                 Active
               </label>
             </div>

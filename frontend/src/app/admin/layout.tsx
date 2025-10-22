@@ -31,13 +31,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-white dark:bg-white">
       {/* Admin Header */}
-      <header className="bg-white dark:bg-gray-800 shadow">
+      <header className="bg-white dark:bg-white shadow border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-8">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {/* OFS Logo */}
+              <Link href="/admin/dashboard" className="flex items-center">
+                <img
+                  src="/logo.png"
+                  alt="OFS Logo"
+                  className="h-12 w-auto cursor-pointer"
+                />
+              </Link>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-900">
                 Admin Panel
               </h1>
               <nav className="flex space-x-4">
@@ -47,8 +55,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     href={item.href}
                     className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       pathname === item.href
-                        ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        ? 'bg-blue-100 dark:bg-blue-100 text-blue-700 dark:text-blue-700'
+                        : 'text-gray-700 dark:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-100'
                     }`}
                   >
                     {item.name}
@@ -63,7 +71,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 View as Customer
               </Link>
-              <div className="text-sm text-gray-700 dark:text-gray-300">
+              <div className="text-sm text-gray-700 dark:text-gray-700">
                 {user?.email}
               </div>
               <button

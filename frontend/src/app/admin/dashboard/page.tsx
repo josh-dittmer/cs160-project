@@ -83,17 +83,17 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
           Dashboard Overview
         </h2>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-gray-600">
           Welcome to the admin dashboard. Manage users and inventory from here.
         </p>
       </div>
 
       {/* Main Stats */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
           System Statistics
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -101,10 +101,10 @@ export default function AdminDashboard() {
             <Link
               key={stat.label}
               href={stat.link}
-              className={`bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition-shadow border-l-4 border-${stat.color}-500`}
+              className={`bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow border-l-4 border-${stat.color}-500`}
             >
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{stat.label}</p>
-              <p className={`text-3xl font-bold text-${stat.color}-600 dark:text-${stat.color}-400`}>
+              <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
+              <p className={`text-3xl font-bold text-${stat.color}-600`}>
                 {stat.value}
               </p>
             </Link>
@@ -114,17 +114,17 @@ export default function AdminDashboard() {
 
       {/* User Roles Breakdown */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
           User Roles
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {userRoleCards.map((stat) => (
             <div
               key={stat.label}
-              className={`bg-white dark:bg-gray-800 p-6 rounded-lg shadow border-l-4 border-${stat.color}-500`}
+              className={`bg-white p-6 rounded-lg shadow border-l-4 border-${stat.color}-500`}
             >
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{stat.label}</p>
-              <p className={`text-3xl font-bold text-${stat.color}-600 dark:text-${stat.color}-400`}>
+              <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
+              <p className={`text-3xl font-bold text-${stat.color}-600`}>
                 {stat.value}
               </p>
             </div>
@@ -134,40 +134,40 @@ export default function AdminDashboard() {
 
       {/* Quick Actions */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
           Quick Actions
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             href="/admin/users"
-            className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition-all hover:scale-105"
+            className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-all hover:scale-105"
           >
-            <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+            <h4 className="font-semibold text-gray-900 mb-2">
               Manage Users
             </h4>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-600">
               View, promote, demote, and block users
             </p>
           </Link>
           <Link
             href="/admin/inventory"
-            className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition-all hover:scale-105"
+            className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-all hover:scale-105"
           >
-            <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+            <h4 className="font-semibold text-gray-900 mb-2">
               Manage Inventory
             </h4>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-600">
               Add, edit, or remove items from the catalog
             </p>
           </Link>
           <Link
             href="/home/dashboard"
-            className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition-all hover:scale-105"
+            className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-all hover:scale-105"
           >
-            <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+            <h4 className="font-semibold text-gray-900 mb-2">
               Customer View
             </h4>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-600">
               Preview the customer experience
             </p>
           </Link>
