@@ -23,7 +23,7 @@ export default function HomeLayout({ children }: { children: ReactNode }) {
                         href="/admin/dashboard"
                         className="px-3 py-1 bg-white text-green-600 hover:bg-gray-100 rounded font-medium text-sm transition-colors"
                     >
-                        Exit to Admin
+                        Switch to Admin view
                     </Link>
                 </div>
             )}

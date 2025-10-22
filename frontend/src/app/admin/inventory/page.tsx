@@ -210,12 +210,12 @@ export default function InventoryManagement() {
               !item.is_active ? 'opacity-60' : ''
             }`}
           >
-            <div className="relative h-48 bg-gray-200">
+            <div className="relative h-48 bg-white border-b border-gray-200 flex items-center justify-center">
               {item.image_url && (
                 <img
                   src={item.image_url}
                   alt={item.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
               )}
               {!item.is_active && (
@@ -334,6 +334,45 @@ function ItemFormModal({
     is_active: item?.is_active ?? true,
   });
   const [saving, setSaving] = useState(false);
+  const [imageUploadMode, setImageUploadMode] = useState<'url' | 'upload'>('url');
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB');
+      return;
+    }
+
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file');
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      // Convert to base64
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setFormData({ ...formData, image_url: base64String });
+        setUploadingImage(false);
+      };
+      reader.onerror = () => {
+        alert('Failed to read image file');
+        setUploadingImage(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Failed to upload image');
+      setUploadingImage(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -436,15 +475,83 @@ function ItemFormModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Image URL
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Product Image
               </label>
-              <input
-                type="url"
-                value={formData.image_url}
-                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
-              />
+              
+              {/* Toggle between URL and Upload */}
+              <div className="flex gap-2 mb-3">
+                <button
+                  type="button"
+                  onClick={() => setImageUploadMode('url')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    imageUploadMode === 'url'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Image URL
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImageUploadMode('upload')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    imageUploadMode === 'upload'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Upload Image
+                </button>
+              </div>
+
+              {imageUploadMode === 'url' ? (
+                <input
+                  type="url"
+                  value={formData.image_url}
+                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                  placeholder="https://example.com/image.jpg"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
+                />
+              ) : (
+                <div className="space-y-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={uploadingImage}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                  {uploadingImage && (
+                    <p className="text-sm text-gray-600">Uploading image...</p>
+                  )}
+                  <p className="text-xs text-gray-500">
+                    Max file size: 5MB. Supported formats: JPG, PNG, GIF, WebP
+                  </p>
+                </div>
+              )}
+
+              {/* Image Preview */}
+              {formData.image_url && (
+                <div className="mt-3">
+                  <p className="text-xs text-gray-600 mb-2">Preview:</p>
+                  <img
+                    src={formData.image_url}
+                    alt="Preview"
+                    className="w-full h-48 object-cover rounded-md border border-gray-300"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999">Invalid Image</text></svg>';
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, image_url: '' })}
+                    className="mt-2 text-sm text-red-600 hover:text-red-800"
+                  >
+                    Remove Image
+                  </button>
+                </div>
+              )}
             </div>
 
             <div>

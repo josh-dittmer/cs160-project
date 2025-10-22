@@ -263,14 +263,14 @@ export default async function ItemDetailPage({ params }: { params: Promise<{ id:
             {/* Top Section - Image and Product Info Side by Side */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Product Image */}
-                <div className="bg-bg-medium rounded-2xl overflow-hidden aspect-square flex items-center justify-center">
+                <div className="bg-white rounded-2xl overflow-hidden aspect-square flex items-center justify-center border border-gray-200">
                     {item.image_url ? (
                         <Image
                             src={item.image_url}
                             alt={item.name}
                             width={600}
                             height={600}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain"
                             priority
                         />
                     ) : (
