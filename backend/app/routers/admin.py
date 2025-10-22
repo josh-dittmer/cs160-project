@@ -170,6 +170,25 @@ def list_items_admin(
     return items
 
 
+@router.get("/categories", response_model=List[str])
+def get_categories(
+    admin: UserCtx = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """
+    Get all unique categories from items.
+    Returns a sorted list of category names.
+    Admin only.
+    """
+    stmt = select(Item.category).where(
+        Item.category.isnot(None),
+        Item.category != ""
+    ).distinct().order_by(Item.category)
+    
+    categories = db.execute(stmt).scalars().all()
+    return list(categories)
+
+
 @router.get("/items/{item_id}", response_model=ItemDetailOut)
 def get_item_admin(
     item_id: int,
