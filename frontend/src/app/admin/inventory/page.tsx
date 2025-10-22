@@ -25,32 +25,38 @@ export default function InventoryManagement() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingItem, setEditingItem] = useState<ItemAdmin | null>(null);
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
+  const [paramsProcessed, setParamsProcessed] = useState(false);
 
   useEffect(() => {
-    // Check for low stock filter first
     const lowStockParam = searchParams.get('lowStock');
+    const statusParam = searchParams.get('status');
+    
+    // Handle low stock filter
     if (lowStockParam === 'true') {
       setShowLowStockOnly(true);
-      setStatusFilter('active'); // Low stock items are typically active
-    } else {
-      // Reset low stock filter when not in URL
-      setShowLowStockOnly(false);
-      
-      // Set status filter from URL parameter if present
-      const statusParam = searchParams.get('status');
-      if (statusParam && (statusParam === 'active' || statusParam === 'inactive' || statusParam === 'all')) {
-        setStatusFilter(statusParam);
-      } else {
-        // Reset to default when no parameters
-        setStatusFilter('active');
-      }
+      setStatusFilter('active');
+      setParamsProcessed(true);
+      return;
     }
+    
+    // Not in low stock mode
+    setShowLowStockOnly(false);
+    
+    // Handle status filter from URL
+    if (statusParam === 'active' || statusParam === 'inactive' || statusParam === 'all') {
+      setStatusFilter(statusParam);
+    } else {
+      // Default to active when no parameter
+      setStatusFilter('active');
+    }
+    
+    setParamsProcessed(true);
   }, [searchParams]);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || !paramsProcessed) return;
     fetchItems();
-  }, [token, statusFilter]);
+  }, [token, statusFilter, paramsProcessed]);
 
   const fetchItems = async () => {
     if (!token) return;
@@ -165,7 +171,12 @@ export default function InventoryManagement() {
             </label>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
+              onChange={(e) => {
+                const newStatus = e.target.value as 'active' | 'inactive' | 'all';
+                setStatusFilter(newStatus);
+                // Update URL to keep it in sync
+                router.push(`/admin/inventory?status=${newStatus}`);
+              }}
               className="px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
               disabled={showLowStockOnly}
             >
