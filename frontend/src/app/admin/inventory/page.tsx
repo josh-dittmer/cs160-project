@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
@@ -9,6 +9,7 @@ import {
   updateItem,
   deleteItem,
   activateItem,
+  permanentlyDeleteItem,
   type ItemAdmin,
   type ItemCreateData,
   type ItemUpdateData
@@ -84,7 +85,7 @@ export default function InventoryManagement() {
   const handleDelete = async (itemId: number) => {
     if (!token) return;
     
-    if (!confirm('Are you sure you want to deactivate this item?')) {
+    if (!confirm('Are you sure you want to deactivate this item? This can be reversed later.')) {
       return;
     }
 
@@ -95,6 +96,26 @@ export default function InventoryManagement() {
     } catch (error: any) {
       console.error('Failed to deactivate item:', error);
       alert(error.message || 'Failed to deactivate item');
+    }
+  };
+
+  const handlePermanentDelete = async (itemId: number, itemName: string) => {
+    if (!token) return;
+    
+    const confirmed = confirm(
+      `⚠️ WARNING: Are you sure you want to PERMANENTLY delete "${itemName}"?\n\n` +
+      `This action CANNOT be undone! The item will be completely removed from the database.`
+    );
+    
+    if (!confirmed) return;
+
+    try {
+      await permanentlyDeleteItem(token, itemId);
+      alert('Item permanently deleted from database');
+      fetchItems();
+    } catch (error: any) {
+      console.error('Failed to permanently delete item:', error);
+      alert(error.message || 'Failed to permanently delete item');
     }
   };
 
@@ -256,28 +277,36 @@ export default function InventoryManagement() {
                   </span>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setEditingItem(item)}
+                    className="flex-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium"
+                  >
+                    Edit
+                  </button>
+                  {item.is_active ? (
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      className="flex-1 px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded text-sm font-medium"
+                    >
+                      Deactivate
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleActivate(item.id, true)}
+                      className="flex-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-medium"
+                    >
+                      Activate
+                    </button>
+                  )}
+                </div>
                 <button
-                  onClick={() => setEditingItem(item)}
-                  className="flex-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium"
+                  onClick={() => handlePermanentDelete(item.id, item.name)}
+                  className="w-full px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium border border-red-800"
                 >
-                  Edit
+                  🗑️ Delete Permanently
                 </button>
-                {item.is_active ? (
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="flex-1 px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium"
-                  >
-                    Deactivate
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleActivate(item.id, true)}
-                    className="flex-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-medium"
-                  >
-                    Activate
-                  </button>
-                )}
               </div>
             </div>
           </div>
@@ -336,6 +365,7 @@ function ItemFormModal({
   const [saving, setSaving] = useState(false);
   const [imageUploadMode, setImageUploadMode] = useState<'url' | 'upload'>('url');
   const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -371,6 +401,14 @@ function ItemFormModal({
       console.error('Error uploading image:', error);
       alert('Failed to upload image');
       setUploadingImage(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setFormData({ ...formData, image_url: '' });
+    // Reset file input to allow re-uploading the same file
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -516,6 +554,7 @@ function ItemFormModal({
               ) : (
                 <div className="space-y-2">
                   <input
+                    ref={fileInputRef}
                     type="file"
                     accept="image/*"
                     onChange={handleImageUpload}
@@ -535,17 +574,19 @@ function ItemFormModal({
               {formData.image_url && (
                 <div className="mt-3">
                   <p className="text-xs text-gray-600 mb-2">Preview:</p>
-                  <img
-                    src={formData.image_url}
-                    alt="Preview"
-                    className="w-full h-48 object-cover rounded-md border border-gray-300"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999">Invalid Image</text></svg>';
-                    }}
-                  />
+                  <div className="w-full h-48 bg-white rounded-md border border-gray-300 flex items-center justify-center overflow-hidden">
+                    <img
+                      src={formData.image_url}
+                      alt="Preview"
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999">Invalid Image</text></svg>';
+                      }}
+                    />
+                  </div>
                   <button
                     type="button"
-                    onClick={() => setFormData({ ...formData, image_url: '' })}
+                    onClick={handleRemoveImage}
                     className="mt-2 text-sm text-red-600 hover:text-red-800"
                   >
                     Remove Image

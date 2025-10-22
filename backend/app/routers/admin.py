@@ -286,3 +286,30 @@ def activate_item(
     
     return item
 
+
+@router.delete("/items/{item_id}/permanent", status_code=status.HTTP_200_OK)
+def permanently_delete_item(
+    item_id: int,
+    admin: UserCtx = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """
+    Permanently delete an item from the database.
+    This action cannot be undone.
+    Admin only.
+    """
+    item = db.get(Item, item_id)
+    if not item:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item not found",
+        )
+    
+    db.delete(item)
+    db.commit()
+    
+    return {
+        "ok": True,
+        "message": "Item permanently deleted from database",
+    }
+

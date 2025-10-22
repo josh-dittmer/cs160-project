@@ -255,3 +255,19 @@ export async function activateItem(
   return response.json();
 }
 
+export async function permanentlyDeleteItem(token: string, itemId: number): Promise<any> {
+  const response = await fetch(`${API_BASE_URL}/api/admin/items/${itemId}/permanent`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to permanently delete item');
+  }
+
+  return response.json();
+}
+

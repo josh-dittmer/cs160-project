@@ -207,10 +207,10 @@ export default function UsersManagement() {
                   <button
                     onClick={() => handleBlockToggle(user.id, user.is_active)}
                     disabled={user.id === currentUser?.id}
-                    className={`${
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                       user.is_active
-                        ? 'text-red-600 hover:text-red-900'
-                        : 'text-green-600 hover:text-green-900'
+                        ? 'bg-red-600 hover:bg-red-700 text-white'
+                        : 'bg-green-600 hover:bg-green-700 text-white'
                     } ${
                       user.id === currentUser?.id ? 'opacity-50 cursor-not-allowed' : ''
                     }`}
