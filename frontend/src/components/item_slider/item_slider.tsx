@@ -28,7 +28,7 @@ function Item({ item }: { item: ItemT }) {
     return (
         <div className="flex justify-center group">
             <div className="m-2 w-72 text-left">
-                <div className="relative flex items-center justify-center bg-bg-medium min-h-36 rounded-xl overflow-hidden">
+                <div className="relative flex items-center justify-center bg-white min-h-36 rounded-xl overflow-hidden border border-gray-200">
                     <button
                         onClick={visitItemPage}
                         className="w-full cursor-pointer"
@@ -37,7 +37,7 @@ function Item({ item }: { item: ItemT }) {
                             <img
                                 src={item.image_url}
                                 alt={item.name}
-                                className="w-full h-36 object-cover"
+                                className="w-full h-36 object-contain"
                             />
                         ) : (
                             <Image width={30} height={30} className="text-fg-dark" />

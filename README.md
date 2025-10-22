@@ -49,6 +49,8 @@ Remove-Item backend\sqlite.db
 
 #### 3. Seed the database
 
+This will create the database tables and an admin user.
+
 **macOS/Linux:**
 ```bash
 PYTHONPATH=. python -m backend.app.seed
@@ -59,6 +61,8 @@ PYTHONPATH=. python -m backend.app.seed
 $env:PYTHONPATH="."
 python -m backend.app.seed
 ```
+
+**Admin Credentials:** `admin@sjsu.edu` / `admin123`
 
 #### 4. Start the backend server
 
@@ -152,6 +156,12 @@ cs160-project/
   - Google OAuth integration
   - JWT token-based authentication
 
+- **Role-Based Access Control**
+  - Four user roles: Admin, Manager, Employee, Customer
+  - Admin panel for user and inventory management
+  - Default admin login: `admin@sjsu.edu` / `admin123`
+  - See [ADMIN.md](ADMIN.md) for complete admin documentation
+
 - **Smart Search**
   - Real-time autocomplete suggestions
   - Fuzzy matching with typo tolerance (handles "oganic aples" → "Organic Apples")
@@ -180,6 +190,9 @@ PYTHONPATH=. pytest tests/ -v
 
 # Run specific test file
 PYTHONPATH=. pytest tests/test_auth.py -v
+
+# Run admin RBAC tests (23 tests)
+PYTHONPATH=. pytest tests/test_admin.py -v
 ```
 
 ---

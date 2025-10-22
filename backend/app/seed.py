@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, update
 from .database import engine, SessionLocal, Base
-from .models import Item, Review, Order, OrderItem
+from .models import Item, Review, Order, OrderItem, User
+from .auth import get_password_hash
 from datetime import datetime
 import json
 
@@ -765,10 +766,31 @@ def seed():
     Base.metadata.create_all(bind=engine)
     db: Session = SessionLocal()
     try:
+        # Create admin user if not exists
+        admin_email = "admin@sjsu.edu"
+        admin_password = "admin123"
+        
+        admin_user = db.query(User).filter(User.email == admin_email).first()
+        if not admin_user:
+            admin_user = User(
+                email=admin_email,
+                hashed_password=get_password_hash(admin_password),
+                full_name="System Administrator",
+                role="admin",
+                is_active=True
+            )
+            db.add(admin_user)
+            db.commit()
+            print(f"✓ Admin user created: {admin_email} / {admin_password}")
+        else:
+            print(f"✓ Admin user already exists: {admin_email}")
+        
+        # Seed items
         if db.query(Item).count() == 0:
             for d in SAMPLE_ITEMS:
                 db.add(Item(**d))
             db.commit()
+            print(f"✓ Seeded {len(SAMPLE_ITEMS)} items")
 
         if db.query(Order).count() == 0:
             for d in SAMPLE_ORDERS:

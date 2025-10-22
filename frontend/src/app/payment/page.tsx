@@ -122,13 +122,21 @@ export default function PaymentPage() {
                                         <div key={ci.item.id} className="product">
                                             {/* Thumb */}
                                             {ci.item.image_url ? (
-                                                <Image
-                                                    src={ci.item.image_url}
-                                                    width={80}
-                                                    height={80}
-                                                    alt={ci.item.name}
-                                                    className="product__thumb"
-                                                />
+                                                ci.item.image_url.startsWith('data:') ? (
+                                                    <img
+                                                        src={ci.item.image_url}
+                                                        alt={ci.item.name}
+                                                        className="product__thumb"
+                                                    />
+                                                ) : (
+                                                    <Image
+                                                        src={ci.item.image_url}
+                                                        width={80}
+                                                        height={80}
+                                                        alt={ci.item.name}
+                                                        className="product__thumb"
+                                                    />
+                                                )
                                             ) : (
                                                 <div className="product__thumb bg-gray-200 flex items-center justify-center">🛍️</div>
                                             )}
