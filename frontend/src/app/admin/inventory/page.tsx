@@ -198,12 +198,6 @@ export default function InventoryManagement() {
                     {item.weight_oz} oz
                   </span>
                 </div>
-                <div>
-                  <span className="text-gray-600">Rating:</span>
-                  <span className="ml-1 font-medium text-gray-900">
-                    {item.avg_rating.toFixed(1)} ({item.ratings_count})
-                  </span>
-                </div>
               </div>
               <div className="flex gap-2">
                 <button
