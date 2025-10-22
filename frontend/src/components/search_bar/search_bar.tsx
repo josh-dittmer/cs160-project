@@ -329,13 +329,21 @@ export default function SearchBar() {
                                 {/* Image or Search Icon */}
                                 <div className="flex-shrink-0 w-10 h-10 rounded-md overflow-hidden bg-bg-medium flex items-center justify-center">
                                     {suggestion.image_url ? (
-                                        <Image
-                                            src={suggestion.image_url}
-                                            alt={suggestion.name}
-                                            width={40}
-                                            height={40}
-                                            className="object-cover"
-                                        />
+                                        suggestion.image_url.startsWith('data:') ? (
+                                            <img
+                                                src={suggestion.image_url}
+                                                alt={suggestion.name}
+                                                className="object-cover w-10 h-10"
+                                            />
+                                        ) : (
+                                            <Image
+                                                src={suggestion.image_url}
+                                                alt={suggestion.name}
+                                                width={40}
+                                                height={40}
+                                                className="object-cover"
+                                            />
+                                        )
                                     ) : (
                                         <Search className="text-fg-medium" width={20} height={20} />
                                     )}

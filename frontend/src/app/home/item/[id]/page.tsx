@@ -265,14 +265,23 @@ export default async function ItemDetailPage({ params }: { params: Promise<{ id:
                 {/* Product Image */}
                 <div className="bg-white rounded-2xl overflow-hidden aspect-square flex items-center justify-center border border-gray-200">
                     {item.image_url ? (
-                        <Image
-                            src={item.image_url}
-                            alt={item.name}
-                            width={600}
-                            height={600}
-                            className="w-full h-full object-contain"
-                            priority
-                        />
+                        item.image_url.startsWith('data:') ? (
+                            // Use regular img tag for base64 images to avoid hydration issues
+                            <img
+                                src={item.image_url}
+                                alt={item.name}
+                                className="w-full h-full object-contain"
+                            />
+                        ) : (
+                            <Image
+                                src={item.image_url}
+                                alt={item.name}
+                                width={600}
+                                height={600}
+                                className="w-full h-full object-contain"
+                                priority
+                            />
+                        )
                     ) : (
                         <Package className="w-32 h-32 text-fg-medium" />
                     )}

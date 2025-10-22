@@ -31,13 +31,21 @@ function CartPreviewItem({ cartItem }: { cartItem: CartItemT }) {
         <div className="flex items-center gap-3 pb-4">
             <div className="">
                 {cartItem.item.image_url && (
-                    <Image
-                        src={cartItem.item.image_url}
-                        width={100}
-                        height={100}
-                        alt={cartItem.item.name}
-                        className="object-cover w-15 h-15 rounded-xl"
-                    />
+                    cartItem.item.image_url.startsWith('data:') ? (
+                        <img
+                            src={cartItem.item.image_url}
+                            alt={cartItem.item.name}
+                            className="object-cover w-15 h-15 rounded-xl"
+                        />
+                    ) : (
+                        <Image
+                            src={cartItem.item.image_url}
+                            width={100}
+                            height={100}
+                            alt={cartItem.item.name}
+                            className="object-cover w-15 h-15 rounded-xl"
+                        />
+                    )
                 )}
                 {!cartItem.item.image_url && (
                     <ImageDown width={50} height={50} />
