@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth';
+import { useSearchParams } from 'next/navigation';
 import {
   listItems,
   createItem,
@@ -15,12 +16,21 @@ import {
 
 export default function InventoryManagement() {
   const { token } = useAuth();
+  const searchParams = useSearchParams();
   const [items, setItems] = useState<ItemAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<'active' | 'inactive' | 'all'>('active');
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingItem, setEditingItem] = useState<ItemAdmin | null>(null);
+
+  useEffect(() => {
+    // Set status filter from URL parameter if present
+    const statusParam = searchParams.get('status');
+    if (statusParam && (statusParam === 'active' || statusParam === 'inactive' || statusParam === 'all')) {
+      setStatusFilter(statusParam);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!token) return;

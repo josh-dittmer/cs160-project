@@ -67,10 +67,10 @@ export default function AdminDashboard() {
 
   const statCards = [
     { label: 'Total Users', value: stats.totalUsers, color: 'blue', link: '/admin/users' },
-    { label: 'Total Items', value: stats.totalItems, color: 'green', link: '/admin/inventory' },
+    { label: 'Total Items', value: stats.totalItems, color: 'green', link: '/admin/inventory?status=all' },
     { label: 'Active Items', value: stats.activeItems, color: 'emerald', link: '/admin/inventory?status=active' },
     { label: 'Inactive Items', value: stats.inactiveItems, color: 'gray', link: '/admin/inventory?status=inactive' },
-    { label: 'Low Stock Items', value: stats.lowStockItems, color: 'yellow', link: '/admin/inventory' },
+    { label: 'Low Stock Items', value: stats.lowStockItems, color: 'yellow', link: '/admin/inventory?status=all' },
   ];
 
   const userRoleCards = [
