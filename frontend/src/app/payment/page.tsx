@@ -34,7 +34,7 @@ export default function PaymentPage() {
     };
     const dec = (itemId: number, currentQty: number) => {
         const next = currentQty - 1;
-        // if you want "0" to remove the line:
+        // if you want "0" to remove the line(delete):
         mutate({ item_id: itemId, quantity: Math.max(0, next) });
     };
 
@@ -49,7 +49,7 @@ export default function PaymentPage() {
     const totalWeightOz = cartItems.total_weight_oz;
     const totalWeightLbs = totalWeightOz / 16;
 
-    // Free shipping for under 20 lbs, or pay $10
+    // free shipping for under 20 lbs, or pay $10
     const shippingFee = cartItems.shipping_waived ? 0 : cartItems.total_shipping_cents / 100;
 
     // calculate totals dynamically
