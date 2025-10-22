@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   listItems,
   createItem,
@@ -17,18 +17,33 @@ import {
 export default function InventoryManagement() {
   const { token } = useAuth();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [items, setItems] = useState<ItemAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<'active' | 'inactive' | 'all'>('active');
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingItem, setEditingItem] = useState<ItemAdmin | null>(null);
+  const [showLowStockOnly, setShowLowStockOnly] = useState(false);
 
   useEffect(() => {
-    // Set status filter from URL parameter if present
-    const statusParam = searchParams.get('status');
-    if (statusParam && (statusParam === 'active' || statusParam === 'inactive' || statusParam === 'all')) {
-      setStatusFilter(statusParam);
+    // Check for low stock filter first
+    const lowStockParam = searchParams.get('lowStock');
+    if (lowStockParam === 'true') {
+      setShowLowStockOnly(true);
+      setStatusFilter('active'); // Low stock items are typically active
+    } else {
+      // Reset low stock filter when not in URL
+      setShowLowStockOnly(false);
+      
+      // Set status filter from URL parameter if present
+      const statusParam = searchParams.get('status');
+      if (statusParam && (statusParam === 'active' || statusParam === 'inactive' || statusParam === 'all')) {
+        setStatusFilter(statusParam);
+      } else {
+        // Reset to default when no parameters
+        setStatusFilter('active');
+      }
     }
   }, [searchParams]);
 
@@ -94,6 +109,11 @@ export default function InventoryManagement() {
     return <div className="text-center py-8">Loading inventory...</div>;
   }
 
+  // Filter items for low stock if needed
+  const filteredItems = showLowStockOnly 
+    ? items.filter(item => item.stock_qty <= 10 && item.is_active)
+    : items;
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -102,7 +122,7 @@ export default function InventoryManagement() {
             Inventory Management
           </h2>
           <p className="text-gray-600 mt-1">
-            Manage product catalog
+            {showLowStockOnly ? 'Showing Low Stock Items (≤10 units)' : 'Manage product catalog'}
           </p>
         </div>
         <button
@@ -128,10 +148,12 @@ export default function InventoryManagement() {
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 placeholder="Search by name or description..."
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
+                disabled={showLowStockOnly}
               />
               <button
                 onClick={handleSearch}
                 className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md"
+                disabled={showLowStockOnly}
               >
                 Search
               </button>
@@ -145,6 +167,7 @@ export default function InventoryManagement() {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
               className="px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
+              disabled={showLowStockOnly}
             >
               <option value="active">Active Only</option>
               <option value="inactive">Inactive Only</option>
@@ -152,11 +175,24 @@ export default function InventoryManagement() {
             </select>
           </div>
         </div>
+        {showLowStockOnly && (
+          <div className="flex items-center justify-between bg-yellow-50 border border-yellow-200 rounded-md p-3">
+            <span className="text-sm text-yellow-800">
+              Filtering low stock items (stock ≤ 10 units)
+            </span>
+            <button
+              onClick={() => router.push('/admin/inventory')}
+              className="text-sm text-blue-600 hover:text-blue-800 underline"
+            >
+              Clear filter
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Items Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {items.map((item) => (
+        {filteredItems.map((item) => (
           <div
             key={item.id}
             className={`bg-white rounded-lg shadow overflow-hidden ${
@@ -237,9 +273,9 @@ export default function InventoryManagement() {
         ))}
       </div>
 
-      {items.length === 0 && (
+      {filteredItems.length === 0 && (
         <div className="text-center py-12 text-gray-500">
-          No items found
+          {showLowStockOnly ? 'No low stock items found' : 'No items found'}
         </div>
       )}
 
