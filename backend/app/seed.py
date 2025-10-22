@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, update
 from .database import engine, SessionLocal, Base
-from .models import Item, Review
+from .models import Item, Review, Order, OrderItem
+from datetime import datetime
 import json
 
 SAMPLE_ITEMS = [
@@ -721,6 +722,44 @@ SAMPLE_REVIEWS = [
     (1, 201, 5, "Tomatoes on point", "Perfect for salads."),
 ]
 
+SAMPLE_ORDERS = [
+    dict(
+        user_id=1,
+        created_at=datetime.strptime("2025-01-01 10:00:00", "%Y-%m-%d %H:%M:%S"),
+        delivered_at=datetime.strptime("2025-01-01 10:30:00", "%Y-%m-%d %H:%M:%S")
+    ),
+    dict(
+        user_id=1,
+        created_at=datetime.strptime("2025-02-14 12:00:00", "%Y-%m-%d %H:%M:%S"),
+        delivered_at=datetime.strptime("2025-02-14 12:45:00", "%Y-%m-%d %H:%M:%S"),
+    ),
+    dict(
+        user_id=1,
+        created_at=datetime.strptime("2025-03-03 18:30:00", "%Y-%m-%d %H:%M:%S"),
+        delivered_at=datetime.strptime("2025-03-03 19:10:00", "%Y-%m-%d %H:%M:%S"),
+    ),
+    dict(
+        user_id=1,
+        created_at=datetime.strptime("2025-04-10 09:15:00", "%Y-%m-%d %H:%M:%S"),
+        delivered_at=None,
+    ),
+]
+
+SAMPLE_ORDER_ITEMS = [
+    dict(order_id=1, item_id=1, quantity=5),
+    dict(order_id=1, item_id=2, quantity=10),
+    dict(order_id=1, item_id=3, quantity=15),
+
+    dict(order_id=2, item_id=4, quantity=2),
+    dict(order_id=2, item_id=5, quantity=1),
+
+    dict(order_id=3, item_id=6, quantity=3),
+    dict(order_id=3, item_id=10, quantity=2),
+    dict(order_id=3, item_id=12, quantity=1),
+
+    dict(order_id=4, item_id=2, quantity=6),
+    dict(order_id=4, item_id=7, quantity=2),
+]
 
 def seed():
     Base.metadata.create_all(bind=engine)
@@ -729,6 +768,16 @@ def seed():
         if db.query(Item).count() == 0:
             for d in SAMPLE_ITEMS:
                 db.add(Item(**d))
+            db.commit()
+
+        if db.query(Order).count() == 0:
+            for d in SAMPLE_ORDERS:
+                db.add(Order(**d))
+            db.commit()
+
+        if db.query(OrderItem).count() == 0:
+            for d in SAMPLE_ORDER_ITEMS:
+                db.add(OrderItem(**d))
             db.commit()
 
         # add a few reviews if none

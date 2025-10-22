@@ -10,3 +10,4 @@ backend/sqlite.db
 backend/sqlite.db-journal
 .env
 temp/
+.github/

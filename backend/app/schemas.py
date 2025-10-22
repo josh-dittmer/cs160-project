@@ -120,3 +120,20 @@ class CartItemsResponse(BaseModel):
     shipping_waived: bool
     total_cents: int
     total_weight_oz: int
+
+
+class OrderOut(BaseModel):
+    id: int
+    user_id: int
+    total_cents: int
+    total_weight_oz: int
+    created_at: datetime
+    delivered_at: datetime | None
+    items: list[CartItemOut]
+
+    class Config:
+        from_attributes = True
+
+
+class OrderItemsResponse(BaseModel):
+    orders: list[OrderOut]

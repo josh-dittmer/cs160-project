@@ -38,6 +38,18 @@ export const CartItem = t.type({
 
 export type CartItemT = t.TypeOf<typeof CartItem>;
 
+export const Order = t.type({
+    id: t.number,
+    user_id: t.number,
+    total_cents: t.number,
+    total_weight_oz: t.number,
+    created_at: t.string,
+    delivered_at: t.union([t.string, t.null]),
+    items: t.array(CartItem)
+})
+
+export type OrderT = t.TypeOf<typeof Order>;
+
 // requests
 export const UpsertCartItemRequest = t.type({
     item_id: t.number,
@@ -75,6 +87,12 @@ export const CartItemsResponse = t.type({
 });
 
 export type CartItemsResponseT = t.TypeOf<typeof CartItemsResponse>;
+
+export const OrderResponse = t.type({
+    orders: t.array(Order)
+})
+
+export type OrderResponseT = t.TypeOf<typeof OrderResponse>;
 
 export const ItemsListResponse = t.array(Item);
 export const ItemsByCategoryResponse = t.record(t.string, t.array(Item));

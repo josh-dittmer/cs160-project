@@ -1,17 +1,17 @@
 import { useAuth } from "@/contexts/auth";
 import { useQuery } from "@tanstack/react-query";
-import { CartItemsResponse } from "../api/models";
+import { OrderResponse } from "../api/models";
 import { get, request } from "../api/request";
 
-export const useCartItemsQuery = () => {
+export const useOrdersQuery = () => {
     const { isAuthenticated, token } = useAuth();
 
     return useQuery({
-        queryKey: ['cartItems'],
-        queryFn: () => request('/api/cart', get({
+        queryKey: ['orders'],
+        queryFn: () => request('/api/orders', get({
             token: token ?? undefined,
-            decoder: CartItemsResponse
+            decoder: OrderResponse
         })),
         enabled: isAuthenticated
     })
-};
+}
