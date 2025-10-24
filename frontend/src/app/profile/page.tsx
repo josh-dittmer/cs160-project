@@ -6,7 +6,21 @@ import { useState } from "react";
 import EditProfilePanel from "./EditProfilePanel";
 
 export default function ProfilePage() {
+
   const [editMode, setEditMode] = useState(false);
+
+  // TODO: need to connect to backend and save user's image
+  const [selectedImage, setSelectedImage] = useState("/profile_image.jpg");
+
+  // choose image from user's computer
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if(file){
+        const imageURL = URL.createObjectURL(file);
+        setSelectedImage(imageURL);
+    }
+  }
+
 
   return (
     <>
@@ -25,8 +39,16 @@ export default function ProfilePage() {
             {/* Left card (inline) */}
             <article className="card profile-card">
               <div className="avatar-wrap">
-                <img src="/profile_image.jpg" alt="User avatar" className="avatar" />
-                <button className="avatar-edit" aria-label="Edit photo">
+                <img src={selectedImage} alt="User avatar" className="avatar" />
+
+                <input 
+                    type="file"
+                    id="avatarInput"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    style={{display: "none"}}
+                />
+                <button className="avatar-edit" aria-label="Edit photo" onClick={() => document.getElementById("avatarInput")?.click()}>
                   <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
                     <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41L18.37 3.29a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
                   </svg>

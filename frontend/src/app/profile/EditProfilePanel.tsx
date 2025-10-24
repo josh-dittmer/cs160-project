@@ -3,6 +3,19 @@ import "./profile_edit.css";
 
 type Props = { onCancel?: () => void };
 
+const states = [
+  "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",
+  "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho",
+  "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana",
+  "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota",
+  "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada",
+  "New Hampshire", "New Jersey", "New Mexico", "New York",
+  "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon",
+  "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota",
+  "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington",
+  "West Virginia", "Wisconsin", "Wyoming"
+];
+
 export default function EditProfilePanel({ onCancel }: Props) {
   return (
     <section className="card edit-card">
@@ -25,6 +38,25 @@ export default function EditProfilePanel({ onCancel }: Props) {
         <div className="field">
           <label htmlFor="phone">Phone</label>
           <input id="phone" type="tel" defaultValue="510-123 1234" />
+        </div>
+
+        <div className="field">
+          <label htmlFor="address">Address</label>
+          <input id="address" type="address" defaultValue="1 Washington Sq" />
+        </div>
+
+        <div className="field">
+          <label htmlFor="zipcode">Zipcode</label>
+          <input id="zipcode" type="zipcode" defaultValue="95192" />
+        </div>
+
+        <div className="field">
+            <label htmlFor="state">State</label>
+            <select id="state" defaultValue="California">
+                {states.map((state) => (
+                    <option key={state} value={state}>{state}</option>
+                ))}
+            </select>
         </div>
 
         <div className="actions">
@@ -59,7 +91,7 @@ export default function EditProfilePanel({ onCancel }: Props) {
           </div>
         </div>
 
-        <div className="actions sticky">
+        <div className="actions">
           <button type="button" className="btn ghost" onClick={onCancel}>Cancel</button>
           <button type="button" className="btn primary">Save Changes</button>
         </div>
