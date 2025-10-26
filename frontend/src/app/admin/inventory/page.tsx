@@ -565,6 +565,13 @@ function ItemFormModal({
         setSaving(false);
         return;
       }
+
+      // Validate image is provided
+      if (!formData.image_url || formData.image_url.trim() === '') {
+        alert('Please provide a product image (either URL or upload an image)');
+        setSaving(false);
+        return;
+      }
       
       const submitData = {
         name: formData.name,
@@ -700,7 +707,7 @@ function ItemFormModal({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Product Image
+                Product Image *
               </label>
               
               {/* Toggle between URL and Upload */}
