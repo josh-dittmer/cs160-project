@@ -368,6 +368,7 @@ function ItemFormModal({
   const [uploadingImage, setUploadingImage] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  const [nutritionJsonError, setNutritionJsonError] = useState<string>('');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Fetch categories when modal opens
@@ -466,6 +467,42 @@ function ItemFormModal({
     if (!/^\d*$/.test(pastedText)) {
       e.preventDefault();
     }
+  };
+
+  // Validate nutrition JSON
+  const validateNutritionJson = (jsonString: string): boolean => {
+    // Empty is allowed (optional field)
+    if (!jsonString || jsonString.trim() === '') {
+      setNutritionJsonError('');
+      return true;
+    }
+
+    try {
+      const parsed = JSON.parse(jsonString);
+      
+      // Check if it's an object (not array or primitive)
+      if (typeof parsed !== 'object' || Array.isArray(parsed)) {
+        setNutritionJsonError('Nutrition data must be a JSON object (not an array or primitive value)');
+        return false;
+      }
+
+      setNutritionJsonError('');
+      return true;
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        setNutritionJsonError(`Invalid JSON syntax: ${error.message}`);
+      } else {
+        setNutritionJsonError('Invalid JSON format');
+      }
+      return false;
+    }
+  };
+
+  // Handle nutrition JSON change with validation
+  const handleNutritionJsonChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setFormData({ ...formData, nutrition_json: value });
+    validateNutritionJson(value);
   };
 
   // Handle price input like a calculator (digits fill from right to left)
@@ -571,6 +608,15 @@ function ItemFormModal({
         alert('Please provide a product image (either URL or upload an image)');
         setSaving(false);
         return;
+      }
+
+      // Validate nutrition JSON if provided
+      if (formData.nutrition_json && formData.nutrition_json.trim() !== '') {
+        if (!validateNutritionJson(formData.nutrition_json)) {
+          alert(`Invalid nutrition JSON: ${nutritionJsonError}`);
+          setSaving(false);
+          return;
+        }
       }
       
       const submitData = {
@@ -808,13 +854,22 @@ function ItemFormModal({
               <textarea
                 rows={6}
                 value={formData.nutrition_json}
-                onChange={(e) => setFormData({ ...formData, nutrition_json: e.target.value })}
+                onChange={handleNutritionJsonChange}
                 placeholder='{"calories": 100, "protein": {"value": 5, "unit": "g"}, "totalFat": {"value": 2, "unit": "g"}}'
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 font-mono text-sm"
+                className={`w-full px-3 py-2 border rounded-md bg-white text-gray-900 font-mono text-sm ${
+                  nutritionJsonError ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
+                }`}
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Enter nutrition data as valid JSON format
-              </p>
+              {nutritionJsonError ? (
+                <p className="text-xs text-red-600 mt-1 flex items-start gap-1">
+                  <span className="mt-0.5">⚠️</span>
+                  <span>{nutritionJsonError}</span>
+                </p>
+              ) : (
+                <p className="text-xs text-gray-500 mt-1">
+                  Enter nutrition data as valid JSON format (must be an object)
+                </p>
+              )}
             </div>
 
             <div className="flex items-center">
