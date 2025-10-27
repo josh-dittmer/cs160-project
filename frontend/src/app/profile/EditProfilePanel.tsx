@@ -246,6 +246,10 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
       });
       alert('Password changed successfully!');
       setPasswordData({ current_password: '', new_password: '', confirm_password: '' });
+      // Redirect back to profile view page
+      if (onCancel) {
+        onCancel();
+      }
     } catch (err: any) {
       setPasswordError(err.message || 'Failed to change password');
       alert(err.message || 'Failed to change password');
