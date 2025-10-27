@@ -156,6 +156,14 @@ cs160-project/
   - Google OAuth integration
   - JWT token-based authentication
 
+- **User Profile Management**
+  - Edit profile information (name, phone, address)
+  - Profile picture upload (file or URL) with Google OAuth integration
+  - Password change (for email/password users)
+  - Address validation restricted to San Jose, CA using Google Places API
+  - Auto-formatted phone numbers
+  - See [PROFILE_IMPLEMENTATION_SUMMARY.md](PROFILE_IMPLEMENTATION_SUMMARY.md) for details
+
 - **Role-Based Access Control**
   - Four user roles: Admin, Manager, Employee, Customer
   - Admin panel for user and inventory management
@@ -214,6 +222,8 @@ PYTHONPATH=. pytest tests/test_admin.py -v
 - Tailwind CSS - Styling
 - Swiper - Carousel component
 - Framer Motion - Animations
+- Google Places API - Address autocomplete and validation
+- @react-google-maps/api - Google Maps integration
 
 ---
 
@@ -229,7 +239,11 @@ GOOGLE_CLIENT_ID=your-google-client-id
 ```bash
 NEXT_PUBLIC_API_URL=http://localhost:8080
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-client-id
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your-google-maps-api-key
 ```
+
+**Note:** Google Maps API key is required for address autocomplete in profile editing.  
+See [GOOGLE_MAPS_SETUP.md](GOOGLE_MAPS_SETUP.md) for setup instructions.
 
 ---
 
@@ -269,6 +283,23 @@ CS160 Project Team 6
 - Ensure `http://localhost:3000` is added to authorized origins in Google Cloud Console
 - Check browser console for specific error messages
 
+### Address autocomplete not working
+- Verify `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` is set in `frontend/.env.local`
+- Ensure **Places API** and **Maps JavaScript API** are enabled in Google Cloud Console
+- Restart the frontend dev server after adding the API key: `npm run dev`
+- See [GOOGLE_MAPS_SETUP.md](GOOGLE_MAPS_SETUP.md) for complete setup guide
+
 ---
 
-For more detailed information, see the documentation in the `backend/docs/` directory.
+## 📚 Documentation
+
+For more detailed information about specific features:
+
+- **[PROFILE_IMPLEMENTATION_SUMMARY.md](PROFILE_IMPLEMENTATION_SUMMARY.md)** - User profile management, address validation, Google Places API integration
+- **[GOOGLE_MAPS_SETUP.md](GOOGLE_MAPS_SETUP.md)** - Setting up Google Maps API for address autocomplete
+- **[ADMIN.md](ADMIN.md)** - Admin panel usage and role-based access control
+- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - Admin RBAC implementation details
+- **[AUTHENTICATION_INTEGRATION.md](AUTHENTICATION_INTEGRATION.md)** - Authentication system details
+- **[backend/docs/](backend/docs/)** - API documentation and search implementation
+
+---

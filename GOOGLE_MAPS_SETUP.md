@@ -63,6 +63,7 @@ The Google Places Autocomplete will now work in the profile edit page!
 ## Features Implemented
 
 - ✅ Address autocomplete restricted to San Jose, CA (20km radius)
+- ✅ **Requires complete addresses with house/building numbers** (rejects "Main St", accepts "123 Main St")
 - ✅ Auto-fills city, state, and zipcode
 - ✅ Validates addresses are within San Jose
 - ✅ Only shows valid US addresses
@@ -76,6 +77,15 @@ If the API key is not configured or fails to load:
 - Users can still enter addresses manually
 - Form validation still ensures city is "San Jose"
 
+## Known Limitations
+
+### Zipcode Accuracy
+The Google Places API sometimes returns **general area zipcodes** rather than building-specific ones. For example:
+- **1 Washington Square** (SJSU): API returns `95112` (neighborhood) instead of `95192` (campus-specific)
+- This is normal behavior and both zipcodes are valid for delivery
+
+Special buildings often have dedicated zipcodes, but the Places API defaults to the broader area code. For most residential addresses, the zipcode will be accurate.
+
 ## Troubleshooting
 
 ### "This page can't load Google Maps correctly"
@@ -87,11 +97,17 @@ If the API key is not configured or fails to load:
 - Verify API key has no domain restrictions (or includes localhost:3000)
 - Check that you've enabled the correct APIs
 - Wait a few minutes after enabling APIs (can take time to propagate)
+- Hard refresh your browser (Cmd+Shift+R or Ctrl+Shift+R) after updating `.env.local`
 
 ### "You have exceeded your request quota"
 - You've used up your $200 monthly credit
 - Add billing information to continue using the API
 - Consider implementing usage limits or caching
+
+### Only street names showing (no house numbers)
+- This is expected - type a specific house number to see complete addresses
+- The autocomplete will show both "5152 Barron Park Drive" and "Barron Park Drive"
+- Addresses without house numbers are automatically rejected with a helpful error message
 
 ## Security Notes
 
