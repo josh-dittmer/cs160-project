@@ -456,11 +456,11 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
         {userData?.google_id && (
           <>
             <hr className="sep" />
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-              <h4 className="text-blue-900 dark:text-blue-100 font-semibold mb-2">
+            <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg border-2 border-gray-900 dark:border-gray-300">
+              <h4 className="text-gray-900 dark:text-white font-semibold mb-2">
                 🔐 Signed in with Google
               </h4>
-              <p className="text-blue-700 dark:text-blue-300 text-sm">
+              <p className="text-gray-900 dark:text-gray-100 text-sm">
                 Your password is managed by your Google account. To change your password, visit your Google Account settings.
               </p>
             </div>
