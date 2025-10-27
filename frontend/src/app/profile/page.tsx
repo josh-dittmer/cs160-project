@@ -2,6 +2,7 @@
 import "./profile.css";
 import TopBar from "@/components/top-bar/top-bar";
 import Sidebar from "@/components/sidebar/sidebar";
+import AccountWindow from "@/components/account_window/account_window";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth";
 import { getCurrentUser, updateProfile, UserInfo } from "@/lib/api/profile";
@@ -130,6 +131,9 @@ export default function ProfilePage() {
       <div className="grid grid-cols-[75px_auto] md:grid-cols-[200px_auto] overflow-hidden h-[calc(100vh-64px)]">
         <div className="relative border-bg-dark border-r bg-bg-light p-3">
           <Sidebar />
+          <div className="absolute bottom-0 right-0 transform-[translateX(100%)] mb-3 z-10 pointer-events-none">
+            <AccountWindow />
+          </div>
         </div>
 
         <main className="p-8 overflow-y-auto">
