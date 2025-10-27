@@ -53,6 +53,14 @@ class User(Base):
     # Google OAuth fields
     google_id: Mapped[str | None] = mapped_column(String(255), unique=True, index=True, nullable=True)
     
+    # Profile fields
+    phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    address: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    city: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    zipcode: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    state: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    profile_picture: Mapped[str | None] = mapped_column(Text, nullable=True)  # base64 or URL
+    
     # Role-based access control
     role: Mapped[str] = mapped_column(String(20), default="customer", index=True)
     

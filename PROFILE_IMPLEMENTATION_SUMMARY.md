@@ -1,0 +1,366 @@
+# Profile Edit Feature Implementation Summary
+
+## Overview
+Successfully implemented a fully functional user profile editing system with backend API integration, including profile information updates, password changes, and profile picture management.
+
+## Backend Changes
+
+### 1. Database Schema (`backend/app/models.py`)
+Added new fields to the `User` model:
+- `phone` (String, nullable)
+- `address` (String, nullable)
+- `city` (String, nullable)
+- `zipcode` (String, nullable)
+- `state` (String, nullable)
+- `profile_picture` (Text, nullable) - stores base64 or URL
+
+### 2. Pydantic Schemas (`backend/app/schemas.py`)
+- Updated `UserOut` schema to include all new profile fields
+- Created `UserProfileUpdate` schema for profile updates
+- Created `PasswordChange` schema for password changes
+
+### 3. API Endpoints (`backend/app/routers/auth.py`)
+
+#### PUT `/api/auth/profile`
+- Updates user profile information
+- Requires authentication
+- Accepts: full_name, phone, address, city, zipcode, state, profile_picture
+- Returns: Updated UserOut
+
+#### PUT `/api/auth/password`
+- Changes user password
+- Requires authentication and current password verification
+- Validates password requirements (min 8 characters)
+- Blocks OAuth users from changing password
+- Returns: Success message
+
+#### Google OAuth Enhancement
+Updated **both** Google OAuth endpoints to fetch and store profile pictures:
+
+**POST `/api/auth/google`** (Primary OAuth endpoint):
+- Extracts `picture` field from Google ID token
+- Stores Google profile picture URL for new users
+- Updates profile picture on every login unless manually overridden
+- Distinguishes between Google URLs and base64 images (starting with `data:`)
+
+**GET `/api/auth/google/callback`** (Legacy redirect flow):
+- Fetches profile picture from Google userinfo
+- Same update logic as primary endpoint
+- Ensures consistency across both OAuth flows
+
+**Smart Update Logic:**
+- Google OAuth users always see their latest Google profile picture
+- Manual uploads (base64 images) are preserved and never overwritten
+- Users maintain full control over their profile picture
+
+## Frontend Changes
+
+### 1. Profile API Client (`frontend/src/lib/api/profile.ts`)
+New API client with functions:
+- `getCurrentUser(token)` - Fetches current user data
+- `updateProfile(token, data)` - Updates profile information
+- `changePassword(token, data)` - Changes password
+
+### 2. Auth Context (`frontend/src/contexts/auth.tsx`)
+- Updated `UserInfo` type to include all new profile fields
+- Added `updateUser()` function to refresh user data after updates
+- Re-exported UserInfo from profile.ts for consistency
+
+### 3. Profile Page (`frontend/src/app/profile/page.tsx`)
+**Features Implemented:**
+- Fetches real user data from backend on mount
+- Displays user information dynamically (no hardcoded data)
+- Profile picture with intelligent fallback:
+  - Shows Google profile picture if logged in via OAuth
+  - Shows uploaded profile picture if manually set
+  - Shows initials (e.g., "John Doe" → "JD") as default
+- **Dual image upload options:**
+  - **File upload**: Click edit icon to upload from device
+    - Base64 conversion
+    - 5MB size limit validation
+  - **URL input**: Click "Use image URL" link to paste image URL
+    - URL validation before submission
+    - Press Enter or click "Save URL" to submit
+    - Toggle between file upload and URL input
+  - Real-time upload to backend
+  - Success confirmation messages
+- **Phone number auto-formatted for display** - converts `5551234567` to `(555) 123-4567`
+- Loading state during data fetch
+- Real-time address display with proper formatting
+
+### 4. Account Window Component (`frontend/src/components/account_window/account_window.tsx`)
+**Profile Picture Display:**
+- Shows Google profile picture if available (OAuth users)
+- Falls back to initials avatar with gradient background
+- Generates proper initials (e.g., "John Doe" → "JD", "Mary" → "M")
+- Matches the same gradient style as the profile page
+
+**Edit Profile Button:**
+- Changed from non-functional `<motion.a>` to `<motion.button>`
+- Redirects to `/profile` page when clicked
+- Closes the account window after navigation
+- Provides seamless navigation to profile editing
+
+### 5. Edit Profile Panel (`frontend/src/app/profile/EditProfilePanel.tsx`)
+**Profile Information Section:**
+- Controlled form inputs with state management
+- Field order: Name, Email, Phone, Address, City, State, Zipcode
+  - Email is read-only (cannot be changed)
+- **Phone Number Input:**
+  - Auto-formats to (XXX) XXX-XXXX as user types
+  - **Blocks non-digit input entirely** - users cannot type letters or symbols
+  - Keyboard shortcuts allowed (Ctrl+C, Ctrl+V, arrows, backspace, etc.)
+  - Paste validation - strips non-digits from pasted content
+  - Maximum 10 digits (US phone format)
+  - **Stores only raw digits** - formatting removed before sending to backend
+  - Validates complete 10-digit number before submission
+  - Formats existing phone numbers on load
+- All fields use real user data from backend
+- Save button with loading state
+- Form validation and error handling
+- Success/error messages via alerts
+
+**Password Change Section:**
+- **Only visible for non-Google OAuth users** (hidden if `google_id` exists)
+- For Google users: Shows informative message that password is managed by Google
+- Separate password form with:
+  - Current password field
+  - New password field (min 8 characters)
+  - Confirm password field
+- Password visibility toggles (eye icons) for all three fields
+- Real-time password validation:
+  - Ensures new password matches confirmation
+  - Validates minimum length
+  - Verifies current password on backend
+- Disabled state when fields are empty
+- Loading state during password change
+- Clears password fields on successful change
+
+## Key Features
+
+### Security
+- All endpoints require JWT authentication
+- Password changes require current password verification
+- **OAuth users cannot change password** (they must use Google)
+  - Password section hidden in UI for Google OAuth users
+  - Backend blocks password changes for users without `hashed_password`
+  - Informative message shown instead of password form
+- Profile picture size limit (5MB) to prevent abuse
+- Input sanitization via Pydantic schemas
+
+### User Experience
+- Real-time data fetching and updates
+- Loading states for all async operations
+- Clear error messages for all failure cases
+- Success confirmation messages
+- Profile picture priority: Manual upload → Google OAuth picture → Initials fallback
+- Google profile pictures auto-update on each login (unless manually overridden)
+- Password visibility toggles for better UX
+- Disabled email field to prevent confusion
+- Form validation before submission
+- Separate save buttons for profile and password
+
+### Data Validation
+**Frontend:**
+- Required field checking
+- Password match validation
+- Password length validation (min 8 characters)
+- Image size validation (max 5MB)
+- **Phone number validation:**
+  - **Blocks non-digit keyboard input** (prevents typing letters/symbols)
+  - Auto-formats to (XXX) XXX-XXXX as user types
+  - Validates and strips non-digits from pasted content
+  - Enforces 10-digit US phone format
+  - Stores only raw digits in database (no formatting characters)
+  - Validates complete phone number before submission
+- Field format placeholders for guidance
+
+**Backend:**
+- Pydantic schema validation
+- Current password verification for password changes
+- Optional field handling (all profile fields are nullable)
+- OAuth user detection for password changes
+
+## Field Order & Logic
+Address fields ordered logically as requested:
+1. Address (street address)
+2. City
+3. State (dropdown with all 50 US states)
+4. Zipcode (max 10 characters)
+
+This order follows the natural geographic hierarchy from specific to general.
+
+## Testing Checklist
+- [x] User can view their profile information
+- [x] User can edit profile information (name, phone, address, city, state, zipcode)
+- [x] User can upload profile picture via **file upload** (base64 conversion)
+- [x] User can upload profile picture via **URL input**
+- [x] Profile picture respects 5MB size limit (file upload)
+- [x] Initials fallback works correctly (shows both first and last initial)
+- [x] Google OAuth users get their Google profile picture
+- [x] Google profile picture updates on every login
+- [x] Manual uploads are preserved and not overwritten by Google
+- [x] Profile picture displays in account window dropdown
+- [x] "Edit profile" button navigates to /profile page
+- [x] Account window closes after clicking "Edit profile"
+- [x] User can change password with current password verification (non-OAuth only)
+- [x] Password fields have visibility toggles
+- [x] Password validation works (min 8 chars, match confirmation)
+- [x] OAuth users cannot change password (backend protection)
+- [x] **Password section hidden for Google OAuth users (UI)**
+- [x] **Google OAuth users see informative message instead of password form**
+- [x] Email field is read-only
+- [x] **Phone number input validation:**
+  - [x] Only accepts numeric characters
+  - [x] Auto-formats to (XXX) XXX-XXXX
+  - [x] Enforces 10-digit limit
+  - [x] Validates before submission
+- [x] All success/error messages display correctly
+- [x] Loading states work properly
+- [x] No linting errors in any files
+
+## Files Modified
+
+**Backend:**
+- `backend/app/models.py` - Added profile fields to User model
+- `backend/app/schemas.py` - Added UserProfileUpdate, PasswordChange, updated UserOut
+- `backend/app/routers/auth.py` - Added profile and password endpoints, updated OAuth
+
+**Frontend:**
+- `frontend/src/lib/api/profile.ts` - New profile API client
+- `frontend/src/lib/api/auth.ts` - Updated to use shared UserInfo type
+- `frontend/src/contexts/auth.tsx` - Added updateUser function, updated UserInfo import
+- `frontend/src/app/profile/page.tsx` - Implemented real data fetching and display
+- `frontend/src/app/profile/EditProfilePanel.tsx` - Implemented form state and handlers
+- `frontend/src/components/account_window/account_window.tsx` - Added profile picture display and functional Edit button
+
+**Database:**
+- Recreated database with new schema using seed.py (no migration file needed)
+
+## API Endpoints
+
+### GET `/api/auth/me`
+Get current user information (existing, now returns new fields)
+
+### PUT `/api/auth/profile`
+Update user profile
+```json
+{
+  "full_name": "string",
+  "phone": "string",
+  "address": "string",
+  "city": "string",
+  "state": "string",
+  "zipcode": "string",
+  "profile_picture": "base64string or url"
+}
+```
+
+### PUT `/api/auth/password`
+Change password
+```json
+{
+  "current_password": "string",
+  "new_password": "string (min 8 chars)"
+}
+```
+
+## Bug Fixes & Improvements
+
+### Issue #1: Google Profile Pictures Not Displaying
+**Problem:** Users logging in with Google saw initials instead of their Google profile picture.
+
+**Root Cause:** The primary Google OAuth endpoint (`POST /api/auth/google`) was not extracting the `picture` field from the ID token.
+
+**Solution:** 
+- Updated `POST /api/auth/google` to extract `picture` from ID token
+- Added same smart update logic as the legacy callback endpoint
+- Now both OAuth flows properly fetch and store Google profile pictures
+
+### Issue #2: Account Window Not Showing Profile Pictures
+**Problem:** The "My Account" dropdown always showed a single letter initial, never the profile picture.
+
+**Solution:**
+- Updated `account_window.tsx` to display `user.profile_picture` if available
+- Added proper initials fallback matching profile page style
+- Improved initials generation to show both first and last initial
+
+### Issue #3: Non-Functional "Edit Profile" Button
+**Problem:** Clicking "Edit profile" in the account window did nothing.
+
+**Solution:**
+- Changed from `<motion.a>` to `<motion.button>` with `onClick` handler
+- Added navigation to `/profile` page
+- Added logic to close the account window after navigation
+
+### Issue #4: Google OAuth Users Seeing Password Change Form
+**Problem:** Google OAuth users could see and attempt to change passwords, which would fail since they authenticate via Google.
+
+**Root Cause:** The UI didn't distinguish between regular users and OAuth users.
+
+**Solution:**
+- Added `google_id` to `UserOut` schema (backend) and `UserInfo` interface (frontend)
+- Password section now hidden for users with `google_id` (Google OAuth users)
+- Shows informative message: "Your password is managed by your Google account"
+- Improves UX by not showing options that will fail
+- Backend already had protection, now UI matches the logic
+
+### Issue #5: Phone Number Accepting Non-Digit Input
+**Problem:** Users could type letters and symbols into the phone number field, and formatted characters were being saved to the database.
+
+**Root Cause:** Input field only filtered non-digits after input, but didn't prevent typing them. Also, formatted phone (with parentheses and dashes) was being sent to backend.
+
+**Solution:**
+- Added `onKeyDown` handler to **block non-digit keys** (allows navigation keys and shortcuts)
+- Added `onPaste` handler to **strip non-digits** from pasted content
+- Modified `handleProfileSubmit` to **extract only digits** before sending to backend
+- Database now stores clean phone numbers (e.g., `5551234567` not `(555) 123-4567`)
+- Display still shows formatted version for better UX
+- Result: Users can only input digits, formatted for display, stored as raw digits
+
+### Issue #6: Phone Number Not Formatted in View Mode
+**Problem:** Phone numbers displayed in the profile view mode showed raw digits (e.g., `4084804840`) instead of formatted version.
+
+**Root Cause:** View mode was displaying the raw phone number directly from the database without formatting.
+
+**Solution:**
+- Added `formatPhoneNumber` helper function in `page.tsx`
+- Automatically formats phone numbers to `(XXX) XXX-XXXX` for display
+- Only formats valid 10-digit numbers
+- Returns original value if not exactly 10 digits
+- Consistent formatting across view and edit modes
+
+### Issue #7: File Input Not Resetting After Upload
+**Problem:** After uploading an image, then using URL, trying to upload a file again (especially the same file) wouldn't work.
+
+**Root Cause:** File input element retains its value after upload. When trying to select the same file again, the `onChange` event doesn't fire because the value hasn't changed.
+
+**Solution:**
+- Added `e.target.value = ''` in `finally` block of `handleImageChange`
+- Clears file input after every upload (success or failure)
+- Now users can upload → URL → upload again seamlessly
+- Can also re-upload the same file multiple times if needed
+
+## Notes
+- Database was recreated using seed.py instead of migration for simplicity in development
+- Profile picture is stored as base64 string or URL (Text field in database)
+- All profile fields are optional (nullable) to allow gradual profile completion
+- Password change is separate from profile update for better security control
+- Google OAuth integration automatically fetches and stores profile picture on **every login**
+- Manual uploads (base64) are preserved and never overwritten by Google updates
+
+## Future Enhancements (Not Implemented)
+
+### Address Validation
+Currently using basic format validation. For production, consider:
+- **Google Places Autocomplete API**: Real-time address validation with auto-fill
+- **USPS Address Validation API**: Free US address verification
+- **Trade-offs**: External APIs add costs and dependencies vs. basic validation
+
+### Additional Google OAuth Data
+Google ID token provides limited data (email, name, picture). To get phone numbers, addresses, etc.:
+- Would require additional OAuth scopes (`user.phonenumbers.read`, `user.addresses.read`)
+- Requires Google People API calls (not just ID token)
+- **Not recommended**: Lower user trust, worse conversion rates, often inaccurate data
+- **Better approach**: Let users provide this info in-app (current implementation)
+
