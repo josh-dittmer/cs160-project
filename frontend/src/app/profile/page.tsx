@@ -2,23 +2,126 @@
 import "./profile.css";
 import TopBar from "@/components/top-bar/top-bar";
 import Sidebar from "@/components/sidebar/sidebar";
-import { useState } from "react";
+import AccountWindow from "@/components/account_window/account_window";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/auth";
+import { getCurrentUser, updateProfile, UserInfo } from "@/lib/api/profile";
 import EditProfilePanel from "./EditProfilePanel";
 
 export default function ProfilePage() {
-
+  const { user, token, updateUser } = useAuth();
   const [editMode, setEditMode] = useState(false);
+  const [userData, setUserData] = useState<UserInfo | null>(user);
+  const [loading, setLoading] = useState(true);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [imageUrl, setImageUrl] = useState('');
 
-  // TODO: need to connect to backend and save user's image
-  const [selectedImage, setSelectedImage] = useState("/profile_image.jpg");
-
-  // choose image from user's computer
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if(file){
-        const imageURL = URL.createObjectURL(file);
-        setSelectedImage(imageURL);
+  // Fetch user data on mount
+  useEffect(() => {
+    async function fetchUser() {
+      if (token) {
+        try {
+          const data = await getCurrentUser(token);
+          setUserData(data);
+          updateUser(data);
+        } catch (error) {
+          console.error('Failed to fetch user:', error);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
+      }
     }
+    fetchUser();
+  }, [token]);
+
+  // Generate initials from full name
+  const getInitials = (name: string | null) => {
+    if (!name) return "?";
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
+  // Format phone number to (XXX) XXX-XXXX
+  const formatPhoneNumber = (phone: string | null) => {
+    if (!phone) return null;
+    
+    // Remove all non-digit characters
+    const digits = phone.replace(/\D/g, '');
+    
+    // Only format if we have a valid 10-digit number
+    if (digits.length !== 10) return phone;
+    
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  };
+
+  // Handle image upload
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !token) return;
+
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB');
+      // Clear the input
+      e.target.value = '';
+      return;
+    }
+
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const base64String = reader.result as string;
+        const updatedUser = await updateProfile(token, { profile_picture: base64String });
+        setUserData(updatedUser);
+        updateUser(updatedUser);
+        alert('Profile picture updated successfully!');
+      } catch (error: any) {
+        alert(error.message || 'Failed to upload image');
+      } finally {
+        // Clear the input so the same file can be selected again
+        e.target.value = '';
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Handle URL submission
+  const handleUrlSubmit = async () => {
+    if (!imageUrl.trim() || !token) return;
+
+    // Basic URL validation
+    try {
+      new URL(imageUrl);
+    } catch {
+      alert('Please enter a valid URL');
+      return;
+    }
+
+    try {
+      const updatedUser = await updateProfile(token, { profile_picture: imageUrl });
+      setUserData(updatedUser);
+      updateUser(updatedUser);
+      setShowUrlInput(false);
+      setImageUrl('');
+      alert('Profile picture updated successfully!');
+    } catch (error: any) {
+      alert(error.message || 'Failed to update profile picture');
+    }
+  };
+
+  if (loading) {
+    return (
+      <>
+        <TopBar />
+        <div className="flex items-center justify-center h-screen">
+          <p>Loading...</p>
+        </div>
+      </>
+    );
   }
 
 
@@ -28,6 +131,9 @@ export default function ProfilePage() {
       <div className="grid grid-cols-[75px_auto] md:grid-cols-[200px_auto] overflow-hidden h-[calc(100vh-64px)]">
         <div className="relative border-bg-dark border-r bg-bg-light p-3">
           <Sidebar />
+          <div className="absolute bottom-0 right-0 transform-[translateX(100%)] mb-3 z-10 pointer-events-none">
+            <AccountWindow />
+          </div>
         </div>
 
         <main className="p-8 overflow-y-auto">
@@ -39,7 +145,21 @@ export default function ProfilePage() {
             {/* Left card (inline) */}
             <article className="card profile-card">
               <div className="avatar-wrap">
-                <img src={selectedImage} alt="User avatar" className="avatar" />
+                {userData?.profile_picture ? (
+                  <img src={userData.profile_picture} alt="User avatar" className="avatar" />
+                ) : (
+                  <div className="avatar" style={{
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '2rem',
+                    fontWeight: 'bold',
+                    color: 'white'
+                  }}>
+                    {getInitials(userData?.full_name || null)}
+                  </div>
+                )}
 
                 <input 
                     type="file"
@@ -54,10 +174,45 @@ export default function ProfilePage() {
                   </svg>
                 </button>
               </div>
-              <h2 className="name">Stella</h2>
+              
+              {/* Image upload options */}
+              <div className="mt-3 flex flex-col gap-2">
+                <button 
+                  type="button"
+                  className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                  onClick={() => setShowUrlInput(!showUrlInput)}
+                >
+                  {showUrlInput ? '✕ Cancel' : '🔗 Use image URL'}
+                </button>
+                
+                {showUrlInput && (
+                  <div className="flex flex-col gap-2">
+                    <input
+                      type="text"
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      placeholder="https://example.com/image.jpg"
+                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                      onKeyDown={(e) => e.key === 'Enter' && handleUrlSubmit()}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleUrlSubmit}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
+                    >
+                      Save URL
+                    </button>
+                  </div>
+                )}
+              </div>
+              <h2 className="name">{userData?.full_name || 'User'}</h2>
               <p className="address">
-                1 Washington Sq
-                <br /> San Jose, CA 95192
+                {userData?.address || 'No address set'}
+                {userData?.city && userData?.state && (
+                  <>
+                    <br /> {userData.city}, {userData.state} {userData.zipcode}
+                  </>
+                )}
               </p>
             </article>
 
@@ -74,15 +229,15 @@ export default function ProfilePage() {
                 <div className="info-grid">
                   <div className="info-field">
                     <span className="label">Name</span>
-                    <span className="value">Stella J</span>
+                    <span className="value">{userData?.full_name || 'Not set'}</span>
                   </div>
                   <div className="info-field">
                     <span className="label">E-Mail</span>
-                    <span className="value">stellajiangwork@gmail.com</span>
+                    <span className="value">{userData?.email}</span>
                   </div>
                   <div className="info-field">
                     <span className="label">Phone</span>
-                    <span className="value">510-123 1234</span>
+                    <span className="value">{formatPhoneNumber(userData?.phone || null) || 'Not set'}</span>
                   </div>
                   <div className="info-field">
                     <span className="label">Password</span>
@@ -96,7 +251,16 @@ export default function ProfilePage() {
                 </div>
               </article>
             ) : (
-              <EditProfilePanel onCancel={() => setEditMode(false)} />
+              <EditProfilePanel 
+                userData={userData} 
+                token={token}
+                onCancel={() => setEditMode(false)}
+                onSuccess={(updatedUser) => {
+                  setUserData(updatedUser);
+                  updateUser(updatedUser);
+                  setEditMode(false);
+                }}
+              />
             )}
           </section>
         </main>

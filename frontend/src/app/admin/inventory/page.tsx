@@ -354,13 +354,13 @@ function ItemFormModal({
 }) {
   const [formData, setFormData] = useState({
     name: item?.name || '',
-    price_cents: item?.price_cents || 0,
-    weight_oz: item?.weight_oz || 0,
+    price_usd: item?.price_cents ? (item.price_cents / 100).toFixed(2) : '',
+    weight_oz: item?.weight_oz ?? '',
     category: item?.category || '',
     image_url: item?.image_url || '',
     description: item?.description || '',
     nutrition_json: item?.nutrition_json || '',
-    stock_qty: item?.stock_qty || 0,
+    stock_qty: item?.stock_qty ?? '',
     is_active: item?.is_active ?? true,
   });
   const [saving, setSaving] = useState(false);
@@ -368,6 +368,7 @@ function ItemFormModal({
   const [uploadingImage, setUploadingImage] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  const [nutritionJsonError, setNutritionJsonError] = useState<string>('');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Fetch categories when modal opens
@@ -431,18 +432,212 @@ function ItemFormModal({
     }
   };
 
+  // Prevent non-numeric input in number fields
+  const handleNumericKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Allow: backspace, delete, tab, escape, enter, arrows
+    if (
+      e.key === 'Backspace' ||
+      e.key === 'Delete' ||
+      e.key === 'Tab' ||
+      e.key === 'Escape' ||
+      e.key === 'Enter' ||
+      e.key === 'ArrowLeft' ||
+      e.key === 'ArrowRight' ||
+      e.key === 'ArrowUp' ||
+      e.key === 'ArrowDown'
+    ) {
+      return;
+    }
+    
+    // Allow Ctrl/Cmd+A, Ctrl/Cmd+C, Ctrl/Cmd+V, Ctrl/Cmd+X
+    if ((e.ctrlKey || e.metaKey) && ['a', 'c', 'v', 'x'].includes(e.key.toLowerCase())) {
+      return;
+    }
+    
+    // Prevent any non-numeric character
+    if (!/^\d$/.test(e.key)) {
+      e.preventDefault();
+    }
+  };
+
+  // Prevent pasting non-numeric content
+  const handleNumericPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pastedText = e.clipboardData.getData('text');
+    // Only allow pasting if all characters are digits
+    if (!/^\d*$/.test(pastedText)) {
+      e.preventDefault();
+    }
+  };
+
+  // Validate nutrition JSON
+  const validateNutritionJson = (jsonString: string): boolean => {
+    // Empty is allowed (optional field)
+    if (!jsonString || jsonString.trim() === '') {
+      setNutritionJsonError('');
+      return true;
+    }
+
+    try {
+      const parsed = JSON.parse(jsonString);
+      
+      // Check if it's an object (not array or primitive)
+      if (typeof parsed !== 'object' || Array.isArray(parsed)) {
+        setNutritionJsonError('Nutrition data must be a JSON object (not an array or primitive value)');
+        return false;
+      }
+
+      setNutritionJsonError('');
+      return true;
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        setNutritionJsonError(`Invalid JSON syntax: ${error.message}`);
+      } else {
+        setNutritionJsonError('Invalid JSON format');
+      }
+      return false;
+    }
+  };
+
+  // Handle nutrition JSON change with validation
+  const handleNutritionJsonChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setFormData({ ...formData, nutrition_json: value });
+    validateNutritionJson(value);
+  };
+
+  // Handle price input like a calculator (digits fill from right to left)
+  const handlePriceKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Allow: tab, escape, enter (but prevent their default on the input)
+    if (e.key === 'Tab' || e.key === 'Escape' || e.key === 'Enter') {
+      return;
+    }
+    
+    // Prevent default for all other keys
+    e.preventDefault();
+    
+    const currentValue = formData.price_usd as string;
+    
+    // Handle backspace - remove last digit
+    if (e.key === 'Backspace' || e.key === 'Delete') {
+      if (currentValue === '') {
+        return;
+      }
+      // Remove all non-digit characters and divide by 10 (remove last digit)
+      const cents = Math.floor(parseFloat(currentValue.replace(/[^\d]/g, '')) / 10);
+      
+      // If we hit zero, clear the field to show placeholder
+      if (cents === 0) {
+        setFormData({ ...formData, price_usd: '' });
+      } else {
+        const newValue = (cents / 100).toFixed(2);
+        setFormData({ ...formData, price_usd: newValue });
+      }
+      return;
+    }
+    
+    // Allow Ctrl/Cmd+A, Ctrl/Cmd+C, Ctrl/Cmd+V
+    if ((e.ctrlKey || e.metaKey) && ['a', 'c', 'v'].includes(e.key.toLowerCase())) {
+      // Let the browser handle these
+      return;
+    }
+    
+    // Only allow digit input
+    if (!/^\d$/.test(e.key)) {
+      return;
+    }
+    
+    // Add the digit to the right (shift everything left)
+    const currentCents = currentValue === '' ? 0 : Math.round(parseFloat(currentValue) * 100);
+    const newCents = currentCents * 10 + parseInt(e.key);
+    
+    // Limit to reasonable max (9999999.99 = 999999999 cents)
+    if (newCents > 999999999) {
+      return;
+    }
+    
+    const newValue = (newCents / 100).toFixed(2);
+    setFormData({ ...formData, price_usd: newValue });
+  };
+
+  // Handle price paste - convert pasted value to proper format
+  const handlePricePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getData('text').trim();
+    
+    // Try to parse as a number
+    const parsed = parseFloat(pastedText);
+    if (isNaN(parsed) || parsed < 0) {
+      return;
+    }
+    
+    // Convert to cents and back to ensure proper format
+    const cents = Math.round(parsed * 100);
+    if (cents > 999999999) {
+      return;
+    }
+    
+    const newValue = (cents / 100).toFixed(2);
+    setFormData({ ...formData, price_usd: newValue });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
 
     try {
+      // Validate price is entered
+      if (!formData.price_usd || formData.price_usd === '') {
+        alert('Please enter a price');
+        setSaving(false);
+        return;
+      }
+      
+      // Convert USD to cents and string values to numbers for API
+      const priceUsd = parseFloat(formData.price_usd as string);
+      const priceCents = Math.round(priceUsd * 100);
+      
+      // Validate price is greater than 0
+      if (priceCents <= 0) {
+        alert('Price must be greater than $0.00');
+        setSaving(false);
+        return;
+      }
+
+      // Validate image is provided
+      if (!formData.image_url || formData.image_url.trim() === '') {
+        alert('Please provide a product image (either URL or upload an image)');
+        setSaving(false);
+        return;
+      }
+
+      // Validate nutrition JSON if provided
+      if (formData.nutrition_json && formData.nutrition_json.trim() !== '') {
+        if (!validateNutritionJson(formData.nutrition_json)) {
+          alert(`Invalid nutrition JSON: ${nutritionJsonError}`);
+          setSaving(false);
+          return;
+        }
+      }
+      
+      const submitData = {
+        name: formData.name,
+        price_cents: priceCents,
+        weight_oz: parseInt(formData.weight_oz as string) || 0,
+        category: formData.category,
+        image_url: formData.image_url,
+        description: formData.description,
+        nutrition_json: formData.nutrition_json,
+        stock_qty: parseInt(formData.stock_qty as string) || 0,
+        is_active: formData.is_active,
+      };
+
       if (item) {
         // Update existing item
-        await updateItem(token, item.id, formData);
+        await updateItem(token, item.id, submitData);
         alert('Item updated successfully');
       } else {
         // Create new item
-        await createItem(token, formData);
+        await createItem(token, submitData);
         alert('Item created successfully');
       }
       onSuccess();
@@ -478,16 +673,25 @@ function ItemFormModal({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Price (cents) *
+                  Price (USD) *
                 </label>
-                <input
-                  type="number"
-                  required
-                  min="0"
-                  value={formData.price_cents}
-                  onChange={(e) => setFormData({ ...formData, price_cents: parseInt(e.target.value) || 0 })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
-                />
+                <div className="relative">
+                  {formData.price_usd && (
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                  )}
+                  <input
+                    type="text"
+                    required
+                    value={formData.price_usd}
+                    placeholder="Enter Price"
+                    onKeyDown={handlePriceKeyDown}
+                    onPaste={handlePricePaste}
+                    onChange={(e) => e.preventDefault()}
+                    className={`w-full pr-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 ${
+                      formData.price_usd ? 'pl-7' : 'pl-3'
+                    }`}
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -498,7 +702,9 @@ function ItemFormModal({
                   required
                   min="0"
                   value={formData.weight_oz}
-                  onChange={(e) => setFormData({ ...formData, weight_oz: parseInt(e.target.value) || 0 })}
+                  onChange={(e) => setFormData({ ...formData, weight_oz: e.target.value })}
+                  onKeyDown={handleNumericKeyDown}
+                  onPaste={handleNumericPaste}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
                 />
               </div>
@@ -537,7 +743,9 @@ function ItemFormModal({
                   required
                   min="0"
                   value={formData.stock_qty}
-                  onChange={(e) => setFormData({ ...formData, stock_qty: parseInt(e.target.value) || 0 })}
+                  onChange={(e) => setFormData({ ...formData, stock_qty: e.target.value })}
+                  onKeyDown={handleNumericKeyDown}
+                  onPaste={handleNumericPaste}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
                 />
               </div>
@@ -545,7 +753,7 @@ function ItemFormModal({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Product Image
+                Product Image *
               </label>
               
               {/* Toggle between URL and Upload */}
@@ -618,7 +826,7 @@ function ItemFormModal({
                   <button
                     type="button"
                     onClick={handleRemoveImage}
-                    className="mt-2 text-sm text-red-600 hover:text-red-800"
+                    className="mt-3 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors border border-red-700"
                   >
                     Remove Image
                   </button>
@@ -646,13 +854,22 @@ function ItemFormModal({
               <textarea
                 rows={6}
                 value={formData.nutrition_json}
-                onChange={(e) => setFormData({ ...formData, nutrition_json: e.target.value })}
+                onChange={handleNutritionJsonChange}
                 placeholder='{"calories": 100, "protein": {"value": 5, "unit": "g"}, "totalFat": {"value": 2, "unit": "g"}}'
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 font-mono text-sm"
+                className={`w-full px-3 py-2 border rounded-md bg-white text-gray-900 font-mono text-sm ${
+                  nutritionJsonError ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
+                }`}
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Enter nutrition data as valid JSON format
-              </p>
+              {nutritionJsonError ? (
+                <p className="text-xs text-red-600 mt-1 flex items-start gap-1">
+                  <span className="mt-0.5">⚠️</span>
+                  <span>{nutritionJsonError}</span>
+                </p>
+              ) : (
+                <p className="text-xs text-gray-500 mt-1">
+                  Enter nutrition data as valid JSON format (must be an object)
+                </p>
+              )}
             </div>
 
             <div className="flex items-center">

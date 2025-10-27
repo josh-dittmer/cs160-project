@@ -1,6 +1,6 @@
 "use client";
 
-import { UserInfo } from '@/lib/api/auth';
+import { UserInfo } from '@/lib/api/profile';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 interface AuthContextType {
@@ -8,6 +8,7 @@ interface AuthContextType {
     token: string | null;
     login: (token: string, user: UserInfo, expires: number) => void;
     logout: () => void;
+    updateUser: (user: UserInfo) => void;
     isAuthenticated: boolean;
 }
 
@@ -51,11 +52,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('auth_expires');
     };
 
+    const updateUser = (newUser: UserInfo) => {
+        setUser(newUser);
+        localStorage.setItem('user_info', JSON.stringify(newUser));
+    };
+
     const value = {
         user,
         token,
         login,
         logout,
+        updateUser,
         isAuthenticated: !!token && !!user,
     };
 

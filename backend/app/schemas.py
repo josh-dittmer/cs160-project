@@ -64,6 +64,13 @@ class UserOut(BaseModel):
     id: int
     email: str
     full_name: str | None
+    google_id: str | None = None
+    phone: str | None = None
+    address: str | None = None
+    city: str | None = None
+    zipcode: str | None = None
+    state: str | None = None
+    profile_picture: str | None = None
     role: str
     is_active: bool
     created_at: datetime
@@ -83,6 +90,23 @@ class Token(BaseModel):
 class GoogleAuthRequest(BaseModel):
     """Schema for Google OAuth token"""
     id_token: str
+
+
+class UserProfileUpdate(BaseModel):
+    """Schema for updating user profile"""
+    full_name: str | None = None
+    phone: str | None = None
+    address: str | None = None
+    city: str | None = None
+    zipcode: str | None = None
+    state: str | None = None
+    profile_picture: str | None = None
+
+
+class PasswordChange(BaseModel):
+    """Schema for changing password"""
+    current_password: str
+    new_password: constr(min_length=8)
 
 
 class SearchSuggestion(BaseModel):

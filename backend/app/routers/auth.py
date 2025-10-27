@@ -9,7 +9,7 @@ from starlette.responses import RedirectResponse, Response
 
 from ..database import get_db
 from ..models import User
-from ..schemas import UserCreate, UserLogin, UserOut, Token, GoogleAuthRequest
+from ..schemas import UserCreate, UserLogin, UserOut, Token, GoogleAuthRequest, UserProfileUpdate, PasswordChange
 from ..auth import (
     get_password_hash,
     authenticate_user,
@@ -147,6 +147,7 @@ def google_auth(google_data: GoogleAuthRequest, response: Response, db: Session 
         google_user_id = idinfo.get('sub')
         email = idinfo.get('email')
         name = idinfo.get('name')
+        picture = idinfo.get('picture')  # Google profile picture URL
         
         if not google_user_id or not email:
             raise HTTPException(
@@ -165,14 +166,26 @@ def google_auth(google_data: GoogleAuthRequest, response: Response, db: Session 
                 user.google_id = google_user_id
                 if not user.full_name and name:
                     user.full_name = name
-                db.commit()
-                db.refresh(user)
+            
+            # Update profile picture from Google if:
+            # 1. User doesn't have a profile picture, OR
+            # 2. User's profile picture is from Google (not a manually uploaded base64 image)
+            # This ensures Google OAuth users always get their latest Google profile picture
+            # unless they manually uploaded a custom image
+            if picture:
+                is_manual_upload = user.profile_picture and user.profile_picture.startswith('data:')
+                if not is_manual_upload:
+                    user.profile_picture = picture
+            
+            db.commit()
+            db.refresh(user)
         else:
-            # Create new user
+            # Create new user with Google profile picture
             user = User(
                 email=email,
                 google_id=google_user_id,
                 full_name=name,
+                profile_picture=picture,  # Store Google profile picture
             )
             db.add(user)
             db.commit()
@@ -241,17 +254,30 @@ async def google_callback(request: Request, response: Response, db: Session = De
     ).first()
 
     if user:
-        # user signed up with email first, associate their google account
+        # Update or associate Google account
         if not user.google_id:
             user.google_id = userinfo.sub
-            db.commit()
-            db.refresh(user)
+        
+        # Update profile picture from Google if:
+        # 1. User doesn't have a profile picture, OR
+        # 2. User's profile picture is from Google (not a manually uploaded base64 image)
+        # This ensures Google OAuth users always get their latest Google profile picture
+        # unless they manually uploaded a custom image
+        google_picture = userinfo.get("picture")
+        if google_picture:
+            is_manual_upload = user.profile_picture and user.profile_picture.startswith('data:')
+            if not is_manual_upload:
+                user.profile_picture = google_picture
+        
+        db.commit()
+        db.refresh(user)
     else:
         # create new account
         user = User(
             email=userinfo.email,
             google_id=userinfo.sub,
-            full_name=userinfo.name
+            full_name=userinfo.name,
+            profile_picture=userinfo.get("picture")  # Get Google profile picture
         )
 
         db.add(user)
@@ -287,4 +313,70 @@ def get_me(current_user: UserCtx = Depends(get_current_user), db: Session = Depe
             detail="User not found",
         )
     return UserOut.model_validate(user)
+
+
+@router.put("/profile", response_model=UserOut)
+def update_profile(
+    profile_data: UserProfileUpdate,
+    current_user: UserCtx = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Update the current user's profile information.
+    Requires valid JWT token in Authorization header.
+    """
+    user = db.query(User).filter(User.id == current_user.id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    
+    # Update only provided fields
+    update_data = profile_data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(user, field, value)
+    
+    db.commit()
+    db.refresh(user)
+    
+    return UserOut.model_validate(user)
+
+
+@router.put("/password")
+def change_password(
+    password_data: PasswordChange,
+    current_user: UserCtx = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Change the current user's password.
+    Requires valid JWT token and current password verification.
+    """
+    user = db.query(User).filter(User.id == current_user.id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    
+    # Check if user has a password (OAuth users might not)
+    if not user.hashed_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot change password for OAuth accounts",
+        )
+    
+    # Verify current password
+    if not authenticate_user(db, user.email, password_data.current_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Current password is incorrect",
+        )
+    
+    # Update password
+    user.hashed_password = get_password_hash(password_data.new_password)
+    db.commit()
+    
+    return {"ok": True, "message": "Password changed successfully"}
 

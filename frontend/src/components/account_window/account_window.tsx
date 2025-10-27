@@ -32,10 +32,21 @@ export default function AccountWindow() {
                         <h1 className="text-fg-dark text-xl font-bold p-1">My Account</h1>
                     </div>
                     <div className="flex items-center gap-3">
-                        <div className="rounded-full bg-bg-medium w-15 h-15 flex items-center justify-center">
-                            {/* profile pic in future? */}
-                            <p className="text-fg-dark font-bold">{user.full_name?.at(0)}</p>
-                        </div>
+                        {user.profile_picture ? (
+                            <img 
+                                src={user.profile_picture} 
+                                alt="Profile" 
+                                className="rounded-full w-15 h-15 object-cover"
+                            />
+                        ) : (
+                            <div className="rounded-full bg-gradient-to-br from-purple-500 to-purple-700 w-15 h-15 flex items-center justify-center">
+                                <p className="text-white font-bold text-lg">
+                                    {user.full_name?.trim().split(/\s+/).length > 1 
+                                        ? user.full_name.trim().split(/\s+/)[0][0] + user.full_name.trim().split(/\s+/).slice(-1)[0][0]
+                                        : user.full_name?.at(0) || "?"}
+                                </p>
+                            </div>
+                        )}
                         <div>
                             <p className="text-fg-dark">{user.full_name}</p>
                         </div>
@@ -45,14 +56,18 @@ export default function AccountWindow() {
                     </div>
                     <div className="flex-col">
                         <div className="border-b border-bg-dark pb-2">
-                            <motion.a
+                            <motion.button
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.99 }}
-                                className="flex items-center gap-2 p-2 hover:bg-bg-dark rounded-xl"
+                                onClick={() => {
+                                    router.push('/profile');
+                                    userWindowContext?.setVisible(false);
+                                }}
+                                className="flex items-center gap-2 p-2 hover:bg-bg-dark rounded-xl w-full"
                             >
                                 <Settings className="text-fg-dark" width={20} height={20} />
                                 <p className="text-fg-dark">Edit profile</p>
-                            </motion.a>
+                            </motion.button>
                         </div>
                         <div className="border-b border-bg-dark pt-2 pb-2">
                             <motion.a
