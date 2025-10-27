@@ -152,8 +152,8 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
     }
   };
 
-  const handleProfileSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleProfileSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
+    e?.preventDefault();
     if (!token) return;
 
     setError('');
@@ -261,7 +261,7 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
         <span className="sub">User Information</span>
       </header>
 
-      <form className="form-grid" onSubmit={handleProfileSubmit}>
+      <form className="form-grid" onSubmit={(e) => e.preventDefault()}>
         <div className="field">
           <label htmlFor="name">Name</label>
           <input 
@@ -304,20 +304,13 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
             Address <span className="text-red-600">*</span>
             <span className="text-xs text-gray-500 ml-2">(San Jose, CA only - must select from dropdown)</span>
           </label>
-          <div onKeyDown={(e) => {
-            // Prevent Enter key from submitting the form while using autocomplete
-            if (e.key === 'Enter') {
-              e.preventDefault();
-            }
-          }}>
-            <GooglePlacesAutocomplete
-              value={formData.address}
-              onChange={handleAddressChange}
-              onPlaceSelected={handlePlaceSelected}
-              placeholder="Start typing address..."
-              className="w-full"
-            />
-          </div>
+          <GooglePlacesAutocomplete
+            value={formData.address}
+            onChange={handleAddressChange}
+            onPlaceSelected={handlePlaceSelected}
+            placeholder="Start typing address..."
+            className="w-full"
+          />
         </div>
 
         <div className="field">
@@ -364,7 +357,12 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
           <button type="button" className="btn ghost" onClick={onCancel} disabled={saving}>
             Cancel
           </button>
-          <button type="submit" className="btn primary" disabled={saving}>
+          <button 
+            type="button" 
+            className="btn primary" 
+            disabled={saving}
+            onClick={handleProfileSubmit}
+          >
             {saving ? 'Saving...' : 'Save Now'}
           </button>
         </div>

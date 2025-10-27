@@ -165,6 +165,21 @@ export default function GooglePlacesAutocomplete({
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && value.trim()) {
+            // Simulate down arrow to select first suggestion, then let autocomplete handle it
+            const downArrowEvent = new KeyboardEvent('keydown', {
+              key: 'ArrowDown',
+              code: 'ArrowDown',
+              keyCode: 40,
+              bubbles: true
+            });
+            e.target.dispatchEvent(downArrowEvent);
+            
+            // Let the Enter key propagate naturally to select the highlighted item
+            // Google Places will handle the rest
+          }
+        }}
         placeholder={placeholder}
         className={className}
       />

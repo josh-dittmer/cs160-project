@@ -468,25 +468,65 @@ Both trigger `onChange` events, so any attempt to invalidate during typing would
 - ✅ Works with all interaction methods (mouse, keyboard, sequential selections)
 - ✅ Better UX - doesn't interrupt user's workflow
 
-**Additional Fix - Prevent Enter Key Form Submission:**
-When using keyboard navigation (down arrow + Enter) to select from autocomplete, pressing Enter would:
-1. Select the address from Google Places ✅
-2. Submit the form (default browser behavior) ❌
+**Additional Fix - Improved Enter Key Handling:**
+When using keyboard navigation to select from autocomplete, pressing Enter would submit the form before the address state updated, causing validation errors.
 
-This caused validation to run before the address state updated, showing "Please select a valid address" alert.
+**Challenge:** Need to allow Google Places to process Enter key naturally (to select suggestions) while preventing accidental form submission.
 
-**Solution:** Wrapped GooglePlacesAutocomplete in a div with `onKeyDown` handler that prevents Enter key from submitting the form:
+**Solution:** Changed form submission to be explicit via button click instead of relying on Enter key:
+
+1. **Form level** - Prevent any Enter-based submission:
 ```typescript
-<div onKeyDown={(e) => {
-  if (e.key === 'Enter') {
-    e.preventDefault(); // Prevent form submission
-  }
-}}>
-  <GooglePlacesAutocomplete ... />
-</div>
+<form onSubmit={(e) => e.preventDefault()}>
 ```
 
-**Result:** Users can freely type and select addresses without seeing premature warnings. Enter key selects from dropdown without submitting the form. Validation only occurs when they click "Save Now", providing a smooth, frustration-free experience.
+2. **Button level** - Explicit submission via click:
+```typescript
+<button 
+  type="button"  // Not "submit"
+  onClick={handleProfileSubmit}
+>
+  Save Now
+</button>
+```
+
+3. **Input level** - Auto-select first suggestion on Enter:
+```typescript
+<input
+  onKeyDown={(e) => {
+    if (e.key === 'Enter' && value.trim()) {
+      // Simulate down arrow to highlight first suggestion
+      const downArrowEvent = new KeyboardEvent('keydown', {
+        key: 'ArrowDown',
+        keyCode: 40,
+        bubbles: true
+      });
+      e.target.dispatchEvent(downArrowEvent);
+      // Then let Enter propagate to select it
+    }
+  }}
+  ...
+/>
+```
+
+**Why this is the best solution:**
+- ✅ **Auto-selects first suggestion** when Enter is pressed (no need for down arrow!)
+- ✅ Users can just type address and press Enter - most intuitive UX
+- ✅ Form never accidentally submits - users must click "Save Now" explicitly
+- ✅ Works with Google Places' native mechanisms (simulates keyboard navigation)
+- ✅ Maintains all standard autocomplete behaviors (arrow keys, mouse clicks)
+
+**UX Improvements:**
+- ✅ **Type address + Enter = Done!** Automatically selects first suggestion (no arrow keys needed!)
+- ✅ Works perfectly with partial addresses: "181 E Santa Clara St" → Auto-completes to full address
+- ✅ City, state, and zipcode auto-fill correctly
+- ✅ Down arrow + Enter still works for manually selecting specific suggestions
+- ✅ Mouse clicks on suggestions still work normally
+- ✅ Form only submits when "Save Now" button is clicked explicitly
+- ✅ No validation errors or race conditions
+
+**Result:** 
+Best-in-class autocomplete UX! Just type the address and press Enter - the system automatically selects the first matching suggestion and fills all fields. No arrow key navigation required for the common case, while still supporting it for power users who want to select a specific suggestion.
 
 ## Notes
 - Database was recreated using seed.py instead of migration for simplicity in development
