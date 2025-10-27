@@ -63,8 +63,9 @@ The Google Places Autocomplete will now work in the profile edit page!
 ## Features Implemented
 
 - ✅ Address autocomplete restricted to San Jose, CA (20km radius)
+- ✅ **Search by place names or addresses:** "San Jose State University", "181 E Santa Clara St", landmarks, etc.
 - ✅ **Requires complete addresses with house/building numbers** (rejects "Main St", accepts "123 Main St")
-- ✅ Auto-fills city, state, and zipcode
+- ✅ Auto-fills city, state, and zipcode when place is selected
 - ✅ Validates addresses are within San Jose
 - ✅ Only shows valid US addresses
 - ✅ Prevents typos and invalid addresses

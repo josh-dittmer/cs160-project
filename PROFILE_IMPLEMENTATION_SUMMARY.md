@@ -106,6 +106,7 @@ New API client with functions:
 - Integrates Google Maps Places API for address autocomplete
 - Restricts results to 20km radius around San Jose city center (37.3382, -121.8863)
 - Uses `strictBounds: true` to only show San Jose addresses
+- **Accepts multiple search types:** Place names (e.g., "San Jose State University"), street addresses, landmarks
 - Extracts and parses address components (street number, route, city, state, zipcode)
 - **Validates address includes house/building number** (rejects "Main St", accepts "123 Main St")
 - Validates selected address is in San Jose before accepting

@@ -47,7 +47,7 @@ export default function GooglePlacesAutocomplete({
     autocompleteInstance.setOptions({
       strictBounds: true, // Only show results within bounds
       componentRestrictions: { country: 'us' },
-      types: ['address'],
+      // No types restriction - allows searching by place names, addresses, etc.
     });
   };
 
@@ -157,7 +157,7 @@ export default function GooglePlacesAutocomplete({
       onPlaceChanged={onPlaceChanged}
       options={{
         componentRestrictions: { country: 'us' },
-        types: ['address'],
+        // No types restriction - allows searching by place names, addresses, etc.
       }}
     >
       <input
