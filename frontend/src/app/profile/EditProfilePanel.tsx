@@ -1,7 +1,8 @@
 import "./profile.css";
 import "./profile_edit.css";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { UserInfo, updateProfile, changePassword } from "@/lib/api/profile";
+import GooglePlacesAutocomplete from "@/components/google_places_autocomplete/GooglePlacesAutocomplete";
 
 type Props = { 
   userData: UserInfo | null;
@@ -64,11 +65,49 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isValidAddress, setIsValidAddress] = useState(!!userData?.address); // Track if address was selected from autocomplete
+  const lastAutocompleteSelectionTime = useRef<number>(0); // Timestamp of last autocomplete selection
 
   // Handle phone number input
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhoneNumber(e.target.value);
     setFormData({...formData, phone: formatted});
+  };
+
+  // Handle Google Places selection
+  const handlePlaceSelected = (place: { address: string; city: string; state: string; zipcode: string }) => {
+    // Record the timestamp of this selection
+    lastAutocompleteSelectionTime.current = Date.now();
+    
+    setFormData({
+      ...formData,
+      address: place.address,
+      city: place.city,
+      state: place.state,
+      zipcode: place.zipcode,
+    });
+    
+    // Only mark as valid if we have a non-empty address (valid selection)
+    // Empty address means it was cleared due to invalid selection
+    const isValid = place.address.trim().length > 0;
+    setIsValidAddress(isValid);
+  };
+
+  // Handle manual address typing (invalidates address)
+  const handleAddressChange = (value: string) => {
+    setFormData({...formData, address: value});
+    
+    // Check if this onChange is within 500ms of last autocomplete selection
+    // This allows multiple onChange events from a single autocomplete selection
+    // Using 500ms to be safe for slower devices and all possible timing scenarios
+    const timeSinceLastSelection = Date.now() - lastAutocompleteSelectionTime.current;
+    if (timeSinceLastSelection < 500) {
+      // This onChange came from autocomplete, keep the validation state
+      return;
+    }
+    
+    // Otherwise, user is manually typing - invalidate
+    setIsValidAddress(false);
   };
 
   // Prevent non-digit input in phone field
@@ -118,6 +157,36 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
     if (!token) return;
 
     setError('');
+
+    // Validate address was selected from autocomplete
+    if (!isValidAddress) {
+      alert('Please select a valid address from the dropdown suggestions');
+      return;
+    }
+
+    // Validate address is provided
+    if (!formData.address || !formData.address.trim()) {
+      alert('Please select a valid address from the suggestions');
+      return;
+    }
+
+    // Validate city is San Jose
+    if (!formData.city || formData.city.toLowerCase() !== 'san jose') {
+      alert('Address must be in San Jose, CA. Please select a San Jose address from the dropdown.');
+      return;
+    }
+
+    // Validate state is California
+    if (!formData.state || formData.state.toLowerCase() !== 'california') {
+      alert('Address must be in California. Please select a San Jose, CA address from the dropdown.');
+      return;
+    }
+
+    // Validate zipcode is present
+    if (!formData.zipcode) {
+      alert('Please select a complete address from the dropdown suggestions');
+      return;
+    }
 
     // Validate phone number if provided
     if (formData.phone) {
@@ -231,14 +300,24 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
         </div>
 
         <div className="field">
-          <label htmlFor="address">Address</label>
-          <input 
-            id="address" 
-            type="text" 
-            value={formData.address}
-            onChange={(e) => setFormData({...formData, address: e.target.value})}
-            placeholder="123 Main St"
-          />
+          <label htmlFor="address">
+            Address <span className="text-red-600">*</span>
+            <span className="text-xs text-gray-500 ml-2">(San Jose, CA only - must select from dropdown)</span>
+          </label>
+          <div onKeyDown={(e) => {
+            // Prevent Enter key from submitting the form while using autocomplete
+            if (e.key === 'Enter') {
+              e.preventDefault();
+            }
+          }}>
+            <GooglePlacesAutocomplete
+              value={formData.address}
+              onChange={handleAddressChange}
+              onPlaceSelected={handlePlaceSelected}
+              placeholder="Start typing address..."
+              className="w-full"
+            />
+          </div>
         </div>
 
         <div className="field">
@@ -247,23 +326,24 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
             id="city" 
             type="text" 
             value={formData.city}
-            onChange={(e) => setFormData({...formData, city: e.target.value})}
-            placeholder="San Jose"
+            disabled
+            placeholder="Auto-filled from address"
+            className="bg-gray-100 cursor-not-allowed"
+            title="Auto-filled when you select an address"
           />
         </div>
 
         <div className="field">
             <label htmlFor="state">State</label>
-            <select 
+            <input 
               id="state" 
+              type="text" 
               value={formData.state}
-              onChange={(e) => setFormData({...formData, state: e.target.value})}
-            >
-                <option value="">Select a State</option>
-                {states.map((state) => (
-                    <option key={state} value={state}>{state}</option>
-                ))}
-            </select>
+              disabled
+              placeholder="Auto-filled from address"
+              className="bg-gray-100 cursor-not-allowed"
+              title="Auto-filled when you select an address"
+            />
         </div>
 
         <div className="field">
@@ -272,8 +352,10 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
             id="zipcode" 
             type="text" 
             value={formData.zipcode}
-            onChange={(e) => setFormData({...formData, zipcode: e.target.value})}
-            placeholder="95192"
+            disabled
+            placeholder="Auto-filled from address"
+            className="bg-gray-100 cursor-not-allowed"
+            title="Auto-filled when you select an address"
             maxLength={10}
           />
         </div>

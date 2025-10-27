@@ -101,7 +101,25 @@ New API client with functions:
 - Closes the account window after navigation
 - Provides seamless navigation to profile editing
 
-### 5. Edit Profile Panel (`frontend/src/app/profile/EditProfilePanel.tsx`)
+### 5. Google Places Autocomplete Component (`frontend/src/components/google_places_autocomplete/GooglePlacesAutocomplete.tsx`)
+**New Component for Address Validation:**
+- Integrates Google Maps Places API for address autocomplete
+- Restricts results to 20km radius around San Jose city center (37.3382, -121.8863)
+- Uses `strictBounds: true` to only show San Jose addresses
+- Extracts and parses address components (street number, route, city, state, zipcode)
+- **Validates address includes house/building number** (rejects "Main St", accepts "123 Main St")
+- Validates selected address is in San Jose before accepting
+- Falls back to regular input if API fails to load
+- Shows loading state while API initializes
+- Triggers callback with parsed address components
+
+**Setup Requirements:**
+- Google Maps API key in `.env.local`
+- Places API enabled in Google Cloud Console
+- Maps JavaScript API enabled
+- See `GOOGLE_MAPS_SETUP.md` for complete setup instructions
+
+### 6. Edit Profile Panel (`frontend/src/app/profile/EditProfilePanel.tsx`)
 **Profile Information Section:**
 - Controlled form inputs with state management
 - Field order: Name, Email, Phone, Address, City, State, Zipcode
@@ -115,6 +133,14 @@ New API client with functions:
   - **Stores only raw digits** - formatting removed before sending to backend
   - Validates complete 10-digit number before submission
   - Formats existing phone numbers on load
+- **Address Input with Google Places Autocomplete:**
+  - Real-time address suggestions as you type
+  - **Restricted to San Jose, CA only** (20km radius)
+  - Auto-fills city, state, and zipcode when address is selected
+  - Validates addresses are within San Jose before submission
+  - Falls back to manual input if API unavailable
+  - City, state, and zipcode fields are read-only (auto-filled)
+  - Address field is mandatory
 - All fields use real user data from backend
 - Save button with loading state
 - Form validation and error handling
@@ -215,6 +241,13 @@ This order follows the natural geographic hierarchy from specific to general.
   - [x] Auto-formats to (XXX) XXX-XXXX
   - [x] Enforces 10-digit limit
   - [x] Validates before submission
+- [x] **Address restriction to San Jose, CA:**
+  - [x] Google Places Autocomplete shows only San Jose addresses
+  - [x] **Requires house/building number** (rejects "Barron Park Drive", accepts "5152 Barron Park Drive")
+  - [x] Auto-fills city, state, and zipcode
+  - [x] Validates address is in San Jose before submission
+  - [x] City and state fields are read-only
+  - [x] Falls back to manual input if API unavailable
 - [x] All success/error messages display correctly
 - [x] Loading states work properly
 - [x] No linting errors in any files
@@ -231,8 +264,15 @@ This order follows the natural geographic hierarchy from specific to general.
 - `frontend/src/lib/api/auth.ts` - Updated to use shared UserInfo type
 - `frontend/src/contexts/auth.tsx` - Added updateUser function, updated UserInfo import
 - `frontend/src/app/profile/page.tsx` - Implemented real data fetching and display
-- `frontend/src/app/profile/EditProfilePanel.tsx` - Implemented form state and handlers
+- `frontend/src/app/profile/EditProfilePanel.tsx` - Implemented form state and handlers with Google Places integration
 - `frontend/src/components/account_window/account_window.tsx` - Added profile picture display and functional Edit button
+- `frontend/src/components/google_places_autocomplete/GooglePlacesAutocomplete.tsx` - New component for San Jose address restriction
+
+**Documentation:**
+- `GOOGLE_MAPS_SETUP.md` - Complete setup guide for Google Maps API
+
+**Dependencies:**
+- Added `@react-google-maps/api` package for Places Autocomplete functionality
 
 **Database:**
 - Recreated database with new schema using seed.py (no migration file needed)
@@ -341,6 +381,113 @@ Change password
 - Now users can upload → URL → upload again seamlessly
 - Can also re-upload the same file multiple times if needed
 
+### Issue #8: Address Validation Not Enforcing Dropdown Selection
+**Problem:** Users could type partial addresses (e.g., "2087") and submit without selecting from the Google Places autocomplete dropdown, bypassing San Jose validation.
+
+**Root Cause:** The form only checked if the city field said "San Jose" but didn't verify that the address was actually selected from the autocomplete dropdown. Users could manually type anything.
+
+**Solution:**
+- Added `isValidAddress` state to track if address was selected from dropdown
+- Added `isSelectingFromAutocomplete` flag to prevent race condition during selection
+- `handlePlaceSelected`: 
+  - Sets `isSelectingFromAutocomplete = true` to prevent invalidation
+  - Updates form data with selected address components
+  - Sets `isValidAddress = true` when address is selected
+  - Resets flag after state updates using `setTimeout`
+- `handleAddressChange`: 
+  - Skips validation if `isSelectingFromAutocomplete` is true
+  - Sets `isValidAddress = false` when user manually types
+- `handleProfileSubmit`: Blocks submission if `!isValidAddress`
+- Added visual warning below address field when address is invalid
+- Multiple validation layers:
+  1. Must select from dropdown (`isValidAddress`)
+  2. Address field must not be empty
+  3. City must be "San Jose"
+  4. State must be "California"
+  5. Zipcode must be present
+- Clear error messages guide users to select from dropdown
+
+**Bug Fix**: Resolved race condition where selecting from dropdown would briefly show validation warning because `handleAddressChange` fired before `handlePlaceSelected` completed.
+
+### Issue #9: Warning Shown When Selecting Valid Address from Dropdown
+**Problem:** When clicking on a valid San Jose address from the autocomplete dropdown (e.g., "1 Washington Square San Jose, CA, USA"), a warning message would briefly appear saying "⚠️ Please select an address from the dropdown suggestions", even though the user DID select from the dropdown. This also occurred when using keyboard navigation (down arrow + Enter).
+
+**Root Cause:** Race condition in state updates:
+1. User clicks address from dropdown (or presses Enter on highlighted suggestion)
+2. Google Autocomplete updates the input field → triggers `onChange` → calls `handleAddressChange`
+3. `handleAddressChange` sees value changed and sets `isValidAddress = false`
+4. Then `onPlaceChanged` fires → calls `handlePlaceSelected` → sets `isValidAddress = true`
+5. React renders with the intermediate state where `isValidAddress` is `false`, showing the warning
+
+Initial fix using state with `setTimeout(..., 0)` wasn't sufficient for keyboard navigation.
+
+**Solution Progression:**
+
+**Attempt 1 - Timeout (500ms):**
+- Used `setTimeout(..., 500)` to keep a flag active
+- ❌ Fragile, relied on arbitrary timing
+
+**Attempt 2 - Value Comparison:**
+- Stored `lastValidAddress` and compared with incoming value
+- ❌ Failed because Google Autocomplete formats addresses differently than what we store
+
+**Attempt 3 - One-Time Flag:**
+- Used `justSelectedFromAutocomplete` ref as a one-time-use flag
+- ❌ Failed because Google fires MULTIPLE onChange events for a single selection, but flag was consumed after the first one
+
+**Final Solution - Validation on Submit Only:**
+
+**The Problem with Inline Validation:**
+All timestamp/flag-based approaches failed because we couldn't reliably distinguish between:
+1. Typing to search in autocomplete dropdown
+2. Typing an address manually (without using autocomplete)
+
+Both trigger `onChange` events, so any attempt to invalidate during typing would show false warnings.
+
+**The Solution:**
+- Track `isValidAddress` state internally using the 500ms timestamp window
+- **Remove inline warning message** that showed while typing
+- **Validate only on form submission** using comprehensive checks
+- Clear, helpful validation messages on submit attempt
+
+**Implementation:**
+- `handlePlaceSelected`: Updates `isValidAddress = true` for valid selections, `false` for invalid
+- `handleAddressChange`: Uses 500ms window to avoid invalidating autocomplete selections
+- `handleProfileSubmit`: Validates address before submission:
+  1. Must have been selected from dropdown (`isValidAddress`)
+  2. Address field not empty
+  3. City must be "San Jose"
+  4. State must be "California"
+  5. Zipcode must be present
+- Show alert with specific error message if validation fails
+
+**Why this is better:**
+- ✅ No false warnings while user is typing or selecting
+- ✅ No complex timing logic needed for UI display
+- ✅ Clear error messages when user tries to submit
+- ✅ Works with all interaction methods (mouse, keyboard, sequential selections)
+- ✅ Better UX - doesn't interrupt user's workflow
+
+**Additional Fix - Prevent Enter Key Form Submission:**
+When using keyboard navigation (down arrow + Enter) to select from autocomplete, pressing Enter would:
+1. Select the address from Google Places ✅
+2. Submit the form (default browser behavior) ❌
+
+This caused validation to run before the address state updated, showing "Please select a valid address" alert.
+
+**Solution:** Wrapped GooglePlacesAutocomplete in a div with `onKeyDown` handler that prevents Enter key from submitting the form:
+```typescript
+<div onKeyDown={(e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault(); // Prevent form submission
+  }
+}}>
+  <GooglePlacesAutocomplete ... />
+</div>
+```
+
+**Result:** Users can freely type and select addresses without seeing premature warnings. Enter key selects from dropdown without submitting the form. Validation only occurs when they click "Save Now", providing a smooth, frustration-free experience.
+
 ## Notes
 - Database was recreated using seed.py instead of migration for simplicity in development
 - Profile picture is stored as base64 string or URL (Text field in database)
@@ -351,11 +498,11 @@ Change password
 
 ## Future Enhancements (Not Implemented)
 
-### Address Validation
-Currently using basic format validation. For production, consider:
-- **Google Places Autocomplete API**: Real-time address validation with auto-fill
-- **USPS Address Validation API**: Free US address verification
-- **Trade-offs**: External APIs add costs and dependencies vs. basic validation
+### ~~Address Validation~~ ✅ IMPLEMENTED
+- ✅ **Google Places Autocomplete API**: Real-time address validation with auto-fill
+- ✅ Restricted to San Jose, CA only for delivery limitations
+- ✅ Auto-fills city, state, and zipcode
+- ✅ See `GOOGLE_MAPS_SETUP.md` for setup instructions
 
 ### Additional Google OAuth Data
 Google ID token provides limited data (email, name, picture). To get phone numbers, addresses, etc.:
