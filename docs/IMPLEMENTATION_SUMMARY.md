@@ -94,8 +94,8 @@ All features from the plan have been successfully implemented.
 ## Testing Checklist
 
 ### Backend Tests
-- [ ] Start backend: `PYTHONPATH=. uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8080`
-- [ ] Verify API docs: `http://localhost:8080/docs`
+- [ ] Start backend: `PYTHONPATH=. uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000` or use `./scripts/backendctl.sh start`
+- [ ] Verify API docs: `http://localhost:8000/docs`
 - [ ] Check admin endpoints appear in API docs
 - [ ] Test admin endpoints require authentication
 

@@ -120,11 +120,28 @@ New API client with functions:
 - Maps JavaScript API enabled
 - See `GOOGLE_MAPS_SETUP.md` for complete setup instructions
 
-### 6. Edit Profile Panel (`frontend/src/app/profile/EditProfilePanel.tsx`)
+### 6. Address Selector Component (`frontend/src/components/address_selector/address_selector.tsx`)
+**New Component for Top-Right Address Functionality:**
+- **Real-time address display** in top-right corner of all pages
+- **Click to view map** - Opens interactive Google Map showing delivery location
+- **Edit address functionality** - Change delivery address without going to profile page
+- **Current location detection** - "Use My Current Location" button with browser geolocation
+- **Smart marker system:**
+  - Red delivery address marker (📦) when different from current location
+  - Blue pulsating dot for current location
+  - Green pulsating marker when at delivery location (combines both)
+- **Theme-aware** - Matches light/dark mode
+- **Real-time sync** - Updates profile page automatically when address changes
+- **Geocoding integration** - Converts addresses to map coordinates
+- **Validation** - All coordinates validated to be within San Jose range
+- **See `/frontend/src/components/address_selector/README.md` for detailed documentation**
+
+### 7. Edit Profile Panel (`frontend/src/app/profile/EditProfilePanel.tsx`)
 **Profile Information Section:**
 - Controlled form inputs with state management
-- Field order: Name, Email, Phone, Address, City, State, Zipcode
+- Field order: Name, Email, Phone, Delivery Address, City, State, Zipcode
   - Email is read-only (cannot be changed)
+  - **Label updated to "Delivery Address"** for clarity
 - **Phone Number Input:**
   - Auto-formats to (XXX) XXX-XXXX as user types
   - **Blocks non-digit input entirely** - users cannot type letters or symbols
@@ -218,6 +235,8 @@ Address fields ordered logically as requested:
 This order follows the natural geographic hierarchy from specific to general.
 
 ## Testing Checklist
+
+### Profile Page
 - [x] User can view their profile information
 - [x] User can edit profile information (name, phone, address, city, state, zipcode)
 - [x] User can upload profile picture via **file upload** (base64 conversion)
@@ -249,9 +268,34 @@ This order follows the natural geographic hierarchy from specific to general.
   - [x] Validates address is in San Jose before submission
   - [x] City and state fields are read-only
   - [x] Falls back to manual input if API unavailable
+- [x] **"Delivery Address" label** used instead of "Address"
+- [x] **Profile page auto-updates** when address changed from address selector
 - [x] All success/error messages display correctly
 - [x] Loading states work properly
 - [x] No linting errors in any files
+
+### Address Selector (Top-Right)
+- [x] **Displays current delivery address** in top-right corner
+- [x] **Displays "Set delivery address"** when no address is set
+- [x] **Truncates long addresses** with ellipsis for display
+- [x] **Opens map modal** when clicked (if address is set)
+- [x] **Opens address input modal** when clicked (if no address is set)
+- [x] **Map displays delivery address** with red marker and animation
+- [x] **Map displays current location** as pulsating blue dot
+- [x] **Map combines markers** when at delivery location (green pulsating marker)
+- [x] **Legend updates dynamically** based on location state
+- [x] **"Edit Address" button** in map modal opens address input
+- [x] **Address input modal** allows setting/changing delivery address
+- [x] **"Use My Current Location" button** detects browser location
+- [x] **Current location validation** ensures detected location is in San Jose
+- [x] **Reverse geocoding** converts coordinates to full address
+- [x] **Address changes sync** to profile page automatically
+- [x] **Theme awareness** - Map and modals match light/dark mode
+- [x] **Geocoding validation** - Coordinates checked to be in San Jose range
+- [x] **Google Maps API loading** consolidated to prevent duplicate loading
+- [x] **Marker prominence** - Delivery address marker clearly visible and animated
+- [x] **Current location ring** properly centered and pulsating
+- [x] **Address coordinates reset** when user updates address in profile
 
 ## Files Modified
 
@@ -264,10 +308,12 @@ This order follows the natural geographic hierarchy from specific to general.
 - `frontend/src/lib/api/profile.ts` - New profile API client
 - `frontend/src/lib/api/auth.ts` - Updated to use shared UserInfo type
 - `frontend/src/contexts/auth.tsx` - Added updateUser function, updated UserInfo import
-- `frontend/src/app/profile/page.tsx` - Implemented real data fetching and display
-- `frontend/src/app/profile/EditProfilePanel.tsx` - Implemented form state and handlers with Google Places integration
+- `frontend/src/app/profile/page.tsx` - Implemented real data fetching and display, auto-sync with address changes
+- `frontend/src/app/profile/EditProfilePanel.tsx` - Implemented form state and handlers with Google Places integration, updated label to "Delivery Address"
 - `frontend/src/components/account_window/account_window.tsx` - Added profile picture display and functional Edit button
 - `frontend/src/components/google_places_autocomplete/GooglePlacesAutocomplete.tsx` - New component for San Jose address restriction
+- `frontend/src/components/address_selector/address_selector.tsx` - **New top-right address selector with map integration**
+- `frontend/src/components/address_selector/README.md` - Complete documentation for address selector component
 
 **Documentation:**
 - `GOOGLE_MAPS_SETUP.md` - Complete setup guide for Google Maps API
