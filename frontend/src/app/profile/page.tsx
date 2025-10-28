@@ -36,6 +36,13 @@ export default function ProfilePage() {
     fetchUser();
   }, [token]);
 
+  // Sync userData with auth context user whenever it changes
+  useEffect(() => {
+    if (user) {
+      setUserData(user);
+    }
+  }, [user]);
+
   // Generate initials from full name
   const getInitials = (name: string | null) => {
     if (!name) return "?";
