@@ -10,6 +10,27 @@ An on-demand food delivery service built with FastAPI (backend) and Next.js (fro
 - Node.js 16+ and npm
 - Git
 
+---
+
+## 🔧 Environment Variables
+
+**Set these up before running the application:**
+
+### Backend (`backend/.env`)
+```bash
+SECRET_KEY=your-secret-key-here
+GOOGLE_CLIENT_ID=your-google-client-id
+```
+
+### Frontend (`frontend/.env.local`)
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-client-id
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your-google-maps-api-key
+```
+
+---
+
 ### Backend Setup
 
 #### 1. Navigate to project and create virtual environment
@@ -157,18 +178,20 @@ cs160-project/
   - JWT token-based authentication
 
 - **User Profile Management**
-  - Edit profile information (name, phone, address)
+  - Edit profile information (name, phone, delivery address)
   - Profile picture upload (file or URL) with Google OAuth integration
   - Password change (for email/password users)
   - Address validation restricted to San Jose, CA using Google Places API
+  - Top-right address selector with interactive map view
+  - Current location detection and geocoding
   - Auto-formatted phone numbers
-  - See [PROFILE_IMPLEMENTATION_SUMMARY.md](PROFILE_IMPLEMENTATION_SUMMARY.md) for details
+  - See [docs/PROFILE_IMPLEMENTATION_SUMMARY.md](docs/PROFILE_IMPLEMENTATION_SUMMARY.md) for details
 
 - **Role-Based Access Control**
   - Four user roles: Admin, Manager, Employee, Customer
   - Admin panel for user and inventory management
   - Default admin login: `admin@sjsu.edu` / `admin123`
-  - See [ADMIN.md](ADMIN.md) for complete admin documentation
+  - See [docs/ADMIN.md](docs/ADMIN.md) for complete admin documentation
 
 - **Smart Search**
   - Real-time autocomplete suggestions
@@ -227,26 +250,6 @@ PYTHONPATH=. pytest tests/test_admin.py -v
 
 ---
 
-## 🔧 Environment Variables
-
-### Backend (`backend/.env`)
-```bash
-SECRET_KEY=your-secret-key-here
-GOOGLE_CLIENT_ID=your-google-client-id
-```
-
-### Frontend (`frontend/.env.local`)
-```bash
-NEXT_PUBLIC_API_URL=http://localhost:8080
-NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-client-id
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your-google-maps-api-key
-```
-
-**Note:** Google Maps API key is required for address autocomplete in profile editing.  
-See [GOOGLE_MAPS_SETUP.md](GOOGLE_MAPS_SETUP.md) for setup instructions.
-
----
-
 ## 📝 License
 
 This project is for educational purposes as part of CS160.
@@ -283,11 +286,11 @@ CS160 Project Team 6
 - Ensure `http://localhost:3000` is added to authorized origins in Google Cloud Console
 - Check browser console for specific error messages
 
-### Address autocomplete not working
+### Address autocomplete or map not working
 - Verify `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` is set in `frontend/.env.local`
-- Ensure **Places API** and **Maps JavaScript API** are enabled in Google Cloud Console
+- Ensure **Places API**, **Maps JavaScript API**, and **Geocoding API** are enabled in Google Cloud Console
 - Restart the frontend dev server after adding the API key: `npm run dev`
-- See [GOOGLE_MAPS_SETUP.md](GOOGLE_MAPS_SETUP.md) for complete setup guide
+- See [docs/GOOGLE_MAPS_SETUP.md](docs/GOOGLE_MAPS_SETUP.md) for complete setup guide
 
 ---
 
@@ -295,11 +298,11 @@ CS160 Project Team 6
 
 For more detailed information about specific features:
 
-- **[PROFILE_IMPLEMENTATION_SUMMARY.md](PROFILE_IMPLEMENTATION_SUMMARY.md)** - User profile management, address validation, Google Places API integration
-- **[GOOGLE_MAPS_SETUP.md](GOOGLE_MAPS_SETUP.md)** - Setting up Google Maps API for address autocomplete
-- **[ADMIN.md](ADMIN.md)** - Admin panel usage and role-based access control
-- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - Admin RBAC implementation details
-- **[AUTHENTICATION_INTEGRATION.md](AUTHENTICATION_INTEGRATION.md)** - Authentication system details
+- **[docs/PROFILE_IMPLEMENTATION_SUMMARY.md](docs/PROFILE_IMPLEMENTATION_SUMMARY.md)** - User profile, address selector, map integration
+- **[docs/GOOGLE_MAPS_SETUP.md](docs/GOOGLE_MAPS_SETUP.md)** - Google Maps API setup guide
+- **[docs/ADMIN.md](docs/ADMIN.md)** - Admin panel and role-based access control
+- **[docs/IMPLEMENTATION_SUMMARY.md](docs/IMPLEMENTATION_SUMMARY.md)** - Admin RBAC implementation details
+- **[docs/AUTHENTICATION_INTEGRATION.md](docs/AUTHENTICATION_INTEGRATION.md)** - Authentication system details
 - **[backend/docs/](backend/docs/)** - API documentation and search implementation
 
 ---
