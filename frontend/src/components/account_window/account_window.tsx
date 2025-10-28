@@ -41,14 +41,16 @@ export default function AccountWindow() {
                         ) : (
                             <div className="rounded-full bg-gradient-to-br from-purple-500 to-purple-700 w-15 h-15 flex items-center justify-center">
                                 <p className="text-white font-bold text-lg">
-                                    {user.full_name?.trim().split(/\s+/).length > 1 
-                                        ? user.full_name.trim().split(/\s+/)[0][0] + user.full_name.trim().split(/\s+/).slice(-1)[0][0]
-                                        : user.full_name?.at(0) || "?"}
+                                    {user?.full_name ? (
+                                        user.full_name.trim().split(/\s+/).length > 1 
+                                            ? user.full_name.trim().split(/\s+/)[0][0] + user.full_name.trim().split(/\s+/).slice(-1)[0][0]
+                                            : user.full_name.at(0)
+                                    ) : "?"}
                                 </p>
                             </div>
                         )}
                         <div>
-                            <p className="text-fg-dark">{user.full_name}</p>
+                            <p className="text-fg-dark">{user?.full_name}</p>
                         </div>
                     </div>
                     <div className="border-b border-bg-dark">

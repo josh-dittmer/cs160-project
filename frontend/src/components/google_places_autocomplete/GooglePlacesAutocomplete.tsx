@@ -1,9 +1,7 @@
 "use client";
 
-import { useLoadScript, Autocomplete } from '@react-google-maps/api';
-import { useState, useRef } from 'react';
-
-const libraries: ("places")[] = ["places"];
+import { Autocomplete } from '@react-google-maps/api';
+import { useState, useRef, useEffect } from 'react';
 
 interface GooglePlacesAutocompleteProps {
   value: string;
@@ -25,10 +23,24 @@ export default function GooglePlacesAutocomplete({
   placeholder = "Enter address",
   className = "",
 }: GooglePlacesAutocompleteProps) {
-  const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
-    libraries,
-  });
+  // Just check if Google Maps API is loaded (loaded by parent component)
+  const [isMapsReady, setIsMapsReady] = useState(false);
+  
+  useEffect(() => {
+    // Check if API is loaded
+    const checkLoaded = () => {
+      if (typeof window !== 'undefined' && window.google?.maps?.places) {
+        setIsMapsReady(true);
+      }
+    };
+    
+    checkLoaded();
+    
+    // If not loaded yet, check periodically
+    const interval = setInterval(checkLoaded, 100);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -126,25 +138,13 @@ export default function GooglePlacesAutocomplete({
     }
   };
 
-  if (loadError) {
+  if (!isMapsReady) {
     return (
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Address autocomplete unavailable"
-        className={className}
-      />
-    );
-  }
-
-  if (!isLoaded) {
-    return (
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="Loading..."
+        placeholder="Loading autocomplete..."
         className={className}
         disabled
       />
