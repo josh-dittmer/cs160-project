@@ -305,7 +305,7 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
 
         <div className="field">
           <label htmlFor="address">
-            Address <span className="text-red-600">*</span>
+            Delivery Address <span className="text-red-600">*</span>
             <span className="text-xs text-gray-500 ml-2">(San Jose, CA only - must select from dropdown)</span>
           </label>
           <GooglePlacesAutocomplete
