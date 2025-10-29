@@ -63,7 +63,7 @@ async def generate_image(
         model = "gemini-2.5-flash-image"
         
         # Prepend default context to ensure high-quality food product images
-        default_context = "Your job is to generate extremely appealing food product images for an online food store called \"OFS.\" The images should be high-quality, professional, and appealing to the target audience."
+        default_context = "Your job is to generate extremely appealing food product images for an online food store. The images should be high-quality, professional, and appealing to the target audience."
         full_prompt = default_context + request.prompt
         
         # Prepare content with the enhanced prompt
