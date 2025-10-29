@@ -64,6 +64,14 @@ class UserOut(BaseModel):
     id: int
     email: str
     full_name: str | None
+    google_id: str | None = None
+    phone: str | None = None
+    address: str | None = None
+    city: str | None = None
+    zipcode: str | None = None
+    state: str | None = None
+    profile_picture: str | None = None
+    role: str
     is_active: bool
     created_at: datetime
 
@@ -82,6 +90,23 @@ class Token(BaseModel):
 class GoogleAuthRequest(BaseModel):
     """Schema for Google OAuth token"""
     id_token: str
+
+
+class UserProfileUpdate(BaseModel):
+    """Schema for updating user profile"""
+    full_name: str | None = None
+    phone: str | None = None
+    address: str | None = None
+    city: str | None = None
+    zipcode: str | None = None
+    state: str | None = None
+    profile_picture: str | None = None
+
+
+class PasswordChange(BaseModel):
+    """Schema for changing password"""
+    current_password: str
+    new_password: constr(min_length=8)
 
 
 class SearchSuggestion(BaseModel):
@@ -137,3 +162,60 @@ class OrderOut(BaseModel):
 
 class OrderItemsResponse(BaseModel):
     orders: list[OrderOut]
+
+
+# ============ Admin Schemas ============
+
+class UserListAdmin(BaseModel):
+    """Schema for admin user list view"""
+    id: int
+    email: str
+    full_name: str | None
+    role: str
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class UserRoleUpdate(BaseModel):
+    """Schema for updating user role"""
+    role: constr(pattern="^(admin|employee|manager|customer)$")
+
+
+class UserBlockUpdate(BaseModel):
+    """Schema for blocking/unblocking user"""
+    is_active: bool
+
+
+class ItemCreate(BaseModel):
+    """Schema for creating a new item"""
+    name: constr(min_length=1, max_length=255)
+    price_cents: conint(ge=0)
+    weight_oz: conint(ge=0)
+    category: str | None = None
+    image_url: str | None = None
+    nutrition_json: str | None = None
+    description: str | None = None
+    stock_qty: conint(ge=0) = 0
+    is_active: bool = True
+
+
+class ItemUpdate(BaseModel):
+    """Schema for updating an item (all fields optional)"""
+    name: constr(min_length=1, max_length=255) | None = None
+    price_cents: conint(ge=0) | None = None
+    weight_oz: conint(ge=0) | None = None
+    category: str | None = None
+    image_url: str | None = None
+    nutrition_json: str | None = None
+    description: str | None = None
+    stock_qty: conint(ge=0) | None = None
+    is_active: bool | None = None
+
+
+class ItemActivateUpdate(BaseModel):
+    """Schema for activating/deactivating an item"""
+    is_active: bool

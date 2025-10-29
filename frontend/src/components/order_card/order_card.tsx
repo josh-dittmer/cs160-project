@@ -61,22 +61,38 @@ export default function OrderCard({ order }: { order: OrderT }) {
                     </div>
                     <div className="flex justify-center items-center">
                         {order.items[0] && order.items[0].item.image_url && (
-                            <Image
-                                src={order.items[0].item.image_url}
-                                width={50}
-                                height={50}
-                                alt={"Item"}
-                                className="object-cover w-20 h-20 rounded-xl border-2 border-fg-dark transform-[translate(50%,25%)]"
-                            />
+                            order.items[0].item.image_url.startsWith('data:') ? (
+                                <img
+                                    src={order.items[0].item.image_url}
+                                    alt={"Item"}
+                                    className="object-cover w-20 h-20 rounded-xl border-2 border-fg-dark transform-[translate(50%,25%)]"
+                                />
+                            ) : (
+                                <Image
+                                    src={order.items[0].item.image_url}
+                                    width={50}
+                                    height={50}
+                                    alt={"Item"}
+                                    className="object-cover w-20 h-20 rounded-xl border-2 border-fg-dark transform-[translate(50%,25%)]"
+                                />
+                            )
                         )}
                         {order.items[1] && order.items[1].item.image_url && (
-                            <Image
-                                src={order.items[1].item.image_url}
-                                width={50}
-                                height={50}
-                                alt={"Item"}
-                                className="object-cover w-20 h-20 rounded-xl border-2 border-fg-dark"
-                            />
+                            order.items[1].item.image_url.startsWith('data:') ? (
+                                <img
+                                    src={order.items[1].item.image_url}
+                                    alt={"Item"}
+                                    className="object-cover w-20 h-20 rounded-xl border-2 border-fg-dark"
+                                />
+                            ) : (
+                                <Image
+                                    src={order.items[1].item.image_url}
+                                    width={50}
+                                    height={50}
+                                    alt={"Item"}
+                                    className="object-cover w-20 h-20 rounded-xl border-2 border-fg-dark"
+                                />
+                            )
                         )}
                     </div>
                 </div>

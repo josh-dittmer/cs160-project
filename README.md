@@ -10,6 +10,28 @@ An on-demand food delivery service built with FastAPI (backend) and Next.js (fro
 - Node.js 16+ and npm
 - Git
 
+---
+
+## 🔧 Environment Variables
+
+**Set these up before running the application:**
+
+### Backend (`backend/.env`)
+```bash
+SECRET_KEY=your-secret-key-here
+GOOGLE_CLIENT_ID=your-google-client-id
+GEMINI_API_KEY=your-gemini-api-key 
+```
+
+### Frontend (`frontend/.env.local`)
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-client-id
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your-google-maps-api-key
+```
+
+---
+
 ### Backend Setup
 
 #### 1. Navigate to project and create virtual environment
@@ -49,6 +71,8 @@ Remove-Item backend\sqlite.db
 
 #### 3. Seed the database
 
+This will create the database tables and an admin user.
+
 **macOS/Linux:**
 ```bash
 PYTHONPATH=. python -m backend.app.seed
@@ -59,6 +83,8 @@ PYTHONPATH=. python -m backend.app.seed
 $env:PYTHONPATH="."
 python -m backend.app.seed
 ```
+
+**Admin Credentials:** `admin@sjsu.edu` / `admin123`
 
 #### 4. Start the backend server
 
@@ -152,6 +178,30 @@ cs160-project/
   - Google OAuth integration
   - JWT token-based authentication
 
+- **User Profile Management**
+  - Edit profile information (name, phone, delivery address)
+  - Profile picture upload (file or URL) with Google OAuth integration
+  - Password change (for email/password users)
+  - Address validation restricted to San Jose, CA using Google Places API
+  - Top-right address selector with interactive map view
+  - Current location detection and geocoding
+  - Auto-formatted phone numbers
+  - See [docs/PROFILE_IMPLEMENTATION_SUMMARY.md](docs/PROFILE_IMPLEMENTATION_SUMMARY.md) for details
+
+- **Role-Based Access Control**
+  - Four user roles: Admin, Manager, Employee, Customer
+  - Admin panel for user and inventory management
+  - Default admin login: `admin@sjsu.edu` / `admin123`
+  - See [docs/ADMIN.md](docs/ADMIN.md) for complete admin documentation
+
+- **AI-Powered Image Generation**
+  - Generate product images from text descriptions using Google Gemini AI
+  - Three image options: URL, file upload, or AI generation
+  - Specialized for food product photography
+  - Automatic image optimization (JPEG, 85% quality)
+  - Admin-only access with proper authentication
+  - See [docs/AI_IMAGE_GENERATION.md](docs/AI_IMAGE_GENERATION.md) for setup guide
+
 - **Smart Search**
   - Real-time autocomplete suggestions
   - Fuzzy matching with typo tolerance (handles "oganic aples" → "Organic Apples")
@@ -180,6 +230,9 @@ PYTHONPATH=. pytest tests/ -v
 
 # Run specific test file
 PYTHONPATH=. pytest tests/test_auth.py -v
+
+# Run admin RBAC tests (23 tests)
+PYTHONPATH=. pytest tests/test_admin.py -v
 ```
 
 ---
@@ -194,6 +247,8 @@ PYTHONPATH=. pytest tests/test_auth.py -v
 - JWT - Authentication tokens
 - Google OAuth 2.0 - Social login
 - RapidFuzz - Fuzzy string matching for search
+- Google Gemini AI (2.5 Flash Image/Nano Banana) - AI image generation
+- Pillow - Image processing and optimization
 
 **Frontend:**
 - Next.js 15 - React framework
@@ -201,22 +256,8 @@ PYTHONPATH=. pytest tests/test_auth.py -v
 - Tailwind CSS - Styling
 - Swiper - Carousel component
 - Framer Motion - Animations
-
----
-
-## 🔧 Environment Variables
-
-### Backend (`backend/.env`)
-```bash
-SECRET_KEY=your-secret-key-here
-GOOGLE_CLIENT_ID=your-google-client-id
-```
-
-### Frontend (`frontend/.env.local`)
-```bash
-NEXT_PUBLIC_API_URL=http://localhost:8080
-NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-client-id
-```
+- Google Places API - Address autocomplete and validation
+- @react-google-maps/api - Google Maps integration
 
 ---
 
@@ -256,6 +297,31 @@ CS160 Project Team 6
 - Ensure `http://localhost:3000` is added to authorized origins in Google Cloud Console
 - Check browser console for specific error messages
 
+### Address autocomplete or map not working
+- Verify `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` is set in `frontend/.env.local`
+- Ensure **Places API**, **Maps JavaScript API**, and **Geocoding API** are enabled in Google Cloud Console
+- Restart the frontend dev server after adding the API key: `npm run dev`
+- See [docs/GOOGLE_MAPS_SETUP.md](docs/GOOGLE_MAPS_SETUP.md) for complete setup guide
+
+### AI image generation not working
+- Verify `GEMINI_API_KEY` is set in `backend/.env`
+- Check your API quota at https://ai.dev/usage?tab=rate-limit
+- Free tier has strict limits - wait 20-30 seconds between requests
+- Consider upgrading to paid tier for production use
+- See [docs/AI_IMAGE_GENERATION.md](docs/AI_IMAGE_GENERATION.md) for setup and troubleshooting
+
 ---
 
-For more detailed information, see the documentation in the `backend/docs/` directory.
+## 📚 Documentation
+
+For more detailed information about specific features:
+
+- **[docs/AI_IMAGE_GENERATION.md](docs/AI_IMAGE_GENERATION.md)** - AI image generation setup and usage guide
+- **[docs/PROFILE_IMPLEMENTATION_SUMMARY.md](docs/PROFILE_IMPLEMENTATION_SUMMARY.md)** - User profile, address selector, map integration
+- **[docs/GOOGLE_MAPS_SETUP.md](docs/GOOGLE_MAPS_SETUP.md)** - Google Maps API setup guide
+- **[docs/ADMIN.md](docs/ADMIN.md)** - Admin panel and role-based access control
+- **[docs/IMPLEMENTATION_SUMMARY.md](docs/IMPLEMENTATION_SUMMARY.md)** - Admin RBAC implementation details
+- **[docs/AUTHENTICATION_INTEGRATION.md](docs/AUTHENTICATION_INTEGRATION.md)** - Authentication system details
+- **[backend/docs/](backend/docs/)** - API documentation and search implementation
+
+---

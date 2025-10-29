@@ -1,5 +1,7 @@
 // API utilities for authentication
 
+import { UserInfo } from './profile';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export interface SignupData {
@@ -13,13 +15,8 @@ export interface LoginData {
     password: string;
 }
 
-export interface UserInfo {
-    id: number;
-    email: string;
-    full_name: string | null;
-    is_active: boolean;
-    created_at: string;
-}
+// Re-export UserInfo from profile for backwards compatibility
+export type { UserInfo };
 
 export interface AuthResponse {
     access_token: string;

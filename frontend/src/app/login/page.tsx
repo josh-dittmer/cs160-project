@@ -30,8 +30,12 @@ export default function LoginPage() {
             // Store token and user info in context
             loginUser(response.access_token, response.user, response.expires);
 
-            // Redirect to home/dashboard
-            router.push("/home/dashboard");
+            // Redirect based on user role
+            if (response.user.role === 'admin') {
+                router.push("/admin/dashboard");
+            } else {
+                router.push("/home/dashboard");
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : "Login failed");
         } finally {
@@ -49,8 +53,12 @@ export default function LoginPage() {
             // Store token and user info in context
             loginUser(response.access_token, response.user, response.expires);
 
-            // Redirect to home/dashboard
-            router.push("/home/dashboard");
+            // Redirect based on user role
+            if (response.user.role === 'admin') {
+                router.push("/admin/dashboard");
+            } else {
+                router.push("/home/dashboard");
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : "Google sign in failed");
         } finally {

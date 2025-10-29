@@ -32,15 +32,17 @@ This document explains how the frontend and backend authentication has been inte
    - Handles authentication errors with user-friendly messages
    - Stores JWT token and user info in context
    - Redirects to dashboard after successful login
-   - Removed Google OAuth UI (as requested)
+   - **Google OAuth Integration** - Sign in with Google button for OAuth flow
 
 ### Backend
 
 No changes were needed to the backend - it was already properly configured with:
-- CORS enabled for `http://localhost:3000`
+- CORS enabled for `http://localhost:3000` and `http://localhost:3001`
 - Working `/api/auth/signup` and `/api/auth/login` endpoints
+- Google OAuth endpoints: `POST /api/auth/google` and `GET /api/auth/google/callback`
 - JWT token generation with 7-day expiration
 - Proper error handling and validation
+- Google profile picture integration for OAuth users
 
 ## How to Test
 
@@ -62,11 +64,11 @@ npm install                      # First time only
 npm run dev
 ```
 
-The frontend will run on `http://localhost:3000`
+The frontend will run on `http://localhost:3001` (or 3000 if port 3001 is unavailable)
 
 ### 3. Test Signup Flow
 
-1. Navigate to `http://localhost:3000/signup`
+1. Navigate to `http://localhost:3001/signup`
 2. Fill in the form:
    - Full Name: Test User
    - Email: test@example.com
@@ -77,7 +79,7 @@ The frontend will run on `http://localhost:3000`
 
 ### 4. Test Login Flow
 
-1. Navigate to `http://localhost:3000/login`
+1. Navigate to `http://localhost:3001/login`
 2. Enter credentials:
    - Email: test@example.com
    - Password: password123
@@ -149,10 +151,14 @@ Open browser DevTools and check:
 
 - Passwords are hashed with bcrypt on the backend
 - JWT tokens expire after 7 days
-- CORS is configured to only allow requests from localhost:3000
+- CORS is configured to allow requests from localhost:3000 and localhost:3001
 - Email validation on both frontend and backend
 - Password minimum length: 8 characters
 - Error messages don't reveal if email exists (security best practice)
+- Google OAuth integration with secure ID token verification
+- OAuth users cannot change password (managed by Google)
+- Profile pictures from Google OAuth auto-update on login
+- Manual profile picture uploads preserved (not overwritten by Google)
 
 ## Using Authentication in Components
 
@@ -179,7 +185,8 @@ function MyComponent() {
 
 ### CORS Errors
 - Make sure backend is running on port 8000
-- Check that CORS is configured in `backend/app/main.py`
+- Check that CORS is configured in `backend/app/main.py` for both localhost:3000 and localhost:3001
+- Frontend may run on port 3001 if port 3000 is in use
 
 ### Token Not Persisting
 - Check browser localStorage in DevTools

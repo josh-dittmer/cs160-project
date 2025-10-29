@@ -108,6 +108,7 @@ body { background: var(--bg); color: var(--text); }
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-height: 95px; 
   margin-bottom: 16px;
 }
 
