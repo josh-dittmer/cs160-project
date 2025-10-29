@@ -20,6 +20,7 @@ An on-demand food delivery service built with FastAPI (backend) and Next.js (fro
 ```bash
 SECRET_KEY=your-secret-key-here
 GOOGLE_CLIENT_ID=your-google-client-id
+GEMINI_API_KEY=your-gemini-api-key 
 ```
 
 ### Frontend (`frontend/.env.local`)
@@ -193,6 +194,14 @@ cs160-project/
   - Default admin login: `admin@sjsu.edu` / `admin123`
   - See [docs/ADMIN.md](docs/ADMIN.md) for complete admin documentation
 
+- **AI-Powered Image Generation**
+  - Generate product images from text descriptions using Google Gemini AI
+  - Three image options: URL, file upload, or AI generation
+  - Specialized for food product photography
+  - Automatic image optimization (JPEG, 85% quality)
+  - Admin-only access with proper authentication
+  - See [docs/AI_IMAGE_GENERATION.md](docs/AI_IMAGE_GENERATION.md) for setup guide
+
 - **Smart Search**
   - Real-time autocomplete suggestions
   - Fuzzy matching with typo tolerance (handles "oganic aples" → "Organic Apples")
@@ -238,6 +247,8 @@ PYTHONPATH=. pytest tests/test_admin.py -v
 - JWT - Authentication tokens
 - Google OAuth 2.0 - Social login
 - RapidFuzz - Fuzzy string matching for search
+- Google Gemini AI (2.5 Flash Image/Nano Banana) - AI image generation
+- Pillow - Image processing and optimization
 
 **Frontend:**
 - Next.js 15 - React framework
@@ -292,12 +303,20 @@ CS160 Project Team 6
 - Restart the frontend dev server after adding the API key: `npm run dev`
 - See [docs/GOOGLE_MAPS_SETUP.md](docs/GOOGLE_MAPS_SETUP.md) for complete setup guide
 
+### AI image generation not working
+- Verify `GEMINI_API_KEY` is set in `backend/.env`
+- Check your API quota at https://ai.dev/usage?tab=rate-limit
+- Free tier has strict limits - wait 20-30 seconds between requests
+- Consider upgrading to paid tier for production use
+- See [docs/AI_IMAGE_GENERATION.md](docs/AI_IMAGE_GENERATION.md) for setup and troubleshooting
+
 ---
 
 ## 📚 Documentation
 
 For more detailed information about specific features:
 
+- **[docs/AI_IMAGE_GENERATION.md](docs/AI_IMAGE_GENERATION.md)** - AI image generation setup and usage guide
 - **[docs/PROFILE_IMPLEMENTATION_SUMMARY.md](docs/PROFILE_IMPLEMENTATION_SUMMARY.md)** - User profile, address selector, map integration
 - **[docs/GOOGLE_MAPS_SETUP.md](docs/GOOGLE_MAPS_SETUP.md)** - Google Maps API setup guide
 - **[docs/ADMIN.md](docs/ADMIN.md)** - Admin panel and role-based access control

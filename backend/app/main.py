@@ -7,6 +7,7 @@ from .routers import auth as auth_router
 from .routers import cart as cart_router
 from .routers import orders as orders_router
 from .routers import admin as admin_router
+from .routers import image_generation as image_generation_router
 
 # Create tables if missing
 Base.metadata.create_all(bind=engine)
@@ -32,6 +33,7 @@ app.include_router(items_router.router)
 app.include_router(cart_router.router)
 app.include_router(orders_router.router)
 app.include_router(admin_router.router)
+app.include_router(image_generation_router.router)
 
 @app.get("/healthz")
 def healthz():

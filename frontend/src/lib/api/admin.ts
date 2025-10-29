@@ -287,3 +287,51 @@ export async function permanentlyDeleteItem(token: string, itemId: number): Prom
   return response.json();
 }
 
+// ============ AI Image Generation ============
+
+export interface ImageGenerationRequest {
+  prompt: string;
+}
+
+export interface ImageGenerationResponse {
+  image_data: string;  // Base64-encoded data URI
+  prompt: string;
+}
+
+export async function generateImage(
+  token: string,
+  prompt: string
+): Promise<ImageGenerationResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/admin/image/generate`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ prompt }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to generate image');
+  }
+
+  return response.json();
+}
+
+export async function checkImageGenerationHealth(token: string): Promise<any> {
+  const response = await fetch(`${API_BASE_URL}/api/admin/image/health`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to check image generation health');
+  }
+
+  return response.json();
+}
+
