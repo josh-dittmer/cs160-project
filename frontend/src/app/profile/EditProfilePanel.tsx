@@ -67,6 +67,7 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isValidAddress, setIsValidAddress] = useState(!!userData?.address); // Track if address was selected from autocomplete
   const lastAutocompleteSelectionTime = useRef<number>(0); // Timestamp of last autocomplete selection
+  const [isPasswordSectionExpanded, setIsPasswordSectionExpanded] = useState(false); // Track password section expansion
 
   // Handle phone number input
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -152,40 +153,36 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
     }
   };
 
-  const handleProfileSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
-    e?.preventDefault();
-    if (!token) return;
-
-    setError('');
-
+  // Helper function to validate profile data
+  const validateProfileData = (): boolean => {
     // Validate address was selected from autocomplete
     if (!isValidAddress) {
       alert('Please select a valid address from the dropdown suggestions');
-      return;
+      return false;
     }
 
     // Validate address is provided
     if (!formData.address || !formData.address.trim()) {
       alert('Please select a valid address from the suggestions');
-      return;
+      return false;
     }
 
     // Validate city is San Jose
     if (!formData.city || formData.city.toLowerCase() !== 'san jose') {
       alert('Address must be in San Jose, CA. Please select a San Jose address from the dropdown.');
-      return;
+      return false;
     }
 
     // Validate state is California
     if (!formData.state || formData.state.toLowerCase() !== 'california') {
       alert('Address must be in California. Please select a San Jose, CA address from the dropdown.');
-      return;
+      return false;
     }
 
     // Validate zipcode is present
     if (!formData.zipcode) {
       alert('Please select a complete address from the dropdown suggestions');
-      return;
+      return false;
     }
 
     // Validate phone number if provided
@@ -193,8 +190,58 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
       const digits = formData.phone.replace(/\D/g, '');
       if (digits.length > 0 && digits.length !== 10) {
         alert('Phone number must be 10 digits');
-        return;
+        return false;
       }
+    }
+
+    return true;
+  };
+
+  // Helper function to validate password data
+  const validatePasswordData = (): boolean => {
+    // Only validate if user has entered password data
+    const hasPasswordData = passwordData.current_password || passwordData.new_password || passwordData.confirm_password;
+    
+    if (!hasPasswordData) {
+      return true; // No password change requested, validation passes
+    }
+
+    // If any password field is filled, all must be filled
+    if (!passwordData.current_password || !passwordData.new_password || !passwordData.confirm_password) {
+      alert('Please fill in all password fields or leave them empty to skip password change');
+      return false;
+    }
+
+    // Validate passwords match
+    if (passwordData.new_password !== passwordData.confirm_password) {
+      alert('New passwords do not match');
+      return false;
+    }
+
+    // Validate password length
+    if (passwordData.new_password.length < 8) {
+      alert('Password must be at least 8 characters');
+      return false;
+    }
+
+    return true;
+  };
+
+  // Combined save handler for both profile and password
+  const handleSaveAll = async () => {
+    if (!token) return;
+
+    setError('');
+    setPasswordError('');
+
+    // Validate profile data
+    if (!validateProfileData()) {
+      return;
+    }
+
+    // Validate password data (if user is trying to change password)
+    if (!userData?.google_id && !validatePasswordData()) {
+      return;
     }
 
     setSaving(true);
@@ -206,55 +253,32 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
         phone: formData.phone ? formData.phone.replace(/\D/g, '') : formData.phone,
       };
       
+      // Update profile
       const updatedUser = await updateProfile(token, dataToSend);
+
+      // Update password if provided (and not a Google user)
+      const hasPasswordData = passwordData.current_password || passwordData.new_password || passwordData.confirm_password;
+      if (!userData?.google_id && hasPasswordData) {
+        await changePassword(token, {
+          current_password: passwordData.current_password,
+          new_password: passwordData.new_password,
+        });
+        alert('Profile and password updated successfully!');
+      } else {
+        alert('Profile updated successfully!');
+      }
+
+      // Clear password fields
+      setPasswordData({ current_password: '', new_password: '', confirm_password: '' });
+      
+      // Update user context and return to view mode
       onSuccess?.(updatedUser);
-      alert('Profile updated successfully!');
     } catch (err: any) {
-      setError(err.message || 'Failed to update profile');
-      alert(err.message || 'Failed to update profile');
+      const errorMessage = err.message || 'Failed to save changes';
+      setError(errorMessage);
+      alert(errorMessage);
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handlePasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token) return;
-
-    setPasswordError('');
-
-    // Validate passwords match
-    if (passwordData.new_password !== passwordData.confirm_password) {
-      setPasswordError('New passwords do not match');
-      alert('New passwords do not match');
-      return;
-    }
-
-    // Validate password length
-    if (passwordData.new_password.length < 8) {
-      setPasswordError('Password must be at least 8 characters');
-      alert('Password must be at least 8 characters');
-      return;
-    }
-
-    setSavingPassword(true);
-
-    try {
-      await changePassword(token, {
-        current_password: passwordData.current_password,
-        new_password: passwordData.new_password,
-      });
-      alert('Password changed successfully!');
-      setPasswordData({ current_password: '', new_password: '', confirm_password: '' });
-      // Redirect back to profile view page
-      if (onCancel) {
-        onCancel();
-      }
-    } catch (err: any) {
-      setPasswordError(err.message || 'Failed to change password');
-      alert(err.message || 'Failed to change password');
-    } finally {
-      setSavingPassword(false);
     }
   };
 
@@ -357,102 +381,92 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
           />
         </div>
 
-        <div className="actions">
-          <button type="button" className="btn ghost" onClick={onCancel} disabled={saving}>
-            Cancel
-          </button>
-          <button 
-            type="button" 
-            className="btn primary" 
-            disabled={saving}
-            onClick={handleProfileSubmit}
-          >
-            {saving ? 'Saving...' : 'Save Now'}
-          </button>
-        </div>
-
         {/* Only show password section for non-OAuth users */}
         {!userData?.google_id && (
           <>
             <hr className="sep" />
-            <h4 className="section-title">Password</h4>
+            
+            {/* Collapsible Password Section */}
+            <div className="password-section">
+              <button 
+                type="button"
+                className="password-toggle-header"
+                onClick={() => setIsPasswordSectionExpanded(!isPasswordSectionExpanded)}
+                aria-expanded={isPasswordSectionExpanded}
+              >
+                <h4 className="section-title">Change Password</h4>
+                <span className="toggle-icon">
+                  {isPasswordSectionExpanded ? '▼' : '▶'}
+                </span>
+              </button>
 
-        <div className="field">
-          <label htmlFor="curpass">Current Password</label>
-          <div className="input-affix">
-            <input 
-              id="curpass" 
-              type={showCurrentPassword ? "text" : "password"}
-              placeholder="••••••••••"
-              value={passwordData.current_password}
-              onChange={(e) => setPasswordData({...passwordData, current_password: e.target.value})}
-            />
-            <button 
-              type="button" 
-              className="iconbtn" 
-              aria-label="Toggle visibility"
-              onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-            >
-              {showCurrentPassword ? '👁️' : '👁️‍🗨️'}
-            </button>
-          </div>
-        </div>
+              {isPasswordSectionExpanded && (
+                <div className="password-fields">
+                  <div className="field">
+                    <label htmlFor="curpass">Current Password</label>
+                    <div className="input-affix">
+                      <input 
+                        id="curpass" 
+                        type={showCurrentPassword ? "text" : "password"}
+                        placeholder="••••••••••"
+                        value={passwordData.current_password}
+                        onChange={(e) => setPasswordData({...passwordData, current_password: e.target.value})}
+                      />
+                      <button 
+                        type="button" 
+                        className="iconbtn" 
+                        aria-label="Toggle visibility"
+                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      >
+                        {showCurrentPassword ? '👁️' : '👁️‍🗨️'}
+                      </button>
+                    </div>
+                  </div>
 
-        <div className="field">
-          <label htmlFor="newpass">New Password</label>
-          <div className="input-affix">
-            <input 
-              id="newpass" 
-              type={showNewPassword ? "text" : "password"}
-              placeholder="New password (min 8 characters)"
-              value={passwordData.new_password}
-              onChange={(e) => setPasswordData({...passwordData, new_password: e.target.value})}
-            />
-            <button 
-              type="button" 
-              className="iconbtn" 
-              aria-label="Toggle visibility"
-              onClick={() => setShowNewPassword(!showNewPassword)}
-            >
-              {showNewPassword ? '👁️' : '👁️‍🗨️'}
-            </button>
-          </div>
-        </div>
+                  <div className="field">
+                    <label htmlFor="newpass">New Password</label>
+                    <div className="input-affix">
+                      <input 
+                        id="newpass" 
+                        type={showNewPassword ? "text" : "password"}
+                        placeholder="New password (min 8 characters)"
+                        value={passwordData.new_password}
+                        onChange={(e) => setPasswordData({...passwordData, new_password: e.target.value})}
+                      />
+                      <button 
+                        type="button" 
+                        className="iconbtn" 
+                        aria-label="Toggle visibility"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                      >
+                        {showNewPassword ? '👁️' : '👁️‍🗨️'}
+                      </button>
+                    </div>
+                  </div>
 
-        <div className="field">
-          <label htmlFor="confpass">Confirm New Password</label>
-          <div className="input-affix">
-            <input 
-              id="confpass" 
-              type={showConfirmPassword ? "text" : "password"}
-              placeholder="Confirm new password"
-              value={passwordData.confirm_password}
-              onChange={(e) => setPasswordData({...passwordData, confirm_password: e.target.value})}
-            />
-            <button 
-              type="button" 
-              className="iconbtn" 
-              aria-label="Toggle visibility"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            >
-              {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
-            </button>
-          </div>
-        </div>
-
-        <div className="actions">
-          <button type="button" className="btn ghost" onClick={onCancel} disabled={savingPassword}>
-            Cancel
-          </button>
-          <button 
-            type="button" 
-            className="btn primary" 
-            onClick={handlePasswordSubmit}
-            disabled={savingPassword || !passwordData.current_password || !passwordData.new_password || !passwordData.confirm_password}
-          >
-            {savingPassword ? 'Saving...' : 'Save Changes'}
-          </button>
-        </div>
+                  <div className="field">
+                    <label htmlFor="confpass">Confirm New Password</label>
+                    <div className="input-affix">
+                      <input 
+                        id="confpass" 
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="Confirm new password"
+                        value={passwordData.confirm_password}
+                        onChange={(e) => setPasswordData({...passwordData, confirm_password: e.target.value})}
+                      />
+                      <button 
+                        type="button" 
+                        className="iconbtn" 
+                        aria-label="Toggle visibility"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      >
+                        {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </>
         )}
 
@@ -470,6 +484,21 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
             </div>
           </>
         )}
+
+        {/* Save All Button at the Bottom */}
+        <div className="actions save-all-section">
+          <button type="button" className="btn ghost" onClick={onCancel} disabled={saving}>
+            Cancel
+          </button>
+          <button 
+            type="button" 
+            className="btn primary" 
+            disabled={saving}
+            onClick={handleSaveAll}
+          >
+            {saving ? 'Saving...' : 'Save All'}
+          </button>
+        </div>
       </form>
     </section>
   );
