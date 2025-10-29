@@ -50,6 +50,8 @@ class User(Base):
     hashed_password: Mapped[str | None] = mapped_column(String(255), nullable=True)
     full_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     
+    stripe_customer_id: Mapped[str | None] = mapped_column(String(255), unique=True, index=True, nullable=True) 
+
     # Google OAuth fields
     google_id: Mapped[str | None] = mapped_column(String(255), unique=True, index=True, nullable=True)
     

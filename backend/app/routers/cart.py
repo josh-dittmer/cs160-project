@@ -5,6 +5,7 @@ from ..schemas import CartItemOut, CartItemIn, CartItemsResponse
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..auth import get_current_user, UserCtx
+from ..cart import calculate_cart_total, CartPriceData
 
 router = APIRouter(prefix="/api", tags=["cart"])
 
@@ -18,10 +19,6 @@ def list_cart_items(
     ).all()
 
     cart_items: List[CartItemOut] = []
-    total_item_cents = 0
-    # simple fixed shipping calculation (example): $2 per distinct item -> 200 cents each
-    total_shipping_cents = 0
-    total_weight_oz = 0
 
     for row in items:
         ci: CartItem = row[0]
@@ -32,26 +29,15 @@ def list_cart_items(
         )
         cart_items.append(cart_item)
 
-        # accumulate totals
-        total_item_cents += it.price_cents * ci.quantity
-        total_weight_oz += it.weight_oz * ci.quantity
-
-    total_shipping_cents = 1000
-
-    if total_weight_oz >= 20 * 16:
-        shipping_waived = False
-    else:
-        shipping_waived = True
-
-    total_cents = total_item_cents + total_shipping_cents
+    price_data: CartPriceData = calculate_cart_total(cart_items)
 
     return CartItemsResponse(
         items=cart_items,
-        total_item_cents=total_item_cents,
-        total_shipping_cents=total_shipping_cents,
-        total_cents=total_cents,
-        total_weight_oz=total_weight_oz,
-        shipping_waived=shipping_waived
+        total_item_cents=price_data.total_item_cents,
+        total_shipping_cents=price_data.total_shipping_cents,
+        total_cents=price_data.total_cents,
+        total_weight_oz=price_data.total_weight_oz,
+        shipping_waived=price_data.shipping_waived
     )
 
 @router.post("/cart", status_code=status.HTTP_201_CREATED)

@@ -1,17 +1,25 @@
 "use client";
 
 import { useAuth } from "@/contexts/auth";
+import { PaymentWindowContext } from "@/contexts/payment_window";
 import { UserWindowContext } from "@/contexts/user_window";
 import { DollarSign, LogOut, Settings } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useContext } from "react";
+import ProfilePicture from "../profile_picture/profile_picture";
 
 export default function AccountWindow() {
     const userWindowContext = useContext(UserWindowContext);
+    const paymentWindowContext = useContext(PaymentWindowContext);
 
     const { user, isAuthenticated, logout } = useAuth();
     const router = useRouter();
+
+    const openPaymentWindow = () => {
+        paymentWindowContext?.setVisible(true);
+        userWindowContext?.setVisible(false);
+    }
 
     const handleLogout = () => {
         logout();
@@ -32,23 +40,7 @@ export default function AccountWindow() {
                         <h1 className="text-fg-dark text-xl font-bold p-1">My Account</h1>
                     </div>
                     <div className="flex items-center gap-3">
-                        {user.profile_picture ? (
-                            <img 
-                                src={user.profile_picture} 
-                                alt="Profile" 
-                                className="rounded-full w-15 h-15 object-cover"
-                            />
-                        ) : (
-                            <div className="rounded-full bg-gradient-to-br from-purple-500 to-purple-700 w-15 h-15 flex items-center justify-center">
-                                <p className="text-white font-bold text-lg">
-                                    {user?.full_name ? (
-                                        user.full_name.trim().split(/\s+/).length > 1 
-                                            ? user.full_name.trim().split(/\s+/)[0][0] + user.full_name.trim().split(/\s+/).slice(-1)[0][0]
-                                            : user.full_name.at(0)
-                                    ) : "?"}
-                                </p>
-                            </div>
-                        )}
+                        <ProfilePicture user={user} />
                         <div>
                             <p className="text-fg-dark">{user?.full_name}</p>
                         </div>
@@ -75,6 +67,7 @@ export default function AccountWindow() {
                             <motion.a
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.99 }}
+                                onClick={openPaymentWindow}
                                 className="flex items-center gap-2 p-2 hover:bg-bg-dark rounded-xl"
                             >
                                 <DollarSign className="text-fg-dark" width={20} height={20} />

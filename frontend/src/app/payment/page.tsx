@@ -1,6 +1,8 @@
 "use client";
 
-import TopBar from "@/components/top-bar/top-bar";
+import ProfilePicture from "@/components/profile_picture/profile_picture";
+import StripePayment from "@/components/stripe_payment/stripe_payment";
+import { useAuth } from "@/contexts/auth";
 import { CartContext } from "@/contexts/cart";
 import { useUpsertCartItemMutation } from "@/lib/mutations/cart_item/upsert";
 import { useCartItemsQuery } from "@/lib/queries/cart_items";
@@ -23,11 +25,10 @@ export default function PaymentPage() {
     const cartContext = useContext(CartContext);
     const router = useRouter();
     const { mutate, isPending: isMutating } = useUpsertCartItemMutation();
-
+    const { user } = useAuth();
 
     const [shipping, setShipping] = useState("standard");
-    const [payMethod, setPayMethod] = useState("card");
-    const [discount, setDiscount] = useState("Currently unavailable.");
+    /*const [discount, setDiscount] = useState("Currently unavailable.");*/
 
     const inc = (itemId: number, currentQty: number) => {
         mutate({ item_id: itemId, quantity: currentQty + 1 });
@@ -59,13 +60,11 @@ export default function PaymentPage() {
 
     return (
         <>
-            <TopBar />
-
             <main className="checkout">
-                <header className="checkout__title">
+                {/*<header className="checkout__title">
                     <h1>Checkout</h1>
                     <p>Shipping charges and discount codes applied at checkout.</p>
-                </header>
+                </header>*/}
 
 
                 <div className="checkout__grid">
@@ -74,28 +73,23 @@ export default function PaymentPage() {
                         {/* Customer summary */}
                         <div className="card">
                             <div className="card__head card__head--row">
-                                <div className="avatar">
-                                    <span className="avatar__icon" aria-hidden>👤</span>
-                                    <span className="avatar__name">Stella</span>
+                                <div className="flex justify-center items-center gap-2">
+                                    <ProfilePicture user={user ?? undefined} size={10} />
+                                    <span className="avatar__name">{user?.full_name}</span>
                                 </div>
                                 <button className="link">Change address</button>
                             </div>
 
-                            <div className="card__body card__body--three">
+                            <div className="card__body grid grid-cols-[1fr_1fr] gap-4">
                                 <div>
                                     <div className="meta__label">Email</div>
-                                    <div className="meta__value">123@gmail.com</div>
+                                    <div className="meta__value">{user?.email}</div>
                                 </div>
-                                <div>
+                                <div className="overflow-hidden">
                                     <div className="meta__label">Address</div>
-                                    <div className="meta__value">
-                                        3234 abc
-                                        <br />San Jose, California
+                                    <div className="meta__value truncate text-ellipsis">
+                                        {user?.address}
                                     </div>
-                                </div>
-                                <div>
-                                    <div className="meta__label">Mobile phone</div>
-                                    <div className="meta__value">510 123 1234</div>
                                 </div>
                             </div>
                         </div>
@@ -119,7 +113,7 @@ export default function PaymentPage() {
                                     )}
 
                                     {!isPending && cartItems?.items.map((ci) => (
-                                        <div key={ci.item.id} className="product">
+                                        <div key={ci.item.id} className="product pb-2">
                                             {/* Thumb */}
                                             {ci.item.image_url ? (
                                                 ci.item.image_url.startsWith('data:') ? (
@@ -134,7 +128,7 @@ export default function PaymentPage() {
                                                         width={80}
                                                         height={80}
                                                         alt={ci.item.name}
-                                                        className="product__thumb"
+                                                        className="product__thumb object-cover"
                                                     />
                                                 )
                                             ) : (
@@ -226,7 +220,6 @@ export default function PaymentPage() {
                                 </label>
                             </div>
                         </div>
-
                         {/* Payment */}
                         <div className="card">
                             <div className="card__head">
@@ -234,56 +227,15 @@ export default function PaymentPage() {
                             </div>
 
                             <div className="card__body card__body--stack">
-                                {/* Card */}
-                                <label className="payopt">
-                                    <input
-                                        type="radio"
-                                        name="pay"
-                                        checked={payMethod === "card"}
-                                        onChange={() => setPayMethod("card")}
-                                    />
-                                    <span>Debit / Credit Card</span>
-                                </label>
-
-                                {payMethod === "card" && (
-                                    <div className="cardblock">
-                                        <input className="inp" placeholder="1234 5678 9012 3456" />
-                                        <div className="row row--2">
-                                            <input className="inp" placeholder="MM / YY" />
-                                            <input className="inp" placeholder="CVC 3 digits" />
-                                        </div>
-                                        <input className="inp" placeholder="Name of the card holder" />
-                                        <div className="fineprint">All transactions are secure and encrypted.</div>
-                                    </div>
-                                )}
-
-                                <label className="payopt">
-                                    <input
-                                        type="radio"
-                                        name="pay"
-                                        checked={payMethod === "paypal"}
-                                        onChange={() => setPayMethod("paypal")}
-                                    />
-                                    <span>PayPal</span>
-                                </label>
-
-                                <label className="payopt">
-                                    <input
-                                        type="radio"
-                                        name="pay"
-                                        checked={payMethod === "applepay"}
-                                        onChange={() => setPayMethod("applepay")}
-                                    />
-                                    <span>ApplePay</span>
-                                </label>
+                                <StripePayment />
                             </div>
 
-                            <div className="card__foot">
+                            {/*<div className="card__foot">
                                 <button className="cta">COMPLETE PURCHASE</button>
                                 <p className="legal">
                                     By clicking “Complete purchase”, you agree to our Terms and confirm you’ve read the Privacy Policy.
                                 </p>
-                            </div>
+                            </div>*/}
                         </div>
                     </section>
 
@@ -309,8 +261,7 @@ export default function PaymentPage() {
                                 </div>
                             </div>
                         </div>
-
-                        <div className="card">
+                        {/*<div className="card">
                             <div className="card__body">
                                 <label className="label">DISCOUNT CODE / GIFT CARD</label>
                                 <div className="row">
@@ -323,7 +274,7 @@ export default function PaymentPage() {
                                     <button className="btn">Apply</button>
                                 </div>
                             </div>
-                        </div>
+                        </div>*/}
                     </aside>
                 </div>
             </main>

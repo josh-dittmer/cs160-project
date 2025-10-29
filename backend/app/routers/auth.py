@@ -18,6 +18,7 @@ from ..auth import (
     token_cookie,
     UserCtx,
 )
+from ..payment import create_stripe_customer
 
 # google oauth configuration
 
@@ -60,6 +61,7 @@ def signup(user_data: UserCreate, response: Response, db: Session = Depends(get_
         email=user_data.email,
         hashed_password=hashed_password,
         full_name=user_data.full_name,
+        stripe_customer_id=create_stripe_customer(email=user_data.email).id  # create stripe customer
     )
     db.add(new_user)
     db.commit()
@@ -185,7 +187,8 @@ def google_auth(google_data: GoogleAuthRequest, response: Response, db: Session 
                 email=email,
                 google_id=google_user_id,
                 full_name=name,
-                profile_picture=picture,  # Store Google profile picture
+                profile_picture=picture,  # Store Google profile picture,
+                stripe_customer_id=create_stripe_customer(email=email).id  # create stripe customer
             )
             db.add(user)
             db.commit()
@@ -277,7 +280,8 @@ async def google_callback(request: Request, response: Response, db: Session = De
             email=userinfo.email,
             google_id=userinfo.sub,
             full_name=userinfo.name,
-            profile_picture=userinfo.get("picture")  # Get Google profile picture
+            profile_picture=userinfo.get("picture"),  # Get Google profile picture
+            stripe_customer_id=create_stripe_customer(email=userinfo.email).id  # create stripe customer
         )
 
         db.add(user)

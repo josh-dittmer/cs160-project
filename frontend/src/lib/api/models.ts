@@ -94,6 +94,22 @@ export const OrderResponse = t.type({
 
 export type OrderResponseT = t.TypeOf<typeof OrderResponse>;
 
+
+export const CreatePaymentIntentResponse = t.type({
+    clientSecret: t.string,
+    customerSessionClientSecret: t.string,
+    totalCents: t.number
+});
+
+export type CreatePaymentIntentResponseT = t.TypeOf<typeof CreatePaymentIntentResponse>;
+
+export const CreateSetupIntentResponse = t.type({
+    clientSecret: t.string,
+    customerSessionClientSecret: t.string,
+});
+
+export type CreateSetupIntentResponseT = t.TypeOf<typeof CreateSetupIntentResponse>;
+
 export const ItemsListResponse = t.array(Item);
 export const ItemsByCategoryResponse = t.record(t.string, t.array(Item));
 export const SearchSuggestionsResponse = t.array(SearchSuggestion);

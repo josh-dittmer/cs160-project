@@ -2,6 +2,7 @@
 
 import { AuthProvider } from "@/contexts/auth";
 import { CartProvider } from "@/contexts/cart";
+import { PaymentWindowProvider } from "@/contexts/payment_window";
 import { ThemeProvider } from "@/contexts/theme";
 import { UserWindowProvider } from "@/contexts/user_window";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -15,9 +16,11 @@ export default function Provider({ children }: { children: ReactNode }) {
             <ThemeProvider defaultTheme='light'>
                 <AuthProvider>
                     <UserWindowProvider>
-                        <CartProvider>
-                            {children}
-                        </CartProvider>
+                        <PaymentWindowProvider>
+                            <CartProvider>
+                                {children}
+                            </CartProvider>
+                        </PaymentWindowProvider>
                     </UserWindowProvider>
                 </AuthProvider>
             </ThemeProvider>

@@ -1,11 +1,12 @@
 "use client";
 
 import AccountWindow from "@/components/account_window/account_window";
+import PaymentWindow from "@/components/payment_window/payment_window";
 import Sidebar from "@/components/sidebar/sidebar";
 import TopBar from "@/components/top-bar/top-bar";
-import { ReactNode } from "react";
 import { useAuth } from "@/contexts/auth";
 import Link from "next/link";
+import { ReactNode } from "react";
 
 export default function HomeLayout({ children }: { children: ReactNode }) {
     const { user } = useAuth();
@@ -27,7 +28,7 @@ export default function HomeLayout({ children }: { children: ReactNode }) {
                     </Link>
                 </div>
             )}
-            
+
             <TopBar></TopBar>
             <div className="grid grid-cols-[75px_auto] md:grid-cols-[200px_auto] overflow-hidden">
                 <div className="relative border-bg-dark border-r bg-bg-light p-3">
@@ -41,6 +42,7 @@ export default function HomeLayout({ children }: { children: ReactNode }) {
             <div className="flex items-center border-bg-dark border-t bg-bg-light pl-5">
                 <p className="text-fg-medium text-xs">CS 160 Project</p>
             </div>
+            <PaymentWindow />
         </div>
     );
 }

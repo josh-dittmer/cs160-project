@@ -4,7 +4,12 @@ from .database import engine, SessionLocal, Base
 from .models import Item, Review, Order, OrderItem, User
 from .auth import get_password_hash
 from datetime import datetime
+from .payment import create_stripe_customer
 import json
+import stripe
+import os
+
+stripe.api_key = os.getenv("STRIPE_API_KEY", "")
 
 SAMPLE_ITEMS = [
     # Fruits (5+ items)
@@ -777,6 +782,7 @@ def seed():
                 hashed_password=get_password_hash(admin_password),
                 full_name="System Administrator",
                 role="admin",
+                stripe_customer_id=create_stripe_customer(admin_email).id,
                 is_active=True
             )
             db.add(admin_user)

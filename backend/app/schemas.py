@@ -163,6 +163,14 @@ class OrderOut(BaseModel):
 class OrderItemsResponse(BaseModel):
     orders: list[OrderOut]
 
+class CreatePaymentIntentResponse(BaseModel):
+    clientSecret: str
+    customerSessionClientSecret: str
+    totalCents: int
+
+class CreateSetupIntenetResponse(BaseModel):
+    clientSecret: str
+    customerSessionClientSecret: str
 
 # ============ Admin Schemas ============
 

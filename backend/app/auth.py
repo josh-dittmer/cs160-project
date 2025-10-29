@@ -101,6 +101,7 @@ class UserCtx(BaseModel):
     id: int
     email: str
     role: str
+    stripe_customer_id: str
 
 
 def get_current_user(
@@ -148,7 +149,7 @@ def get_current_user(
             detail="Inactive user",
         )
     
-    return UserCtx(id=user.id, email=user.email, role=user.role)
+    return UserCtx(id=user.id, email=user.email, role=user.role, stripe_customer_id=user.stripe_customer_id)
 
 
 def require_user(x_user_id: int | None = Header(default=None, alias="X-User-Id")) -> UserCtx:
