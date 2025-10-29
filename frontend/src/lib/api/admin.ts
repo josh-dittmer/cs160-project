@@ -291,6 +291,7 @@ export async function permanentlyDeleteItem(token: string, itemId: number): Prom
 
 export interface ImageGenerationRequest {
   prompt: string;
+  base_image?: string;  // Optional base64-encoded image for editing
 }
 
 export interface ImageGenerationResponse {
@@ -300,15 +301,21 @@ export interface ImageGenerationResponse {
 
 export async function generateImage(
   token: string,
-  prompt: string
+  prompt: string,
+  baseImage?: string
 ): Promise<ImageGenerationResponse> {
+  const requestBody: ImageGenerationRequest = { prompt };
+  if (baseImage) {
+    requestBody.base_image = baseImage;
+  }
+
   const response = await fetch(`${API_BASE_URL}/api/admin/image/generate`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ prompt }),
+    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {
