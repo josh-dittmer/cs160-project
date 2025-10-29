@@ -11,6 +11,7 @@ import {
   activateItem,
   permanentlyDeleteItem,
   getCategories,
+  generateImage,
   type ItemAdmin,
   type ItemCreateData,
   type ItemUpdateData
@@ -364,12 +365,14 @@ function ItemFormModal({
     is_active: item?.is_active ?? true,
   });
   const [saving, setSaving] = useState(false);
-  const [imageUploadMode, setImageUploadMode] = useState<'url' | 'upload'>('url');
+  const [imageUploadMode, setImageUploadMode] = useState<'url' | 'upload' | 'ai'>('url');
   const [uploadingImage, setUploadingImage] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [nutritionJsonError, setNutritionJsonError] = useState<string>('');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [generatingImage, setGeneratingImage] = useState(false);
 
   // Fetch categories when modal opens
   useEffect(() => {
@@ -429,6 +432,25 @@ function ItemFormModal({
     // Reset file input to allow re-uploading the same file
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  const handleGenerateImage = async () => {
+    if (!aiPrompt.trim()) {
+      alert('Please enter a description for the image you want to generate');
+      return;
+    }
+
+    setGeneratingImage(true);
+    try {
+      const result = await generateImage(token, aiPrompt);
+      setFormData({ ...formData, image_url: result.image_data });
+      alert('Image generated successfully! You can now preview it below.');
+    } catch (error: any) {
+      console.error('Failed to generate image:', error);
+      alert(error.message || 'Failed to generate image. Please try again.');
+    } finally {
+      setGeneratingImage(false);
     }
   };
 
@@ -756,12 +778,12 @@ function ItemFormModal({
                 Product Image *
               </label>
               
-              {/* Toggle between URL and Upload */}
+              {/* Toggle between URL, Upload, and AI Generation */}
               <div className="flex gap-2 mb-3">
                 <button
                   type="button"
                   onClick={() => setImageUploadMode('url')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     imageUploadMode === 'url'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -772,13 +794,24 @@ function ItemFormModal({
                 <button
                   type="button"
                   onClick={() => setImageUploadMode('upload')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     imageUploadMode === 'upload'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
                   Upload Image
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImageUploadMode('ai')}
+                  className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    imageUploadMode === 'ai'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  🤖 AI Generate
                 </button>
               </div>
 
@@ -790,7 +823,7 @@ function ItemFormModal({
                   placeholder="https://example.com/image.jpg"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
                 />
-              ) : (
+              ) : imageUploadMode === 'upload' ? (
                 <div className="space-y-2">
                   <input
                     ref={fileInputRef}
@@ -805,6 +838,38 @@ function ItemFormModal({
                   )}
                   <p className="text-xs text-gray-500">
                     Max file size: 5MB. Supported formats: JPG, PNG, GIF, WebP
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <textarea
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    placeholder="Describe the product image you want to generate. Example: 'A fresh organic red apple on a white background, professional product photography'"
+                    rows={4}
+                    disabled={generatingImage}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleGenerateImage}
+                    disabled={generatingImage || !aiPrompt.trim()}
+                    className="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {generatingImage ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Generating Image...
+                      </span>
+                    ) : (
+                      '✨ Generate Image with AI'
+                    )}
+                  </button>
+                  <p className="text-xs text-gray-500">
+                    💡 Tip: Be specific about the product, lighting, background, and style. Generation may take 10-30 seconds.
                   </p>
                 </div>
               )}
