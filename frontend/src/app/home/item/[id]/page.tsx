@@ -290,15 +290,30 @@ export default async function ItemDetailPage({ params }: { params: Promise<{ id:
                     
                     {/* Product Video */}
                     {item.video_url && (
-                        <div className="bg-black rounded-2xl overflow-hidden border border-gray-200">
-                            <video
-                                src={item.video_url}
-                                controls
-                                className="w-full"
-                                preload="metadata"
-                            >
-                                Your browser does not support the video tag.
-                            </video>
+                        <div className="space-y-3">
+                            <h3 className="text-xl font-semibold text-fg-primary flex items-center gap-2">
+                                <span className="text-2xl">🎬</span>
+                                See It In Action
+                            </h3>
+                            <div className="bg-black rounded-2xl overflow-hidden border border-gray-200">
+                                {item.video_url.includes('youtube.com/embed') || item.video_url.includes('vimeo.com') ? (
+                                    <iframe
+                                        src={item.video_url}
+                                        className="w-full aspect-video"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                    />
+                                ) : (
+                                    <video
+                                        src={item.video_url}
+                                        controls
+                                        className="w-full"
+                                        preload="metadata"
+                                    >
+                                        Your browser does not support the video tag.
+                                    </video>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>
