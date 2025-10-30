@@ -12,6 +12,7 @@ import {
   permanentlyDeleteItem,
   getCategories,
   generateImage,
+  generateVideoSync,
   type ItemAdmin,
   type ItemCreateData,
   type ItemUpdateData
@@ -359,6 +360,7 @@ function ItemFormModal({
     weight_oz: item?.weight_oz ?? '',
     category: item?.category || '',
     image_url: item?.image_url || '',
+    video_url: item?.video_url || '',
     description: item?.description || '',
     nutrition_json: item?.nutrition_json || '',
     stock_qty: item?.stock_qty ?? '',
@@ -375,6 +377,9 @@ function ItemFormModal({
   const [aiPrompt, setAiPrompt] = useState('');
   const [generatingImage, setGeneratingImage] = useState(false);
   const [aiBaseImage, setAiBaseImage] = useState<string>('');
+  const [videoPrompt, setVideoPrompt] = useState('');
+  const [generatingVideo, setGeneratingVideo] = useState(false);
+  const [videoModel, setVideoModel] = useState<'veo-3.1-generate-preview' | 'veo-3.1-fast-generate-preview'>('veo-3.1-fast-generate-preview');
 
   // Fetch categories when modal opens
   useEffect(() => {
@@ -525,6 +530,34 @@ function ItemFormModal({
     } finally {
       setGeneratingImage(false);
     }
+  };
+
+  const handleGenerateVideo = async () => {
+    if (!videoPrompt.trim()) {
+      alert('Please enter a description for the video you want to generate');
+      return;
+    }
+
+    if (!confirm('Video generation takes 30-60 seconds and costs ~$0.10-0.15. Continue?')) {
+      return;
+    }
+
+    setGeneratingVideo(true);
+    try {
+      const result = await generateVideoSync(token, videoPrompt, videoModel);
+      setFormData({ ...formData, video_url: result.video_data || '' });
+      alert('Video generated successfully! You can now preview it below.');
+    } catch (error: any) {
+      console.error('Failed to generate video:', error);
+      alert(error.message || 'Failed to generate video. Please try again.');
+    } finally {
+      setGeneratingVideo(false);
+    }
+  };
+
+  const handleRemoveVideo = () => {
+    setFormData({ ...formData, video_url: '' });
+    setVideoPrompt('');
   };
 
   // Prevent non-numeric input in number fields
@@ -720,6 +753,7 @@ function ItemFormModal({
         weight_oz: parseInt(formData.weight_oz as string) || 0,
         category: formData.category,
         image_url: formData.image_url,
+        video_url: formData.video_url,
         description: formData.description,
         nutrition_json: formData.nutrition_json,
         stock_qty: parseInt(formData.stock_qty as string) || 0,
@@ -1092,6 +1126,87 @@ function ItemFormModal({
                 <p className="text-xs text-gray-500 mt-1">
                   Enter nutrition data as valid JSON format (must be an object)
                 </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Product Video (Optional)
+                <span className="text-xs text-gray-500 ml-2">Generate a marketing video with AI</span>
+              </label>
+              
+              <div className="space-y-3 border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Video Quality
+                  </label>
+                  <select
+                    value={videoModel}
+                    onChange={(e) => setVideoModel(e.target.value as any)}
+                    disabled={generatingVideo}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm"
+                  >
+                    <option value="veo-3.1-fast-generate-preview">Fast (~30s, $0.10)</option>
+                    <option value="veo-3.1-generate-preview">Best Quality (~60s, $0.15)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Describe your video
+                  </label>
+                  <textarea
+                    value={videoPrompt}
+                    onChange={(e) => setVideoPrompt(e.target.value)}
+                    placeholder="Example: 'A fresh organic apple rotating slowly on a white surface with soft lighting and a subtle shadow'"
+                    rows={3}
+                    disabled={generatingVideo}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 Tip: Be specific about the product, action, lighting, and style. Veo 3.1 generates 8-second videos with audio.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleGenerateVideo}
+                  disabled={generatingVideo || !videoPrompt.trim()}
+                  className="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {generatingVideo ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Generating Video... (30-60s)
+                    </span>
+                  ) : (
+                    '🎬 Generate Video with AI'
+                  )}
+                </button>
+              </div>
+
+              {/* Video Preview */}
+              {formData.video_url && (
+                <div className="mt-3">
+                  <p className="text-xs text-gray-600 mb-2">Preview:</p>
+                  <div className="w-full bg-black rounded-md overflow-hidden">
+                    <video
+                      src={formData.video_url}
+                      controls
+                      className="w-full"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRemoveVideo}
+                    className="mt-2 w-full px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors"
+                  >
+                    Remove Video
+                  </button>
+                </div>
               )}
             </div>
 

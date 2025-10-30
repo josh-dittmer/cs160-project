@@ -262,28 +262,44 @@ export default async function ItemDetailPage({ params }: { params: Promise<{ id:
         <div className="max-w-7xl mx-auto p-6 space-y-8">
             {/* Top Section - Image and Product Info Side by Side */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Product Image */}
-                <div className="bg-white rounded-2xl overflow-hidden aspect-square flex items-center justify-center border border-gray-200">
-                    {item.image_url ? (
-                        item.image_url.startsWith('data:') ? (
-                            // Use regular img tag for base64 images to avoid hydration issues
-                            <img
-                                src={item.image_url}
-                                alt={item.name}
-                                className="w-full h-full object-contain"
-                            />
+                {/* Product Image and Video */}
+                <div className="space-y-4">
+                    <div className="bg-white rounded-2xl overflow-hidden aspect-square flex items-center justify-center border border-gray-200">
+                        {item.image_url ? (
+                            item.image_url.startsWith('data:') ? (
+                                // Use regular img tag for base64 images to avoid hydration issues
+                                <img
+                                    src={item.image_url}
+                                    alt={item.name}
+                                    className="w-full h-full object-contain"
+                                />
+                            ) : (
+                                <Image
+                                    src={item.image_url}
+                                    alt={item.name}
+                                    width={600}
+                                    height={600}
+                                    className="w-full h-full object-contain"
+                                    priority
+                                />
+                            )
                         ) : (
-                            <Image
-                                src={item.image_url}
-                                alt={item.name}
-                                width={600}
-                                height={600}
-                                className="w-full h-full object-contain"
-                                priority
-                            />
-                        )
-                    ) : (
-                        <Package className="w-32 h-32 text-fg-medium" />
+                            <Package className="w-32 h-32 text-fg-medium" />
+                        )}
+                    </div>
+                    
+                    {/* Product Video */}
+                    {item.video_url && (
+                        <div className="bg-black rounded-2xl overflow-hidden border border-gray-200">
+                            <video
+                                src={item.video_url}
+                                controls
+                                className="w-full"
+                                preload="metadata"
+                            >
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
                     )}
                 </div>
 
