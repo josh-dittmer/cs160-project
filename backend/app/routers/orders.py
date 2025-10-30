@@ -16,7 +16,7 @@ def list_order_items(
 ) -> OrderItemsResponse:
     orders_res = db.query(OrderItem, Order, Item).join(Order).join(Item).filter(
         Order.user_id == user.id
-    ).order_by(Order.created_at).limit(limit)
+    ).order_by(Order.created_at.desc())
 
     orders: Dict[int, OrderOut] = {}
 
