@@ -11,6 +11,7 @@ import {
   activateItem,
   permanentlyDeleteItem,
   getCategories,
+  generateImage,
   type ItemAdmin,
   type ItemCreateData,
   type ItemUpdateData
@@ -364,12 +365,16 @@ function ItemFormModal({
     is_active: item?.is_active ?? true,
   });
   const [saving, setSaving] = useState(false);
-  const [imageUploadMode, setImageUploadMode] = useState<'url' | 'upload'>('url');
+  const [imageUploadMode, setImageUploadMode] = useState<'url' | 'upload' | 'ai'>('url');
   const [uploadingImage, setUploadingImage] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [nutritionJsonError, setNutritionJsonError] = useState<string>('');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const aiImageInputRef = React.useRef<HTMLInputElement>(null);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [generatingImage, setGeneratingImage] = useState(false);
+  const [aiBaseImage, setAiBaseImage] = useState<string>('');
 
   // Fetch categories when modal opens
   useEffect(() => {
@@ -429,6 +434,96 @@ function ItemFormModal({
     // Reset file input to allow re-uploading the same file
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  const handleEditPreviewWithAI = async () => {
+    try {
+      // Switch to AI mode
+      setImageUploadMode('ai');
+      
+      // If the image is already base64, use it directly
+      if (formData.image_url.startsWith('data:image')) {
+        setAiBaseImage(formData.image_url);
+      } else {
+        // If it's a URL (like Unsplash), fetch and convert to base64
+        const response = await fetch(formData.image_url);
+        const blob = await response.blob();
+        
+        // Convert blob to base64
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64String = reader.result as string;
+          setAiBaseImage(base64String);
+        };
+        reader.readAsDataURL(blob);
+      }
+      
+      // Clear the prompt (ready for new edit instructions)
+      setAiPrompt('');
+    } catch (error) {
+      console.error('Error loading image for editing:', error);
+      alert('Failed to load image for editing. Please try uploading the image directly.');
+    }
+  };
+
+  const handleAiImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB');
+      return;
+    }
+
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file');
+      return;
+    }
+
+    try {
+      // Convert to base64
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setAiBaseImage(base64String);
+      };
+      reader.onerror = () => {
+        alert('Failed to read image file');
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Failed to upload image');
+    }
+  };
+
+  const handleRemoveAiBaseImage = () => {
+    setAiBaseImage('');
+    if (aiImageInputRef.current) {
+      aiImageInputRef.current.value = '';
+    }
+  };
+
+
+  const handleGenerateImage = async () => {
+    if (!aiPrompt.trim()) {
+      alert('Please enter a description for the image you want to generate or edit');
+      return;
+    }
+
+    setGeneratingImage(true);
+    try {
+      const result = await generateImage(token, aiPrompt, aiBaseImage || undefined);
+      setFormData({ ...formData, image_url: result.image_data });
+      alert(aiBaseImage ? 'Image edited successfully! You can now preview it below.' : 'Image generated successfully! You can now preview it below.');
+    } catch (error: any) {
+      console.error('Failed to generate image:', error);
+      alert(error.message || 'Failed to generate image. Please try again.');
+    } finally {
+      setGeneratingImage(false);
     }
   };
 
@@ -756,12 +851,12 @@ function ItemFormModal({
                 Product Image *
               </label>
               
-              {/* Toggle between URL and Upload */}
+              {/* Toggle between URL, Upload, and AI Generation */}
               <div className="flex gap-2 mb-3">
                 <button
                   type="button"
                   onClick={() => setImageUploadMode('url')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     imageUploadMode === 'url'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -772,13 +867,24 @@ function ItemFormModal({
                 <button
                   type="button"
                   onClick={() => setImageUploadMode('upload')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     imageUploadMode === 'upload'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
                   Upload Image
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImageUploadMode('ai')}
+                  className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    imageUploadMode === 'ai'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  ✨ Generate with AI
                 </button>
               </div>
 
@@ -790,7 +896,7 @@ function ItemFormModal({
                   placeholder="https://example.com/image.jpg"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
                 />
-              ) : (
+              ) : imageUploadMode === 'upload' ? (
                 <div className="space-y-2">
                   <input
                     ref={fileInputRef}
@@ -806,6 +912,114 @@ function ItemFormModal({
                   <p className="text-xs text-gray-500">
                     Max file size: 5MB. Supported formats: JPG, PNG, GIF, WebP
                   </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {/* Unified AI Generation Interface */}
+                  <div className="space-y-3">
+                    <div className="relative">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {aiBaseImage ? 'Describe the edits you want' : 'Describe the image you want to generate'}
+                      </label>
+                      <textarea
+                        value={aiPrompt}
+                        onChange={(e) => setAiPrompt(e.target.value)}
+                        placeholder={
+                          aiBaseImage
+                            ? "Example: 'Change background to white' or 'Add a fresh label' or 'Make the colors more vibrant'"
+                            : "Example: 'A fresh organic red apple on a white background, professional product photography'"
+                        }
+                        rows={4}
+                        disabled={generatingImage}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
+                      />
+                      
+                      {/* Optional image upload button - bottom left corner */}
+                      {!aiBaseImage && (
+                        <div className="absolute -bottom-2 left-2">
+                          <input
+                            ref={aiImageInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAiImageUpload}
+                            className="hidden"
+                            id="ai-image-upload-generate"
+                          />
+                          <label
+                            htmlFor="ai-image-upload-generate"
+                            className="cursor-pointer inline-flex items-center gap-1 px-3 py-1 bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs font-medium rounded-full border border-purple-300 transition-colors"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            Upload image to edit
+                          </label>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Show uploaded base image if present */}
+                    {aiBaseImage && (
+                      <div className="border-2 border-purple-200 rounded-md p-3 bg-purple-50">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-medium text-purple-700">Base Image:</span>
+                          <label
+                            htmlFor="ai-image-change-generate"
+                            className="px-3 py-1 text-xs bg-purple-600 hover:bg-purple-700 text-white font-medium rounded cursor-pointer transition-colors"
+                          >
+                            Replace
+                          </label>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAiImageUpload}
+                            className="hidden"
+                            id="ai-image-change-generate"
+                          />
+                        </div>
+                        <div className="relative w-full h-24 bg-white rounded flex items-center justify-center overflow-hidden border border-purple-200 group">
+                          <img
+                            src={aiBaseImage}
+                            alt="Base image"
+                            className="w-full h-full object-contain"
+                          />
+                          {/* X icon on hover - centered */}
+                          <button
+                            type="button"
+                            onClick={handleRemoveAiBaseImage}
+                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg"
+                            title="Remove image"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={handleGenerateImage}
+                      disabled={generatingImage || !aiPrompt.trim()}
+                      className="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {generatingImage ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                          {aiBaseImage ? 'Editing Image...' : 'Generating Image...'}
+                        </span>
+                      ) : (
+                        aiBaseImage ? 'Edit Image with AI' : 'Generate Image with AI'
+                      )}
+                    </button>
+                    <p className="text-xs text-gray-500">
+                      💡 Tip: {aiBaseImage ? 'Be specific about what edits you want.' : 'Be specific about the product, lighting, background, and style. Or upload an image to edit it.'} Generation may take 10-30 seconds.
+                    </p>
+                  </div>
                 </div>
               )}
 
@@ -823,13 +1037,22 @@ function ItemFormModal({
                       }}
                     />
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleRemoveImage}
-                    className="mt-3 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors border border-red-700"
-                  >
-                    Remove Image
-                  </button>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleEditPreviewWithAI}
+                      className="flex-1 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition-colors border border-purple-700"
+                    >
+                      Edit with AI
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="flex-1 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors border border-red-700"
+                    >
+                      Remove Image
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
