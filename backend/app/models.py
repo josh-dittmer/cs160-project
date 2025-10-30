@@ -25,6 +25,7 @@ class Item(Base):
     weight_oz: Mapped[int] = mapped_column(Integer)
     category: Mapped[str | None] = mapped_column(String(64), index=True, nullable=True)
     image_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    video_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     nutrition_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # new fields for Sprint 1.5

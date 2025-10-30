@@ -11,6 +11,7 @@ from .routers import payment as payment_router
 import stripe
 import os
 from .routers import image_generation as image_generation_router
+from .routers import video_generation as video_generation_router
 
 stripe.api_key = os.getenv("STRIPE_API_KEY", "")
 
@@ -40,6 +41,7 @@ app.include_router(orders_router.router)
 app.include_router(admin_router.router)
 app.include_router(payment_router.router)
 app.include_router(image_generation_router.router)
+app.include_router(video_generation_router.router)
 
 @app.get("/healthz")
 def healthz():
