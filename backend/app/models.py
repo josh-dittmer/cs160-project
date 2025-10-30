@@ -115,6 +115,7 @@ class Order(Base):
     delivered_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    payment_intent_id: Mapped[str | None] = mapped_column(String(255), index=True)
 
     user = relationship(User)
 

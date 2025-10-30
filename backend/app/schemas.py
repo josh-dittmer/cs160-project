@@ -163,6 +163,13 @@ class OrderOut(BaseModel):
 class OrderItemsResponse(BaseModel):
     orders: list[OrderOut]
 
+class ConfirmPaymentRequest(BaseModel):
+    intentId: str
+    clientSecret: str
+
+class ConfirmPaymentResponse(BaseModel):
+    orderId: int
+
 class CreatePaymentIntentResponse(BaseModel):
     clientSecret: str
     customerSessionClientSecret: str

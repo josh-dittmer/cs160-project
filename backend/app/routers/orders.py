@@ -14,8 +14,6 @@ def list_order_items(
     user: UserCtx = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> OrderItemsResponse:
-    print(user.id)
-
     orders_res = db.query(OrderItem, Order, Item).join(Order).join(Item).filter(
         Order.user_id == user.id
     ).order_by(Order.created_at).limit(limit)

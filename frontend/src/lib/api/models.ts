@@ -94,6 +94,18 @@ export const OrderResponse = t.type({
 
 export type OrderResponseT = t.TypeOf<typeof OrderResponse>;
 
+export const ConfirmPaymentRequest = t.type({
+    intentId: t.string,
+    clientSecret: t.string
+});
+
+export type ConfirmPaymentRequestT = t.TypeOf<typeof ConfirmPaymentRequest>;
+
+export const ConfirmPaymentResponse = t.type({
+    orderId: t.number
+});
+
+export type ConfirmPaymentResponseT = t.TypeOf<typeof ConfirmPaymentResponse>;
 
 export const CreatePaymentIntentResponse = t.type({
     clientSecret: t.string,
