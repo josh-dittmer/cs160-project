@@ -383,6 +383,7 @@ function ItemFormModal({
   const [videoMethod, setVideoMethod] = useState<'ai' | 'url' | 'upload'>('ai');
   const [videoUrlInput, setVideoUrlInput] = useState('');
   const videoFileInputRef = React.useRef<HTMLInputElement>(null);
+  const formRef = React.useRef<HTMLFormElement>(null);
 
   // Fetch categories when modal opens
   useEffect(() => {
@@ -842,12 +843,39 @@ function ItemFormModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">
-            {item ? 'Edit Item' : 'Create New Item'}
-          </h3>
-          <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] flex flex-col">
+        {/* Sticky Header */}
+        <div className="sticky top-0 bg-white rounded-t-lg border-b border-gray-200 px-6 py-4 z-10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Close"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <h3 className="text-xl font-bold text-gray-900">
+                {item ? 'Edit Item' : 'Create New Item'}
+              </h3>
+            </div>
+            <button
+              type="button"
+              onClick={() => formRef.current?.requestSubmit()}
+              disabled={saving}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium disabled:opacity-50 transition-colors"
+            >
+              {saving ? 'Saving...' : '💾 Save'}
+            </button>
+          </div>
+        </div>
+        
+        {/* Scrollable Content */}
+        <div className="overflow-y-auto flex-1 px-6 py-4">
+          <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Name *
