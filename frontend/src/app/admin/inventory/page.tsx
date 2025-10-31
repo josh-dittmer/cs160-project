@@ -574,16 +574,24 @@ function ItemFormModal({
       return;
     }
     
-    // Convert YouTube watch URLs to embed URLs for better compatibility
+    // Convert YouTube URLs to embed URLs for better compatibility
     let processedUrl = videoUrlInput.trim();
     
     // Handle different YouTube URL formats
     if (processedUrl.includes('youtube.com/watch?v=')) {
+      // Regular YouTube video: https://www.youtube.com/watch?v=VIDEO_ID
       const videoId = new URL(processedUrl).searchParams.get('v');
       if (videoId) {
         processedUrl = `https://www.youtube.com/embed/${videoId}`;
       }
+    } else if (processedUrl.includes('youtube.com/shorts/')) {
+      // YouTube Shorts: https://www.youtube.com/shorts/VIDEO_ID
+      const videoId = processedUrl.split('youtube.com/shorts/')[1]?.split('?')[0];
+      if (videoId) {
+        processedUrl = `https://www.youtube.com/embed/${videoId}`;
+      }
     } else if (processedUrl.includes('youtu.be/')) {
+      // Short YouTube URL: https://youtu.be/VIDEO_ID
       const videoId = processedUrl.split('youtu.be/')[1]?.split('?')[0];
       if (videoId) {
         processedUrl = `https://www.youtube.com/embed/${videoId}`;
@@ -1367,7 +1375,7 @@ function ItemFormModal({
                       type="url"
                       value={videoUrlInput}
                       onChange={(e) => setVideoUrlInput(e.target.value)}
-                      placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
+                      placeholder="YouTube, YouTube Shorts, Vimeo, or direct video URL"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm"
                     />
                     <p className="text-xs text-gray-500 mt-1">
@@ -1428,23 +1436,6 @@ function ItemFormModal({
               <label htmlFor="is_active" className="ml-2 text-sm text-gray-700">
                 Active
               </label>
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <button
-                type="submit"
-                disabled={saving}
-                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium disabled:opacity-50"
-              >
-                {saving ? 'Saving...' : item ? 'Update Item' : 'Create Item'}
-              </button>
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md font-medium"
-              >
-                Cancel
-              </button>
             </div>
           </form>
         </div>
