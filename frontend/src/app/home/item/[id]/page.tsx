@@ -265,6 +265,8 @@ export default function ItemDetailPage({ params }: { params: Promise<{ id: strin
     const [nutrition, setNutrition] = useState<NutritionT | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
+    const [showZoom, setShowZoom] = useState(false);
+    const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
 
     useEffect(() => {
         const fetchData = async () => {
@@ -293,6 +295,13 @@ export default function ItemDetailPage({ params }: { params: Promise<{ id: strin
         fetchData();
     }, [id]);
 
+    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        setZoomPosition({ x, y });
+    };
+
     if (loading) {
         return (
             <div className="max-w-7xl mx-auto p-6 flex items-center justify-center min-h-screen">
@@ -312,39 +321,59 @@ export default function ItemDetailPage({ params }: { params: Promise<{ id: strin
     return (
         <div className="max-w-7xl mx-auto p-6 space-y-8">
             {/* Top Section - Image and Product Info Side by Side */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                 {/* Product Image and Video */}
                 <div className="space-y-4">
-                    <div className="bg-white rounded-2xl overflow-hidden aspect-square flex items-center justify-center border border-gray-200">
-                        {item.image_url ? (
-                            item.image_url.startsWith('data:') ? (
-                                // Use regular img tag for base64 images to avoid hydration issues
-                                <img
-                                    src={item.image_url}
-                                    alt={item.name}
-                                    className="w-full h-full object-contain"
-                                />
+                    <div 
+                        className="bg-white rounded-2xl overflow-hidden aspect-square border border-gray-200 -mt-6 relative cursor-crosshair"
+                        onMouseEnter={() => setShowZoom(true)}
+                        onMouseLeave={() => setShowZoom(false)}
+                        onMouseMove={handleMouseMove}
+                    >
+                        {/* Main Image */}
+                        <div className="w-full h-full flex items-center justify-center">
+                            {item.image_url ? (
+                                item.image_url.startsWith('data:') ? (
+                                    // Use regular img tag for base64 images to avoid hydration issues
+                                    <img
+                                        src={item.image_url}
+                                        alt={item.name}
+                                        className="w-full h-full object-contain"
+                                    />
+                                ) : (
+                                    <Image
+                                        src={item.image_url}
+                                        alt={item.name}
+                                        width={600}
+                                        height={600}
+                                        className="w-full h-full object-contain"
+                                        priority
+                                    />
+                                )
                             ) : (
-                                <Image
-                                    src={item.image_url}
-                                    alt={item.name}
-                                    width={600}
-                                    height={600}
-                                    className="w-full h-full object-contain"
-                                    priority
-                                />
-                            )
-                        ) : (
-                            <Package className="w-32 h-32 text-fg-medium" />
+                                <Package className="w-32 h-32 text-fg-medium" />
+                            )}
+                        </div>
+
+                        {/* Zoomed Image Overlay */}
+                        {showZoom && item.image_url && (
+                            <div 
+                                className="absolute inset-0 pointer-events-none"
+                                style={{
+                                    backgroundImage: `url(${item.image_url})`,
+                                    backgroundSize: '200%',
+                                    backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
+                                    backgroundRepeat: 'no-repeat',
+                                }}
+                            />
                         )}
                     </div>
                     
                     {/* Product Video */}
                     {item.video_url && (
                         <div className="space-y-3">
-                            <h3 className="text-xl font-semibold text-fg-primary flex items-center gap-2">
-                                <span className="text-2xl">🎬</span>
-                                See It In Action
+                            <h3 className="text-xl font-semibold text-fg-primary">
+                                Product Video
                             </h3>
                             <div className="bg-black rounded-2xl overflow-hidden border border-gray-200">
                                 {item.video_url.includes('youtube.com/embed') || item.video_url.includes('vimeo.com') ? (
