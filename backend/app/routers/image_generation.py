@@ -138,9 +138,12 @@ async def generate_image(
             ),
         ]
         
-        # Configure to explicitly request image output
+        # Configure to explicitly request image output with 16:9 aspect ratio
         generate_content_config = types.GenerateContentConfig(
             response_modalities=["IMAGE", "TEXT"],
+            image_config=types.ImageConfig(
+                aspect_ratio="16:9",
+            ),
         )
         
         # Generate image using streaming API
