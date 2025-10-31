@@ -48,6 +48,6 @@ uvicorn==0.37.0
 uvloop==0.21.0; platform_system != "Windows"
 watchfiles==1.1.0
 websockets
-google-genai>=1.47.0
+google-genai==1.47.0
 Pillow==11.0.0
 stripe==13.0.1
