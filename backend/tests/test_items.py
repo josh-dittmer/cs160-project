@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
-from backend.app.main import app
-from backend.app.seed import seed
+from app.main import app
+from app.seed import seed
 
 seed()  # ensure DB and sample data
 client = TestClient(app)

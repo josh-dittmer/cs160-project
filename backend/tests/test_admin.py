@@ -5,10 +5,10 @@ Tests admin authentication, user management, inventory CRUD, and single admin mo
 
 import pytest
 from fastapi.testclient import TestClient
-from backend.app.main import app
-from backend.app.database import SessionLocal, Base, engine
-from backend.app.models import User, Item
-from backend.app.auth import get_password_hash
+from app.main import app
+from app.database import SessionLocal, Base, engine
+from app.models import User, Item
+from app.auth import get_password_hash
 
 # Setup test client
 client = TestClient(app)

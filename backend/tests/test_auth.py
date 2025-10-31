@@ -6,10 +6,10 @@ Tests signup, login, Google OAuth, and JWT token validation.
 import os
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
-from backend.app.main import app
-from backend.app.database import SessionLocal, Base, engine
-from backend.app.models import User
-from backend.app.auth import get_password_hash
+from app.main import app
+from app.database import SessionLocal, Base, engine
+from app.models import User
+from app.auth import get_password_hash
 
 # Setup test client
 client = TestClient(app)
@@ -258,7 +258,7 @@ def test_google_auth_new_user():
         "name": GOOGLE_USER_NAME,
     }
     
-    with patch("backend.app.routers.auth.id_token.verify_oauth2_token") as mock_verify:
+    with patch("app.routers.auth.id_token.verify_oauth2_token") as mock_verify:
         with patch.dict(os.environ, {"GOOGLE_CLIENT_ID": "test-client-id"}):
             mock_verify.return_value = mock_idinfo
             
@@ -312,7 +312,7 @@ def test_google_auth_existing_user():
         "name": GOOGLE_USER_NAME,
     }
     
-    with patch("backend.app.routers.auth.id_token.verify_oauth2_token") as mock_verify:
+    with patch("app.routers.auth.id_token.verify_oauth2_token") as mock_verify:
         with patch.dict(os.environ, {"GOOGLE_CLIENT_ID": "test-client-id"}):
             mock_verify.return_value = mock_idinfo
             
@@ -349,7 +349,7 @@ def test_google_auth_link_existing_email():
         "name": GOOGLE_USER_NAME,
     }
     
-    with patch("backend.app.routers.auth.id_token.verify_oauth2_token") as mock_verify:
+    with patch("app.routers.auth.id_token.verify_oauth2_token") as mock_verify:
         with patch.dict(os.environ, {"GOOGLE_CLIENT_ID": "test-client-id"}):
             mock_verify.return_value = mock_idinfo
             
@@ -372,7 +372,7 @@ def test_google_auth_link_existing_email():
 
 def test_google_auth_invalid_token():
     """Test that invalid Google token fails"""
-    with patch("backend.app.routers.auth.id_token.verify_oauth2_token") as mock_verify:
+    with patch("app.routers.auth.id_token.verify_oauth2_token") as mock_verify:
         with patch.dict(os.environ, {"GOOGLE_CLIENT_ID": "test-client-id"}):
             mock_verify.side_effect = ValueError("Invalid token")
             
@@ -441,7 +441,7 @@ def test_get_me_with_invalid_token():
 
 def test_token_expires():
     """Test that expired tokens are rejected"""
-    from backend.app.auth import create_access_token
+    from app.auth import create_access_token
     from datetime import timedelta
     
     # Create a user
@@ -541,7 +541,7 @@ def test_signup_and_google_link():
         "name": TEST_USER_NAME,
     }
     
-    with patch("backend.app.routers.auth.id_token.verify_oauth2_token") as mock_verify:
+    with patch("app.routers.auth.id_token.verify_oauth2_token") as mock_verify:
         with patch.dict(os.environ, {"GOOGLE_CLIENT_ID": "test-client-id"}):
             mock_verify.return_value = mock_idinfo
             

@@ -1,10 +1,13 @@
+'use client';
+
 import AddToCartButton from '@/components/add_to_cart_button/add_to_cart_button';
 import { ItemDetail, ItemDetailT } from '@/lib/api/models';
 import { get, request } from '@/lib/api/request';
 import * as t from 'io-ts';
-import { Package, TrendingUp } from 'lucide-react';
+import { Package, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
+import { useState, useEffect, use } from 'react';
 
 // Define the nutrition type
 const NutritionFact = t.partial({
@@ -47,27 +50,48 @@ const Nutrition = t.partial({
 type NutritionT = t.TypeOf<typeof Nutrition>;
 
 function NutritionLabel({ nutrition }: { nutrition: NutritionT }) {
-    return (
-        <div className="bg-white border-2 border-black p-2 font-sans text-sm">
-            <div className="border-b-8 border-black pb-1">
-                <h2 className="text-3xl font-bold">Nutrition Facts</h2>
-                {nutrition.servingsPerContainer && (
-                    <p className="text-xs">{nutrition.servingsPerContainer}</p>
-                )}
-                {nutrition.servingSize && (
-                    <p className="font-bold">Serving size <span className="float-right">{nutrition.servingSize}</span></p>
-                )}
-            </div>
+    const [isExpanded, setIsExpanded] = useState(false);
 
-            {/* Calories */}
-            {nutrition.calories !== undefined && (
-                <div className="border-b-4 border-black py-1">
-                    <p className="text-xs font-bold">Amount per serving</p>
-                    <p className="text-3xl font-bold">
-                        Calories <span className="float-right">{nutrition.calories}</span>
-                    </p>
+    return (
+        <div className="bg-white border-2 border-black font-sans text-sm">
+            {/* Clickable Header - Only Title When Collapsed */}
+            <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="w-full text-left p-2 hover:bg-gray-50 transition-colors"
+            >
+                <div className="flex items-center justify-between">
+                    <h2 className="text-3xl font-bold">Nutrition Facts</h2>
+                    <div className="ml-4 flex-shrink-0">
+                        {isExpanded ? (
+                            <ChevronUp className="w-6 h-6 text-black" />
+                        ) : (
+                            <ChevronDown className="w-6 h-6 text-black" />
+                        )}
+                    </div>
                 </div>
-            )}
+            </button>
+
+            {/* Collapsible Content - Everything Else */}
+            {isExpanded && (
+                <div className="p-2 pt-0">
+                    <div className="border-b-8 border-black pb-1 mb-1">
+                        {nutrition.servingsPerContainer && (
+                            <p className="text-xs">{nutrition.servingsPerContainer}</p>
+                        )}
+                        {nutrition.servingSize && (
+                            <p className="font-bold">Serving size <span className="float-right">{nutrition.servingSize}</span></p>
+                        )}
+                    </div>
+
+                    {/* Calories */}
+                    {nutrition.calories !== undefined && (
+                        <div className="border-b-4 border-black py-1">
+                            <p className="text-xs font-bold">Amount per serving</p>
+                            <p className="text-3xl font-bold">
+                                Calories <span className="float-right">{nutrition.calories}</span>
+                            </p>
+                        </div>
+                    )}
 
             <div className="border-b-2 border-black py-1">
                 <p className="text-xs text-right font-bold">% Daily Value*</p>
@@ -229,61 +253,148 @@ function NutritionLabel({ nutrition }: { nutrition: NutritionT }) {
             <div className="border-t-4 border-black pt-2 text-xs">
                 <p>* Percent Daily Values are based on a 2,000 calorie diet.</p>
             </div>
+                </div>
+            )}
         </div>
     );
 }
 
-export default async function ItemDetailPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params;
+export default function ItemDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
+    const [item, setItem] = useState<ItemDetailT | null>(null);
+    const [nutrition, setNutrition] = useState<NutritionT | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
+    const [showZoom, setShowZoom] = useState(false);
+    const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
 
-    const addToCart = () => {
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+                const fetchedItem = await request(`/api/items/${id}`, get({ decoder: ItemDetail }));
+                setItem(fetchedItem);
 
+                // Parse nutrition data
+                if (fetchedItem.nutrition_json) {
+                    try {
+                        const parsedNutrition = JSON.parse(fetchedItem.nutrition_json);
+                        setNutrition(parsedNutrition);
+                    } catch (e) {
+                        console.error('Failed to parse nutrition JSON:', e);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to fetch item:', error);
+                setError(true);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [id]);
+
+    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        setZoomPosition({ x, y });
     };
 
-    // Fetch item details
-    let item: ItemDetailT;
-    try {
-        item = await request(`/api/items/${id}`, get({ decoder: ItemDetail }));
-    } catch (error) {
-        notFound();
+    if (loading) {
+        return (
+            <div className="max-w-7xl mx-auto p-6 flex items-center justify-center min-h-screen">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-fg-primary mx-auto mb-4"></div>
+                    <p className="text-fg-medium">Loading product details...</p>
+                </div>
+            </div>
+        );
     }
 
-    // Parse nutrition data
-    let nutrition: NutritionT | null = null;
-    if (item.nutrition_json) {
-        try {
-            nutrition = JSON.parse(item.nutrition_json);
-        } catch (e) {
-            console.error('Failed to parse nutrition JSON:', e);
-        }
+    if (error || !item) {
+        notFound();
+        return null;
     }
 
     return (
         <div className="max-w-7xl mx-auto p-6 space-y-8">
             {/* Top Section - Image and Product Info Side by Side */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Product Image */}
-                <div className="bg-white rounded-2xl overflow-hidden aspect-square flex items-center justify-center border border-gray-200">
-                    {item.image_url ? (
-                        item.image_url.startsWith('data:') ? (
-                            // Use regular img tag for base64 images to avoid hydration issues
-                            <img
-                                src={item.image_url}
-                                alt={item.name}
-                                className="w-full h-full object-contain"
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                {/* Product Image and Video */}
+                <div className="space-y-4">
+                    <div 
+                        className="bg-white rounded-2xl overflow-hidden aspect-square border border-gray-200 -mt-6 relative cursor-crosshair"
+                        onMouseEnter={() => setShowZoom(true)}
+                        onMouseLeave={() => setShowZoom(false)}
+                        onMouseMove={handleMouseMove}
+                    >
+                        {/* Main Image */}
+                        <div className="w-full h-full flex items-center justify-center">
+                            {item.image_url ? (
+                                item.image_url.startsWith('data:') ? (
+                                    // Use regular img tag for base64 images to avoid hydration issues
+                                    <img
+                                        src={item.image_url}
+                                        alt={item.name}
+                                        className="w-full h-full object-contain"
+                                    />
+                                ) : (
+                                    <Image
+                                        src={item.image_url}
+                                        alt={item.name}
+                                        width={600}
+                                        height={600}
+                                        className="w-full h-full object-contain"
+                                        priority
+                                    />
+                                )
+                            ) : (
+                                <Package className="w-32 h-32 text-fg-medium" />
+                            )}
+                        </div>
+
+                        {/* Zoomed Image Overlay */}
+                        {showZoom && item.image_url && (
+                            <div 
+                                className="absolute inset-0 pointer-events-none"
+                                style={{
+                                    backgroundImage: `url(${item.image_url})`,
+                                    backgroundSize: '200%',
+                                    backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
+                                    backgroundRepeat: 'no-repeat',
+                                }}
                             />
-                        ) : (
-                            <Image
-                                src={item.image_url}
-                                alt={item.name}
-                                width={600}
-                                height={600}
-                                className="w-full h-full object-contain"
-                                priority
-                            />
-                        )
-                    ) : (
-                        <Package className="w-32 h-32 text-fg-medium" />
+                        )}
+                    </div>
+                    
+                    {/* Product Video */}
+                    {item.video_url && (
+                        <div className="space-y-3">
+                            <h3 className="text-xl font-semibold text-fg-primary">
+                                Product Video
+                            </h3>
+                            <div className="bg-black rounded-2xl overflow-hidden border border-gray-200">
+                                {item.video_url.includes('youtube.com/embed') || item.video_url.includes('vimeo.com') ? (
+                                    <iframe
+                                        src={item.video_url}
+                                        className="w-full aspect-video"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                    />
+                                ) : (
+                                    <video
+                                        src={item.video_url}
+                                        controls
+                                        className="w-full"
+                                        preload="metadata"
+                                    >
+                                        Your browser does not support the video tag.
+                                    </video>
+                                )}
+                            </div>
+                        </div>
                     )}
                 </div>
 

@@ -11,3 +11,4 @@ backend/sqlite.db-journal
 .env
 temp/
 .github/
+.pytest_cache/

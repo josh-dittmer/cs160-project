@@ -34,25 +34,33 @@ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your-google-maps-api-key
 
 ### Backend Setup
 
-#### 1. Navigate to project and create virtual environment
+#### 1. Navigate to backend directory and create virtual environment
 
 ```bash
-cd cs160-project
+cd cs160-project/backend
 python3 -m venv .venv
 source .venv/bin/activate
 ```
 
 **Windows:**
 ```powershell
-cd cs160-project
+cd cs160-project\backend
 python -m venv .venv
 .venv\Scripts\activate
 ```
 
+> **Note:** If you already have `.venv` in the project root, you can still use it:
+> ```bash
+> cd cs160-project
+> source .venv/bin/activate  # or .venv\Scripts\activate on Windows
+> cd backend
+> ```
+> Then continue with the remaining steps below.
+
 #### 2. Install backend dependencies
 
 ```bash
-pip install -r backend/requirements.txt
+pip install -r requirements.txt
 ```
 
 #### 2.5 Reset Database (Optional)
@@ -61,42 +69,28 @@ If you need to reseed with fresh data, delete the existing database first:
 
 **macOS/Linux:**
 ```bash
-rm backend/sqlite.db
+rm sqlite.db
 ```
 
 **Windows PowerShell:**
 ```powershell
-Remove-Item backend\sqlite.db
+Remove-Item sqlite.db
 ```
 
 #### 3. Seed the database
 
 This will create the database tables and an admin user.
 
-**macOS/Linux:**
 ```bash
-PYTHONPATH=. python -m backend.app.seed
-```
-
-**Windows PowerShell:**
-```powershell
-$env:PYTHONPATH="."
-python -m backend.app.seed
+python -m app.seed
 ```
 
 **Admin Credentials:** `admin@sjsu.edu` / `admin123`
 
 #### 4. Start the backend server
 
-**macOS/Linux:**
 ```bash
-PYTHONPATH=. uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8080
-```
-
-**Windows PowerShell:**
-```powershell
-$env:PYTHONPATH="."
-uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8080
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
 ```
 
 
@@ -202,6 +196,15 @@ cs160-project/
   - Admin-only access with proper authentication
   - See [docs/AI_IMAGE_GENERATION.md](docs/AI_IMAGE_GENERATION.md) for setup guide
 
+- **AI-Powered Video Generation** 
+  - Generate professional marketing videos from text descriptions using Veo 3.1
+  - Creates 8-second videos with native audio (dialogue, sound effects)
+  - Cinematic quality in 720p/1080p resolution
+  - Two generation modes: Standard (best quality) and Fast (optimized speed)
+  - Async and sync generation workflows
+  - Perfect for product demos, ads, and social media content
+  - See [backend/docs/api/VIDEO_API.md](backend/docs/api/VIDEO_API.md) for API documentation
+
 - **Smart Search**
   - Real-time autocomplete suggestions
   - Fuzzy matching with typo tolerance (handles "oganic aples" → "Organic Apples")
@@ -221,19 +224,39 @@ cs160-project/
 
 ## 🧪 Running Tests
 
+**macOS/Linux:**
 ```bash
-# Activate virtual environment
+# Navigate to backend directory and activate virtual environment
+cd cs160-project/backend
 source .venv/bin/activate
 
 # Run all tests
-PYTHONPATH=. pytest tests/ -v
+pytest tests/ -v
 
 # Run specific test file
-PYTHONPATH=. pytest tests/test_auth.py -v
+pytest tests/test_auth.py -v
 
 # Run admin RBAC tests (23 tests)
-PYTHONPATH=. pytest tests/test_admin.py -v
+pytest tests/test_admin.py -v
 ```
+
+**Windows PowerShell:**
+```powershell
+# Navigate to backend directory and activate virtual environment
+cd cs160-project\backend
+.venv\Scripts\activate
+
+# Run all tests
+pytest tests/ -v
+
+# Run specific test file
+pytest tests/test_auth.py -v
+
+# Run admin RBAC tests (23 tests)
+pytest tests/test_admin.py -v
+```
+
+> **Note:** If you have `.venv` in the project root, activate it there first, then `cd backend` before running tests.
 
 ---
 
@@ -247,7 +270,9 @@ PYTHONPATH=. pytest tests/test_admin.py -v
 - JWT - Authentication tokens
 - Google OAuth 2.0 - Social login
 - RapidFuzz - Fuzzy string matching for search
-- Google Gemini AI (2.5 Flash Image/Nano Banana) - AI image generation
+- Google Gemini AI - AI content generation
+  - Gemini 2.5 Flash Image - AI image generation
+  - Veo 3.1 - AI video generation
 - Pillow - Image processing and optimization
 
 **Frontend:**
@@ -276,20 +301,35 @@ CS160 Project Team 6
 ## 🐛 Troubleshooting
 
 ### Backend won't start
-- Make sure virtual environment is activated: `source .venv/bin/activate`
+- Make sure you're in the backend directory: `cd backend`
+- Make sure virtual environment is activated:
+  - macOS/Linux: `source .venv/bin/activate`
+  - Windows PowerShell: `.venv\Scripts\activate`
 - Check if port 8080 is already in use
-- Verify all dependencies are installed: `pip install -r backend/requirements.txt`
+- Verify all dependencies are installed: `pip install -r requirements.txt`
 
 ### Frontend won't start
 - Make sure you're in the frontend directory: `cd frontend`
-- Delete `node_modules` and reinstall: `rm -rf node_modules && npm install`
+- Delete `node_modules` and reinstall:
+  - macOS/Linux: `rm -rf node_modules && npm install`
+  - Windows PowerShell: `Remove-Item -Recurse -Force node_modules; npm install`
 - Check if port 3000 is already in use
 
 ### Database issues
-- Delete and re-seed the database:
+- Delete and re-seed the database (from backend directory):
+  
+  **macOS/Linux:**
   ```bash
-  rm backend/sqlite.db
-  PYTHONPATH=. python -m backend.app.seed
+  cd backend
+  rm sqlite.db
+  python -m app.seed
+  ```
+  
+  **Windows PowerShell:**
+  ```powershell
+  cd backend
+  Remove-Item sqlite.db
+  python -m app.seed
   ```
 
 ### Google Sign-In not working
@@ -310,6 +350,15 @@ CS160 Project Team 6
 - Consider upgrading to paid tier for production use
 - See [docs/AI_IMAGE_GENERATION.md](docs/AI_IMAGE_GENERATION.md) for setup and troubleshooting
 
+### AI video generation not working
+- Verify `GEMINI_API_KEY` is set in `backend/.env` (same key as image generation)
+- Video generation requires paid API access - Veo is not available in free tier
+- Check your API quota and billing at https://ai.google.dev/pricing
+- Generation takes 30-60 seconds - use async endpoint for better UX
+- Test the API health: `GET /api/admin/video/health`
+- Run test script (from backend directory): `python test_video_generation.py`
+- See [backend/docs/api/VIDEO_API.md](backend/docs/api/VIDEO_API.md) for complete API documentation
+
 ---
 
 ## 📚 Documentation
@@ -317,6 +366,7 @@ CS160 Project Team 6
 For more detailed information about specific features:
 
 - **[docs/AI_IMAGE_GENERATION.md](docs/AI_IMAGE_GENERATION.md)** - AI image generation setup and usage guide
+- **[backend/docs/api/VIDEO_API.md](backend/docs/api/VIDEO_API.md)** - AI video generation API documentation 
 - **[docs/PROFILE_IMPLEMENTATION_SUMMARY.md](docs/PROFILE_IMPLEMENTATION_SUMMARY.md)** - User profile, address selector, map integration
 - **[docs/GOOGLE_MAPS_SETUP.md](docs/GOOGLE_MAPS_SETUP.md)** - Google Maps API setup guide
 - **[docs/ADMIN.md](docs/ADMIN.md)** - Admin panel and role-based access control

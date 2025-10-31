@@ -61,23 +61,34 @@ export default function AdminDashboard() {
     fetchStats();
   }, [token]);
 
+  const getColorClasses = (color: string) => {
+    const colorMap: Record<string, { text: string; border: string }> = {
+      black: { text: 'text-gray-900', border: 'border-gray-900' },
+      yellow: { text: 'text-yellow-600', border: 'border-yellow-500' },
+      red: { text: 'text-red-600', border: 'border-red-500' },
+      green: { text: 'text-green-600', border: 'border-green-500' },
+      blue: { text: 'text-blue-600', border: 'border-blue-500' },
+    };
+    return colorMap[color] || colorMap.black;
+  };
+
   if (loading) {
     return <div className="text-center py-8">Loading dashboard...</div>;
   }
 
   const statCards = [
-    { label: 'Total Users', value: stats.totalUsers, color: 'blue', link: '/admin/users' },
-    { label: 'Total Items', value: stats.totalItems, color: 'green', link: '/admin/inventory?status=all' },
-    { label: 'Active Items', value: stats.activeItems, color: 'emerald', link: '/admin/inventory?status=active' },
-    { label: 'Inactive Items', value: stats.inactiveItems, color: 'gray', link: '/admin/inventory?status=inactive' },
-    { label: 'Low Stock Items', value: stats.lowStockItems, color: 'yellow', link: '/admin/inventory?lowStock=true' },
+    { label: 'Total Users', value: stats.totalUsers, color: 'black', link: '/admin/users' },
+    { label: 'Total Items', value: stats.totalItems, color: 'black', link: '/admin/inventory?status=all' },
+    { label: 'Active Items', value: stats.activeItems, color: 'black', link: '/admin/inventory?status=active' },
+    { label: 'Inactive Items', value: stats.inactiveItems, color: 'black', link: '/admin/inventory?status=inactive' },
+    { label: 'Low Stock Items', value: stats.lowStockItems, color: stats.lowStockItems >= 1 ? 'yellow' : 'black', link: '/admin/inventory?lowStock=true' },
   ];
 
   const userRoleCards = [
-    { label: 'Admins', value: stats.adminCount, color: 'purple', role: 'admin' },
-    { label: 'Employees', value: stats.employeeCount, color: 'indigo', role: 'employee' },
-    { label: 'Managers', value: stats.managerCount, color: 'blue', role: 'manager' },
-    { label: 'Customers', value: stats.customerCount, color: 'green', role: 'customer' },
+    { label: 'Admins', value: stats.adminCount, color: 'black', role: 'admin' },
+    { label: 'Employees', value: stats.employeeCount, color: 'black', role: 'employee' },
+    { label: 'Managers', value: stats.managerCount, color: 'black', role: 'manager' },
+    { label: 'Customers', value: stats.customerCount, color: 'black', role: 'customer' },
   ];
 
   return (
@@ -97,18 +108,21 @@ export default function AdminDashboard() {
           System Statistics
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {statCards.map((stat) => (
-            <Link
-              key={stat.label}
-              href={stat.link}
-              className={`bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow border-l-4 border-${stat.color}-500`}
-            >
-              <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
-              <p className={`text-3xl font-bold text-${stat.color}-600`}>
-                {stat.value}
-              </p>
-            </Link>
-          ))}
+          {statCards.map((stat) => {
+            const colors = getColorClasses(stat.color);
+            return (
+              <Link
+                key={stat.label}
+                href={stat.link}
+                className={`bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow border-l-4 ${colors.border}`}
+              >
+                <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
+                <p className={`text-3xl font-bold ${colors.text}`}>
+                  {stat.value}
+                </p>
+              </Link>
+            );
+          })}
         </div>
       </div>
 
@@ -118,18 +132,21 @@ export default function AdminDashboard() {
           User Roles
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {userRoleCards.map((stat) => (
-            <Link
-              key={stat.label}
-              href={`/admin/users?role=${stat.role}`}
-              className={`bg-white p-6 rounded-lg shadow hover:shadow-lg transition-all hover:scale-105 border-l-4 border-${stat.color}-500 cursor-pointer`}
-            >
-              <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
-              <p className={`text-3xl font-bold text-${stat.color}-600`}>
-                {stat.value}
-              </p>
-            </Link>
-          ))}
+          {userRoleCards.map((stat) => {
+            const colors = getColorClasses(stat.color);
+            return (
+              <Link
+                key={stat.label}
+                href={`/admin/users?role=${stat.role}`}
+                className={`bg-white p-6 rounded-lg shadow hover:shadow-lg transition-all hover:scale-105 border-l-4 ${colors.border} cursor-pointer`}
+              >
+                <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
+                <p className={`text-3xl font-bold ${colors.text}`}>
+                  {stat.value}
+                </p>
+              </Link>
+            );
+          })}
         </div>
       </div>
 

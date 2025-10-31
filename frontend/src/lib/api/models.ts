@@ -8,6 +8,7 @@ export const Item = t.type({
     weight_oz: t.number,
     category: t.union([t.string, t.null]),
     image_url: t.union([t.string, t.null]),
+    video_url: t.union([t.string, t.null]),
     avg_rating: t.number,
     ratings_count: t.number
 });
@@ -21,6 +22,7 @@ export const ItemDetail = t.type({
     weight_oz: t.number,
     category: t.union([t.string, t.null]),
     image_url: t.union([t.string, t.null]),
+    video_url: t.union([t.string, t.null]),
     description: t.union([t.string, t.null]),
     nutrition_json: t.union([t.string, t.null]),
     avg_rating: t.number,

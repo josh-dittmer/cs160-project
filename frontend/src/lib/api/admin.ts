@@ -21,6 +21,7 @@ export interface ItemAdmin {
   weight_oz: number;
   category: string | null;
   image_url: string | null;
+  video_url: string | null;
   nutrition_json: string | null;
   description: string | null;
   avg_rating: number;
@@ -35,6 +36,7 @@ export interface ItemCreateData {
   weight_oz: number;
   category?: string | null;
   image_url?: string | null;
+  video_url?: string | null;
   nutrition_json?: string | null;
   description?: string | null;
   stock_qty?: number;
@@ -47,6 +49,7 @@ export interface ItemUpdateData {
   weight_oz?: number;
   category?: string | null;
   image_url?: string | null;
+  video_url?: string | null;
   nutrition_json?: string | null;
   description?: string | null;
   stock_qty?: number;
@@ -337,6 +340,125 @@ export async function checkImageGenerationHealth(token: string): Promise<any> {
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.detail || 'Failed to check image generation health');
+  }
+
+  return response.json();
+}
+
+// ============ AI Video Generation ============
+
+export interface VideoGenerationRequest {
+  prompt: string;
+  model?: string;  // 'veo-3.1-generate-preview' or 'veo-3.1-fast-generate-preview'
+}
+
+export interface VideoGenerationResponse {
+  status: string;  // 'processing', 'completed', 'failed'
+  video_data?: string;  // Base64-encoded MP4 data URI when completed
+  operation_id?: string;  // For polling
+  prompt: string;
+  message?: string;
+}
+
+export interface VideoStatusResponse {
+  status: string;
+  video_data?: string;
+  message?: string;
+}
+
+export async function generateVideo(
+  token: string,
+  prompt: string,
+  model: string = 'veo-3.1-fast-generate-preview'
+): Promise<VideoGenerationResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/admin/video/generate`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ prompt, model }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to start video generation');
+  }
+
+  return response.json();
+}
+
+export async function generateVideoSync(
+  token: string,
+  prompt: string,
+  model: string = 'veo-3.1-fast-generate-preview'
+): Promise<VideoGenerationResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/admin/video/generate-sync`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ prompt, model }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to generate video');
+  }
+
+  return response.json();
+}
+
+export async function checkVideoStatus(
+  token: string,
+  operationId: string
+): Promise<VideoStatusResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/admin/video/status/${operationId}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to check video status');
+  }
+
+  return response.json();
+}
+
+export async function deleteVideoOperation(
+  token: string,
+  operationId: string
+): Promise<any> {
+  const response = await fetch(`${API_BASE_URL}/api/admin/video/operation/${operationId}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to delete operation');
+  }
+
+  return response.json();
+}
+
+export async function checkVideoGenerationHealth(token: string): Promise<any> {
+  const response = await fetch(`${API_BASE_URL}/api/admin/video/health`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to check video generation health');
   }
 
   return response.json();

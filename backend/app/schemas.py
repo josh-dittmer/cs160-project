@@ -10,6 +10,7 @@ class ItemListOut(BaseModel):
     weight_oz: int
     category: str | None = None
     image_url: str | None = None
+    video_url: str | None = None
     avg_rating: float
     ratings_count: int
 
@@ -212,6 +213,7 @@ class ItemCreate(BaseModel):
     weight_oz: conint(ge=0)
     category: str | None = None
     image_url: str | None = None
+    video_url: str | None = None
     nutrition_json: str | None = None
     description: str | None = None
     stock_qty: conint(ge=0) = 0
@@ -225,6 +227,7 @@ class ItemUpdate(BaseModel):
     weight_oz: conint(ge=0) | None = None
     category: str | None = None
     image_url: str | None = None
+    video_url: str | None = None
     nutrition_json: str | None = None
     description: str | None = None
     stock_qty: conint(ge=0) | None = None
