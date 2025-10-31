@@ -585,7 +585,7 @@ function ItemFormModal({
         processedUrl = `https://www.youtube.com/embed/${videoId}`;
       }
     } else if (processedUrl.includes('youtube.com/shorts/')) {
-      // YouTube Shorts: https://www.youtube.com/shorts/VIDEO_ID
+      // YouTube Shorts: https://www.youtube.com/shorts/VIDEO_ID  
       const videoId = processedUrl.split('youtube.com/shorts/')[1]?.split('?')[0];
       if (videoId) {
         processedUrl = `https://www.youtube.com/embed/${videoId}`;
