@@ -237,3 +237,93 @@ class ItemUpdate(BaseModel):
 class ItemActivateUpdate(BaseModel):
     """Schema for activating/deactivating an item"""
     is_active: bool
+
+
+# ============ Admin Order Management Schemas ============
+
+class OrderItemAdmin(BaseModel):
+    """Schema for order items in admin view"""
+    id: int
+    quantity: int
+    item_id: int
+    item_name: str
+    item_price_cents: int
+    item_image_url: str | None = None
+    
+    class Config:
+        from_attributes = True
+
+
+class OrderUserInfo(BaseModel):
+    """Basic user info for order view"""
+    id: int
+    email: str
+    full_name: str | None
+    
+    class Config:
+        from_attributes = True
+
+
+class OrderListAdmin(BaseModel):
+    """Schema for admin order list view"""
+    id: int
+    user_id: int
+    user_email: str
+    user_full_name: str | None
+    total_cents: int
+    total_items: int
+    created_at: datetime
+    delivered_at: datetime | None
+    payment_intent_id: str | None
+    is_delivered: bool
+    
+    class Config:
+        from_attributes = True
+
+
+class OrderDetailAdmin(BaseModel):
+    """Schema for admin order detail view"""
+    id: int
+    user: OrderUserInfo
+    items: list[OrderItemAdmin]
+    total_cents: int
+    total_weight_oz: int
+    created_at: datetime
+    delivered_at: datetime | None
+    payment_intent_id: str | None
+    is_delivered: bool
+    
+    class Config:
+        from_attributes = True
+
+
+class OrderStatusUpdate(BaseModel):
+    """Schema for updating order delivery status"""
+    delivered: bool
+
+
+# ============ Audit Log Schemas ============
+
+class AuditLogOut(BaseModel):
+    """Schema for audit log output"""
+    id: int
+    action_type: str
+    actor_id: int | None
+    actor_email: str | None
+    target_type: str
+    target_id: int
+    details: str | None  # JSON string
+    ip_address: str | None
+    timestamp: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class AuditLogStats(BaseModel):
+    """Schema for audit log statistics"""
+    total_logs: int
+    logs_last_24h: int
+    logs_last_7d: int
+    top_actions: list[dict[str, str | int]]  # [{"action_type": "...", "count": ...}]
+    top_actors: list[dict[str, str | int]]  # [{"actor_email": "...", "count": ...}]

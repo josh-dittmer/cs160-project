@@ -132,6 +132,28 @@ After running the seed script, you should see:
   - Deactivate item (soft delete)
   - Reactivate inactive item
 
+### Order Management (`/admin/orders`)
+- Table view of all orders with key information
+- Advanced filtering and search capabilities:
+  - Search by order ID, user email, or payment intent ID
+  - Filter by status (All, Pending, Delivered)
+  - Filter by date range (From/To dates)
+- Real-time order statistics (Total, Pending, Delivered)
+- Each order row shows:
+  - Order ID, customer email/name
+  - Number of items and total amount
+  - Created date and delivery status
+- Actions:
+  - View detailed order information (modal)
+  - Toggle delivery status (Mark Delivered/Pending)
+- Order detail modal includes:
+  - Complete customer information
+  - All order items with images and prices
+  - Order totals and weight
+  - Payment intent ID
+  - Created and delivered timestamps
+- See [docs/ORDER_MANAGEMENT.md](docs/ORDER_MANAGEMENT.md) for complete documentation
+
 ## API Endpoints
 
 ### User Management Endpoints
@@ -150,6 +172,35 @@ PUT    /api/admin/items/{id}               - Update item
 DELETE /api/admin/items/{id}               - Deactivate item
 PUT    /api/admin/items/{id}/activate      - Activate/deactivate item
 ```
+
+### Order Management Endpoints
+```
+GET    /api/admin/orders                   - List orders (with filters)
+GET    /api/admin/orders/{id}              - Get order details
+PUT    /api/admin/orders/{id}/status       - Update delivery status
+```
+
+### Audit Log Endpoints
+```
+GET    /api/admin/audit-logs               - List audit logs (with filters)
+GET    /api/admin/audit-logs/stats         - Get audit log statistics
+```
+
+**Query Parameters for `/api/admin/audit-logs`:**
+- `action_type`: Filter by specific action type
+- `actor_email`: Search by actor email (partial match)
+- `target_type`: Filter by target type (user, item, order, cart)
+- `from_date`: Filter logs from date (ISO format)
+- `to_date`: Filter logs to date (ISO format)
+- `limit`: Maximum results (default: 100, max: 500)
+- `offset`: Pagination offset (default: 0)
+
+**Response from `/api/admin/audit-logs/stats`:**
+- `total_logs`: Total count of audit logs
+- `logs_last_24h`: Count of logs in last 24 hours
+- `logs_last_7d`: Count of logs in last 7 days
+- `top_actions`: Top 10 action types with counts
+- `top_actors`: Top 10 actors by activity
 
 All admin endpoints require:
 - Valid JWT authentication token
@@ -214,14 +265,116 @@ All admin endpoints require:
 5. **Soft Deletes**: Items are deactivated, not permanently deleted
 6. **Audit Trail**: All user records retain created_at and updated_at timestamps
 
+### Audit Logs (`/admin/audit-logs`)
+- Complete audit trail of all database modifications
+- Comprehensive filtering:
+  - By actor (user email search)
+  - By action type (e.g., item_created, user_blocked)
+  - By target type (user, item, order, cart)
+  - By date range (from/to dates)
+- Detailed view of each action with JSON details
+- Pagination support (50 entries per page)
+- Recent activity statistics on dashboard
+- See [Audit Logging](#audit-logging-system) section for complete details
+
+## Audit Logging System
+
+The admin panel includes a comprehensive audit logging system that tracks **all database modifications** made by any user in the system.
+
+### What Gets Logged
+
+**Admin Actions:**
+- User role changes (promote/demote users)
+- User blocking/unblocking
+- Inventory item creation, updates, deletion, and activation/deactivation
+- Order delivery status changes
+
+**User Account Events:**
+- User registration (email/password and Google OAuth)
+- Profile updates (address, phone, personal info)
+- Password changes
+
+**Shopping Actions:**
+- Cart operations (add items, update quantities, remove items)
+- Order creation and payment confirmation
+
+**What Does NOT Get Logged:**
+- Read-only operations (viewing items, browsing, searching)
+- Authentication attempts (login/logout)
+- Page views and navigation
+
+### Audit Log Information
+
+Each audit log entry captures:
+- **Timestamp**: When the action occurred (with timezone)
+- **Actor**: Who performed the action (user ID and email)
+- **Action Type**: Specific action taken (e.g., "item_created", "user_role_updated")
+- **Target**: What was affected (type and ID)
+- **Details**: JSON object with before/after values and context
+- **IP Address**: Actor's IP address (when available)
+
+### Viewing Audit Logs
+
+Navigate to **Admin Panel → Audit Logs** to view the complete audit trail.
+
+**Available Filters:**
+- **Actor Email**: Search for actions by a specific user
+- **Target Type**: Filter by user, item, order, or cart actions
+- **Action Type**: Search for specific action types
+- **Date Range**: View logs within a specific time period
+
+**Example Action Types:**
+- `user_registered` - New user account created
+- `user_role_updated` - Admin changed user's role
+- `user_blocked` / `user_unblocked` - Admin blocked/unblocked user
+- `item_created` / `item_updated` / `item_deleted` - Inventory changes
+- `cart_item_added` / `cart_item_updated` / `cart_item_removed` - Cart operations
+- `order_created` - New order placed
+- `order_marked_delivered` / `order_marked_pending` - Admin changed order status
+- `user_profile_updated` - User updated their profile
+- `user_password_changed` - User changed their password
+
+### Security & Privacy
+
+- **Immutable**: Audit logs cannot be edited or deleted, even by admin
+- **Non-blocking**: Audit logging failures never break the main operation
+- **Privacy-conscious**: Passwords and sensitive payment data are never logged
+- **Comprehensive**: Before/after values stored as JSON for complete transparency
+
+### Dashboard Integration
+
+The admin dashboard displays:
+- **Recent Activity**: Count of actions in the last 24 hours
+- Quick link to full audit log viewer
+
+## Recent Updates
+
+### Audit Logging System (Completed)
+- ✅ Comprehensive tracking of all database modifications
+- ✅ Admin, user, cart, and order action logging
+- ✅ Advanced filtering and search capabilities
+- ✅ Detailed JSON view of action details
+- ✅ Dashboard integration with 24h activity count
+- ✅ Immutable audit trail for compliance
+
+### Order Management (Completed)
+- ✅ Full order viewing and management system
+- ✅ Advanced filtering (status, date range, search)
+- ✅ Order detail modal with complete information
+- ✅ Delivery status management
+- ✅ Integration with admin dashboard statistics
+
 ## Future Enhancements
 
 Potential additions for future sprints:
-- Audit logging (track who changed what and when)
-- Admin analytics dashboard (sales, popular items, user activity)
+- Admin analytics dashboard (sales trends, revenue charts)
 - Bulk operations (bulk role changes, bulk item updates)
-- Export functionality (user list, inventory report)
+- Export functionality (user list, inventory report, order CSV, audit log CSV)
 - Advanced filtering and sorting options
 - Image upload for inventory items
 - Role-specific permissions for manager and employee roles
+- Review moderation system
+- Order refunds and cancellations
+- Email notifications for order status changes
+- Audit log retention policies and archiving
 

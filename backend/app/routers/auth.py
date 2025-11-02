@@ -9,6 +9,7 @@ from starlette.responses import RedirectResponse, Response
 
 from ..database import get_db
 from ..models import User
+from ..audit import create_audit_log, get_actor_ip
 from ..schemas import UserCreate, UserLogin, UserOut, Token, GoogleAuthRequest, UserProfileUpdate, PasswordChange
 from ..auth import (
     get_password_hash,
@@ -42,7 +43,7 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 # ============ Regular Auth Endpoints ============
 
 @router.post("/signup", response_model=Token, status_code=status.HTTP_201_CREATED)
-def signup(user_data: UserCreate, response: Response, db: Session = Depends(get_db)):
+def signup(user_data: UserCreate, request: Request, response: Response, db: Session = Depends(get_db)):
     """
     Register a new user with email and password.
     Returns JWT token and user info.
@@ -66,6 +67,22 @@ def signup(user_data: UserCreate, response: Response, db: Session = Depends(get_
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+    
+    # Create audit log for new user registration
+    create_audit_log(
+        db=db,
+        action_type="user_registered",
+        target_type="user",
+        target_id=new_user.id,
+        actor_id=new_user.id,  # User is their own actor for registration
+        actor_email=new_user.email,
+        details={
+            "email": new_user.email,
+            "full_name": new_user.full_name,
+            "role": new_user.role,
+        },
+        ip_address=get_actor_ip(request),
+    )
     
     # create jwt and set cookie
     token_data = create_access_token(data={"sub": str(new_user.id)})
@@ -193,6 +210,22 @@ def google_auth(google_data: GoogleAuthRequest, response: Response, db: Session 
             db.add(user)
             db.commit()
             db.refresh(user)
+            
+            # Create audit log for new user registration via Google
+            create_audit_log(
+                db=db,
+                action_type="user_registered_google",
+                target_type="user",
+                target_id=user.id,
+                actor_id=user.id,
+                actor_email=user.email,
+                details={
+                    "email": user.email,
+                    "full_name": user.full_name,
+                    "auth_method": "google_oauth",
+                },
+                ip_address=get_actor_ip(request),
+            )
         
         # Check if user is active
         if not user.is_active:
@@ -287,6 +320,22 @@ async def google_callback(request: Request, response: Response, db: Session = De
         db.add(user)
         db.commit()
         db.refresh(user)
+        
+        # Create audit log for new user registration via Google (legacy flow)
+        create_audit_log(
+            db=db,
+            action_type="user_registered_google",
+            target_type="user",
+            target_id=user.id,
+            actor_id=user.id,
+            actor_email=user.email,
+            details={
+                "email": user.email,
+                "full_name": user.full_name,
+                "auth_method": "google_oauth_legacy",
+            },
+            ip_address=get_actor_ip(request),
+        )
 
     # ensure user account is active
     if not user.is_active:
@@ -322,6 +371,7 @@ def get_me(current_user: UserCtx = Depends(get_current_user), db: Session = Depe
 @router.put("/profile", response_model=UserOut)
 def update_profile(
     profile_data: UserProfileUpdate,
+    request: Request,
     current_user: UserCtx = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -336,6 +386,16 @@ def update_profile(
             detail="User not found",
         )
     
+    # Store old values for audit log
+    old_values = {
+        "full_name": user.full_name,
+        "phone": user.phone,
+        "address": user.address,
+        "city": user.city,
+        "zipcode": user.zipcode,
+        "state": user.state,
+    }
+    
     # Update only provided fields
     update_data = profile_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -344,12 +404,36 @@ def update_profile(
     db.commit()
     db.refresh(user)
     
+    # Create audit log with changed fields (excluding profile_picture for privacy)
+    changed_fields = {}
+    for field, new_value in update_data.items():
+        if field != "profile_picture" and field in old_values and old_values[field] != new_value:
+            changed_fields[field] = {"old": old_values[field], "new": new_value}
+    
+    # Only log if there were actual changes
+    if changed_fields or "profile_picture" in update_data:
+        details = {"changed_fields": changed_fields}
+        if "profile_picture" in update_data:
+            details["profile_picture_updated"] = True
+        
+        create_audit_log(
+            db=db,
+            action_type="user_profile_updated",
+            target_type="user",
+            target_id=user.id,
+            actor_id=user.id,
+            actor_email=user.email,
+            details=details,
+            ip_address=get_actor_ip(request),
+        )
+    
     return UserOut.model_validate(user)
 
 
 @router.put("/password")
 def change_password(
     password_data: PasswordChange,
+    request: Request,
     current_user: UserCtx = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -381,6 +465,20 @@ def change_password(
     # Update password
     user.hashed_password = get_password_hash(password_data.new_password)
     db.commit()
+    
+    # Create audit log for password change (don't log the actual password!)
+    create_audit_log(
+        db=db,
+        action_type="user_password_changed",
+        target_type="user",
+        target_id=user.id,
+        actor_id=user.id,
+        actor_email=user.email,
+        details={
+            "message": "User password was changed successfully"
+        },
+        ip_address=get_actor_ip(request),
+    )
     
     return {"ok": True, "message": "Password changed successfully"}
 

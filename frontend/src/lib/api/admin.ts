@@ -290,6 +290,130 @@ export async function permanentlyDeleteItem(token: string, itemId: number): Prom
   return response.json();
 }
 
+// ============ Order Management ============
+
+export interface OrderItemAdmin {
+  id: number;
+  quantity: number;
+  item_id: number;
+  item_name: string;
+  item_price_cents: number;
+  item_image_url: string | null;
+}
+
+export interface OrderUserInfo {
+  id: number;
+  email: string;
+  full_name: string | null;
+}
+
+export interface OrderListAdmin {
+  id: number;
+  user_id: number;
+  user_email: string;
+  user_full_name: string | null;
+  total_cents: number;
+  total_items: number;
+  created_at: string;
+  delivered_at: string | null;
+  payment_intent_id: string | null;
+  is_delivered: boolean;
+}
+
+export interface OrderDetailAdmin {
+  id: number;
+  user: OrderUserInfo;
+  items: OrderItemAdmin[];
+  total_cents: number;
+  total_weight_oz: number;
+  created_at: string;
+  delivered_at: string | null;
+  payment_intent_id: string | null;
+  is_delivered: boolean;
+}
+
+export interface ListOrdersParams {
+  query?: string;
+  status_filter?: 'all' | 'delivered' | 'pending';
+  user_id?: number;
+  from_date?: string;
+  to_date?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export async function listOrders(
+  token: string,
+  params: ListOrdersParams = {}
+): Promise<OrderListAdmin[]> {
+  const searchParams = new URLSearchParams();
+  
+  if (params.query) searchParams.append('query', params.query);
+  if (params.status_filter) searchParams.append('status_filter', params.status_filter);
+  if (params.user_id) searchParams.append('user_id', params.user_id.toString());
+  if (params.from_date) searchParams.append('from_date', params.from_date);
+  if (params.to_date) searchParams.append('to_date', params.to_date);
+  if (params.limit) searchParams.append('limit', params.limit.toString());
+  if (params.offset) searchParams.append('offset', params.offset.toString());
+
+  const url = `${API_BASE_URL}/api/admin/orders${searchParams.toString() ? '?' + searchParams.toString() : ''}`;
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to fetch orders');
+  }
+
+  return response.json();
+}
+
+export async function getOrderDetail(
+  token: string,
+  orderId: number
+): Promise<OrderDetailAdmin> {
+  const response = await fetch(`${API_BASE_URL}/api/admin/orders/${orderId}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to fetch order details');
+  }
+
+  return response.json();
+}
+
+export async function updateOrderStatus(
+  token: string,
+  orderId: number,
+  delivered: boolean
+): Promise<any> {
+  const response = await fetch(`${API_BASE_URL}/api/admin/orders/${orderId}/status`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ delivered }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to update order status');
+  }
+
+  return response.json();
+}
+
 // ============ AI Image Generation ============
 
 export interface ImageGenerationRequest {
@@ -459,6 +583,87 @@ export async function checkVideoGenerationHealth(token: string): Promise<any> {
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.detail || 'Failed to check video generation health');
+  }
+
+  return response.json();
+}
+
+// ============ Audit Log Types ============
+
+export interface AuditLog {
+  id: number;
+  action_type: string;
+  actor_id: number | null;
+  actor_email: string | null;
+  target_type: string;
+  target_id: number;
+  details: string | null;
+  ip_address: string | null;
+  timestamp: string;
+}
+
+export interface AuditLogStats {
+  total_logs: number;
+  logs_last_24h: number;
+  logs_last_7d: number;
+  top_actions: Array<{ action_type: string; count: number }>;
+  top_actors: Array<{ actor_email: string; count: number }>;
+}
+
+export interface AuditLogFilters {
+  action_type?: string;
+  actor_email?: string;
+  target_type?: string;
+  from_date?: string;
+  to_date?: string;
+  limit?: number;
+  offset?: number;
+}
+
+// ============ Audit Log Functions ============
+
+export async function listAuditLogs(
+  token: string,
+  filters?: AuditLogFilters
+): Promise<AuditLog[]> {
+  const params = new URLSearchParams();
+  
+  if (filters?.action_type) params.append('action_type', filters.action_type);
+  if (filters?.actor_email) params.append('actor_email', filters.actor_email);
+  if (filters?.target_type) params.append('target_type', filters.target_type);
+  if (filters?.from_date) params.append('from_date', filters.from_date);
+  if (filters?.to_date) params.append('to_date', filters.to_date);
+  if (filters?.limit) params.append('limit', filters.limit.toString());
+  if (filters?.offset) params.append('offset', filters.offset.toString());
+
+  const url = `${API_BASE_URL}/api/admin/audit-logs${params.toString() ? `?${params.toString()}` : ''}`;
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to fetch audit logs');
+  }
+
+  return response.json();
+}
+
+export async function getAuditLogStats(token: string): Promise<AuditLogStats> {
+  const response = await fetch(`${API_BASE_URL}/api/admin/audit-logs/stats`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to fetch audit log stats');
   }
 
   return response.json();
