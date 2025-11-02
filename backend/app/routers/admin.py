@@ -758,9 +758,9 @@ def list_audit_logs(
     # Build query
     stmt = select(AuditLog)
     
-    # Filter by action type
+    # Filter by action type (partial match, case-insensitive)
     if action_type:
-        stmt = stmt.where(AuditLog.action_type == action_type)
+        stmt = stmt.where(AuditLog.action_type.ilike(f"%{action_type}%"))
     
     # Filter by actor email (partial match)
     if actor_email:

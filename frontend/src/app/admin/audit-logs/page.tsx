@@ -37,8 +37,20 @@ export default function AuditLogsPage() {
         if (actionTypeFilter) filters.action_type = actionTypeFilter;
         if (actorEmailFilter) filters.actor_email = actorEmailFilter;
         if (targetTypeFilter) filters.target_type = targetTypeFilter;
-        if (fromDateFilter) filters.from_date = new Date(fromDateFilter).toISOString();
-        if (toDateFilter) filters.to_date = new Date(toDateFilter).toISOString();
+        
+        // For from_date: start of selected day in local timezone, then convert to UTC
+        if (fromDateFilter) {
+          const fromDate = new Date(fromDateFilter);
+          fromDate.setHours(0, 0, 0, 0); // Start of day
+          filters.from_date = fromDate.toISOString();
+        }
+        
+        // For to_date: END of selected day in local timezone, then convert to UTC
+        if (toDateFilter) {
+          const toDate = new Date(toDateFilter);
+          toDate.setHours(23, 59, 59, 999); // End of day
+          filters.to_date = toDate.toISOString();
+        }
 
         const data = await listAuditLogs(token, filters);
         setLogs(data);
