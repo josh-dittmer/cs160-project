@@ -381,7 +381,7 @@ export default function AuditLogsPage() {
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                           {log.actor_email || 'System'}
                         </td>
-                        <td className={`px-4 py-3 whitespace-nowrap text-sm font-medium ${getActionColor(log.action_type)}`}>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                           {log.action_type}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
