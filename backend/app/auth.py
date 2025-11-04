@@ -214,8 +214,8 @@ def can_modify_user_role(actor_role: str, target_role: str, new_role: str) -> bo
     
     Rules:
     - Cannot promote to admin
-    - Manager can only promote customers to employees
-    - Admin can promote to any role except admin
+    - Manager can change between customer and employee roles only
+    - Admin can change to any role except admin
     
     Args:
         actor_role: Role of the user performing the action
@@ -229,11 +229,14 @@ def can_modify_user_role(actor_role: str, target_role: str, new_role: str) -> bo
     if new_role == "admin":
         return False
     
-    # Manager can only promote customers to employees
+    # Manager can change between customer and employee (bidirectional)
     if actor_role == "manager":
-        return target_role == "customer" and new_role == "employee"
+        return (
+            target_role in ["customer", "employee"] and 
+            new_role in ["customer", "employee"]
+        )
     
-    # Admin can promote to any role except admin
+    # Admin can change to any role except admin
     if actor_role == "admin":
         return new_role in ["customer", "employee", "manager"]
     

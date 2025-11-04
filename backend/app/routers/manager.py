@@ -52,7 +52,7 @@ def update_user_role(
         if manager.role == "manager":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Managers can only promote customers to employees. To promote to manager, create a referral.",
+                detail="Managers can only change roles between customer and employee. To promote to manager, create a referral.",
             )
         else:
             raise HTTPException(
