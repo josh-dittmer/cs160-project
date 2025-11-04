@@ -33,7 +33,7 @@ export default function SignupPage() {
             login(response.access_token, response.user, response.expires);
 
             // Redirect based on user role
-            if (response.user.role === 'admin') {
+            if (response.user.role === 'admin' || response.user.role === 'manager') {
                 router.push("/admin/dashboard");
             } else {
                 router.push("/home/dashboard");
@@ -56,7 +56,7 @@ export default function SignupPage() {
             login(response.access_token, response.user, response.expires);
 
             // Redirect based on user role
-            if (response.user.role === 'admin') {
+            if (response.user.role === 'admin' || response.user.role === 'manager') {
                 router.push("/admin/dashboard");
             } else {
                 router.push("/home/dashboard");

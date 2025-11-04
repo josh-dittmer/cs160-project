@@ -669,3 +669,189 @@ export async function getAuditLogStats(token: string): Promise<AuditLogStats> {
   return response.json();
 }
 
+// ============ Referral Management ============
+
+export interface ReferralOut {
+  id: number;
+  referred_user_id: number;
+  referred_user_email: string;
+  referred_user_name: string | null;
+  referring_manager_id: number;
+  referring_manager_email: string;
+  target_role: string;
+  reason: string;
+  status: string;
+  admin_notes: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+}
+
+// List referrals (admin or manager)
+export async function listReferrals(
+  token: string,
+  params?: { status_filter?: string }
+): Promise<ReferralOut[]> {
+  const queryParams = new URLSearchParams();
+  if (params?.status_filter) {
+    queryParams.append('status_filter', params.status_filter);
+  }
+
+  const url = `${API_BASE_URL}/api/admin/referrals${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to fetch referrals');
+  }
+
+  return response.json();
+}
+
+// Approve referral (admin only)
+export async function approveReferral(
+  token: string,
+  referralId: number,
+  adminNotes?: string
+): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/admin/referrals/${referralId}/approve`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ admin_notes: adminNotes || null }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to approve referral');
+  }
+}
+
+// Reject referral (admin only)
+export async function rejectReferral(
+  token: string,
+  referralId: number,
+  adminNotes?: string
+): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/admin/referrals/${referralId}/reject`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ admin_notes: adminNotes || null }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to reject referral');
+  }
+}
+
+// Create referral (manager only)
+export async function createReferral(
+  token: string,
+  referredUserId: number,
+  reason: string
+): Promise<ReferralOut> {
+  const response = await fetch(`${API_BASE_URL}/api/manager/referrals`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      referred_user_id: referredUserId,
+      reason: reason,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to create referral');
+  }
+
+  return response.json();
+}
+
+// List my referrals (manager only)
+export async function listMyReferrals(token: string): Promise<ReferralOut[]> {
+  const response = await fetch(`${API_BASE_URL}/api/manager/referrals`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to fetch referrals');
+  }
+
+  return response.json();
+}
+
+// Cancel referral (manager only)
+export async function cancelReferral(token: string, referralId: number): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/manager/referrals/${referralId}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to cancel referral');
+  }
+}
+
+// Manager user management - promote customer to employee
+export async function managerUpdateUserRole(
+  token: string,
+  userId: number,
+  role: string
+): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/manager/users/${userId}/role`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ role }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to update user role');
+  }
+}
+
+// Manager block user
+export async function managerBlockUser(
+  token: string,
+  userId: number,
+  isActive: boolean
+): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/manager/users/${userId}/block`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ is_active: isActive }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to block/unblock user');
+  }
+}
+

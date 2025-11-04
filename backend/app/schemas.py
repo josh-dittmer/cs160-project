@@ -327,3 +327,35 @@ class AuditLogStats(BaseModel):
     logs_last_7d: int
     top_actions: list[dict[str, str | int]]  # [{"action_type": "...", "count": ...}]
     top_actors: list[dict[str, str | int]]  # [{"actor_email": "...", "count": ...}]
+
+
+# ============ Promotion Referral Schemas ============
+
+class ReferralCreate(BaseModel):
+    """Schema for creating a promotion referral"""
+    referred_user_id: int
+    reason: constr(min_length=20)
+
+
+class ReferralOut(BaseModel):
+    """Schema for promotion referral output"""
+    id: int
+    referred_user_id: int
+    referred_user_email: str
+    referred_user_name: str | None
+    referring_manager_id: int
+    referring_manager_email: str
+    target_role: str
+    reason: str
+    status: str
+    admin_notes: str | None
+    created_at: datetime
+    reviewed_at: datetime | None
+    
+    class Config:
+        from_attributes = True
+
+
+class ReferralReview(BaseModel):
+    """Schema for admin reviewing a referral"""
+    admin_notes: str | None = None

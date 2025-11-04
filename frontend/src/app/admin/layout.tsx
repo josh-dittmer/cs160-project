@@ -14,22 +14,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/login');
-    } else if (user?.role !== 'admin') {
-      // Redirect non-admin users to customer dashboard
+    } else if (user?.role !== 'admin' && user?.role !== 'manager') {
+      // Redirect non-admin/non-manager users to customer dashboard
       router.push('/home/dashboard');
     }
   }, [isAuthenticated, user, router]);
 
-  if (!isAuthenticated || user?.role !== 'admin') {
+  if (!isAuthenticated || (user?.role !== 'admin' && user?.role !== 'manager')) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
+  
+  // Determine panel title based on role
+  const panelTitle = user?.role === 'admin' ? 'Admin Panel' : 'Manager Panel';
 
+  // Show Referrals nav item based on role
   const navItems = [
     { name: 'Dashboard', href: '/admin/dashboard' },
     { name: 'Users', href: '/admin/users' },
     { name: 'Inventory', href: '/admin/inventory' },
     { name: 'Orders', href: '/admin/orders' },
     { name: 'Audit Logs', href: '/admin/audit-logs' },
+    { name: 'Referrals', href: '/admin/referrals' },
   ];
 
   return (
@@ -48,7 +53,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 />
               </Link>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-900">
-                Admin Panel
+                {panelTitle}
               </h1>
               <nav className="flex space-x-4">
                 {navItems.map((item) => (

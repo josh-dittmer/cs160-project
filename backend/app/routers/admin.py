@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, or_, func
 
 from ..database import get_db
-from ..models import User, Item, Order, OrderItem, AuditLog
+from ..models import User, Item, Order, OrderItem, AuditLog, PromotionReferral
 from ..audit import create_audit_log, get_actor_ip
 from ..schemas import (
     UserListAdmin,
@@ -22,8 +22,10 @@ from ..schemas import (
     OrderItemAdmin,
     AuditLogOut,
     AuditLogStats,
+    ReferralOut,
+    ReferralReview,
 )
-from ..auth import require_admin, UserCtx
+from ..auth import require_admin, require_manager, UserCtx
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -32,12 +34,12 @@ router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 @router.get("/users", response_model=List[UserListAdmin])
 def list_users(
-    admin: UserCtx = Depends(require_admin),
+    admin: UserCtx = Depends(require_manager),
     db: Session = Depends(get_db),
 ):
     """
     List all users with their roles and status.
-    Admin only.
+    Manager or admin only.
     """
     users = db.query(User).order_by(User.created_at.desc()).all()
     return users
@@ -177,13 +179,13 @@ def list_items_admin(
     low_stock_threshold: Optional[int] = Query(None, ge=0, description="Filter items with stock below this threshold"),
     limit: int = Query(50, ge=1, le=200, description="Maximum number of results"),
     offset: int = Query(0, ge=0, description="Number of results to skip"),
-    admin: UserCtx = Depends(require_admin),
+    admin: UserCtx = Depends(require_manager),
     db: Session = Depends(get_db),
 ):
     """
     List all items with filtering and pagination.
     Defaults to showing only active items.
-    Admin only.
+    Manager or admin only.
     """
     # Build query
     stmt = select(Item)
@@ -222,13 +224,13 @@ def list_items_admin(
 
 @router.get("/categories", response_model=List[str])
 def get_categories(
-    admin: UserCtx = Depends(require_admin),
+    admin: UserCtx = Depends(require_manager),
     db: Session = Depends(get_db),
 ):
     """
     Get all unique categories from items.
     Returns a sorted list of category names.
-    Admin only.
+    Manager or admin only.
     """
     stmt = select(Item.category).where(
         Item.category.isnot(None),
@@ -242,12 +244,12 @@ def get_categories(
 @router.get("/items/{item_id}", response_model=ItemDetailOut)
 def get_item_admin(
     item_id: int,
-    admin: UserCtx = Depends(require_admin),
+    admin: UserCtx = Depends(require_manager),
     db: Session = Depends(get_db),
 ):
     """
     Get single item details (including inactive items).
-    Admin only.
+    Manager or admin only.
     """
     item = db.get(Item, item_id)
     if not item:
@@ -262,12 +264,12 @@ def get_item_admin(
 def create_item(
     item_data: ItemCreate,
     request: Request,
-    admin: UserCtx = Depends(require_admin),
+    admin: UserCtx = Depends(require_manager),
     db: Session = Depends(get_db),
 ):
     """
     Create a new item.
-    Admin only.
+    Manager or admin only.
     """
     new_item = Item(**item_data.model_dump())
     db.add(new_item)
@@ -299,12 +301,12 @@ def update_item(
     item_id: int,
     item_data: ItemUpdate,
     request: Request,
-    admin: UserCtx = Depends(require_admin),
+    admin: UserCtx = Depends(require_manager),
     db: Session = Depends(get_db),
 ):
     """
     Update an item (all fields optional).
-    Admin only.
+    Manager or admin only.
     """
     item = db.get(Item, item_id)
     if not item:
@@ -362,12 +364,12 @@ def update_item(
 def delete_item(
     item_id: int,
     request: Request,
-    admin: UserCtx = Depends(require_admin),
+    admin: UserCtx = Depends(require_manager),
     db: Session = Depends(get_db),
 ):
     """
     Soft delete an item (set is_active to False).
-    Admin only.
+    Manager or admin only.
     """
     item = db.get(Item, item_id)
     if not item:
@@ -406,12 +408,12 @@ def activate_item(
     item_id: int,
     activate_data: ItemActivateUpdate,
     request: Request,
-    admin: UserCtx = Depends(require_admin),
+    admin: UserCtx = Depends(require_manager),
     db: Session = Depends(get_db),
 ):
     """
     Activate or deactivate an item.
-    Admin only.
+    Manager or admin only.
     """
     item = db.get(Item, item_id)
     if not item:
@@ -451,13 +453,13 @@ def activate_item(
 def permanently_delete_item(
     item_id: int,
     request: Request,
-    admin: UserCtx = Depends(require_admin),
+    admin: UserCtx = Depends(require_manager),
     db: Session = Depends(get_db),
 ):
     """
     Permanently delete an item from the database.
     This action cannot be undone.
-    Admin only.
+    Manager or admin only.
     """
     item = db.get(Item, item_id)
     if not item:
@@ -508,12 +510,12 @@ def list_orders(
     to_date: Optional[str] = Query(None, description="Filter orders to date (ISO format)"),
     limit: int = Query(50, ge=1, le=200, description="Maximum number of results"),
     offset: int = Query(0, ge=0, description="Number of results to skip"),
-    admin: UserCtx = Depends(require_admin),
+    admin: UserCtx = Depends(require_manager),
     db: Session = Depends(get_db),
 ):
     """
     List all orders with filtering, search, and pagination.
-    Admin only.
+    Manager or admin only.
     """
     # Build base query with join to User and count of items
     stmt = (
@@ -608,12 +610,12 @@ def list_orders(
 @router.get("/orders/{order_id}", response_model=OrderDetailAdmin)
 def get_order_detail(
     order_id: int,
-    admin: UserCtx = Depends(require_admin),
+    admin: UserCtx = Depends(require_manager),
     db: Session = Depends(get_db),
 ):
     """
     Get detailed information about a specific order including all items.
-    Admin only.
+    Manager or admin only.
     """
     order = db.get(Order, order_id)
     if not order:
@@ -677,13 +679,13 @@ def update_order_status(
     order_id: int,
     status_update: OrderStatusUpdate,
     request: Request,
-    admin: UserCtx = Depends(require_admin),
+    admin: UserCtx = Depends(require_manager),
     db: Session = Depends(get_db),
 ):
     """
     Update order delivery status.
     Sets delivered_at to current time if marking as delivered, or None if marking as pending.
-    Admin only.
+    Manager or admin only.
     """
     order = db.get(Order, order_id)
     if not order:
@@ -748,12 +750,12 @@ def list_audit_logs(
     to_date: Optional[str] = Query(None, description="Filter logs to date (ISO format)"),
     limit: int = Query(100, ge=1, le=500, description="Maximum number of results"),
     offset: int = Query(0, ge=0, description="Number of results to skip"),
-    admin: UserCtx = Depends(require_admin),
+    admin: UserCtx = Depends(require_manager),
     db: Session = Depends(get_db),
 ):
     """
     List all audit logs with filtering and pagination.
-    Admin only.
+    Manager or admin only.
     """
     # Build query
     stmt = select(AuditLog)
@@ -800,12 +802,12 @@ def list_audit_logs(
 
 @router.get("/audit-logs/stats", response_model=AuditLogStats)
 def get_audit_stats(
-    admin: UserCtx = Depends(require_admin),
+    admin: UserCtx = Depends(require_manager),
     db: Session = Depends(get_db),
 ):
     """
     Get audit log statistics.
-    Admin only.
+    Manager or admin only.
     """
     # Total logs count
     total_logs = db.query(func.count(AuditLog.id)).scalar() or 0
@@ -862,4 +864,198 @@ def get_audit_stats(
         top_actions=top_actions,
         top_actors=top_actors,
     )
+
+
+# ============ Promotion Referral Management Endpoints ============
+
+@router.get("/referrals", response_model=List[ReferralOut])
+def list_referrals(
+    status_filter: str = Query("pending", description="Filter by status: all, pending, approved, rejected, cancelled"),
+    admin: UserCtx = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """
+    List all promotion referrals with optional status filtering.
+    Admin only.
+    """
+    # Build query - get all referrals with status filtering
+    stmt = select(PromotionReferral).order_by(PromotionReferral.created_at.desc())
+    
+    # Filter by status
+    if status_filter != "all":
+        stmt = stmt.where(PromotionReferral.status == status_filter)
+    
+    referrals_list = db.execute(stmt).scalars().all()
+    
+    # Build response - fetch related users for each referral
+    referrals = []
+    for referral in referrals_list:
+        referred_user = db.get(User, referral.referred_user_id)
+        referring_manager = db.get(User, referral.referring_manager_id)
+        
+        if referred_user and referring_manager:
+            referrals.append(ReferralOut(
+                id=referral.id,
+                referred_user_id=referred_user.id,
+                referred_user_email=referred_user.email,
+                referred_user_name=referred_user.full_name,
+                referring_manager_id=referring_manager.id,
+                referring_manager_email=referring_manager.email,
+                target_role=referral.target_role,
+                reason=referral.reason,
+                status=referral.status,
+                admin_notes=referral.admin_notes,
+                created_at=referral.created_at,
+                reviewed_at=referral.reviewed_at,
+            ))
+    
+    return referrals
+
+
+@router.put("/referrals/{referral_id}/approve", status_code=status.HTTP_200_OK)
+def approve_referral(
+    referral_id: int,
+    review_data: ReferralReview,
+    request: Request,
+    admin: UserCtx = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """
+    Approve a promotion referral and promote the user to manager.
+    Admin only.
+    """
+    referral = db.get(PromotionReferral, referral_id)
+    if not referral:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Referral not found",
+        )
+    
+    # Can only approve pending referrals
+    if referral.status != "pending":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot approve referral with status '{referral.status}'",
+        )
+    
+    # Get the referred user
+    referred_user = db.get(User, referral.referred_user_id)
+    if not referred_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Referred user not found",
+        )
+    
+    # Store old role for audit log
+    old_role = referred_user.role
+    
+    # Promote user to manager
+    referred_user.role = referral.target_role
+    
+    # Update referral status
+    referral.status = "approved"
+    referral.reviewed_at = datetime.now(timezone.utc)
+    referral.reviewed_by_admin_id = admin.id
+    referral.admin_notes = review_data.admin_notes
+    
+    db.commit()
+    db.refresh(referred_user)
+    db.refresh(referral)
+    
+    # Create audit log for role change
+    create_audit_log(
+        db=db,
+        action_type="user_role_updated",
+        target_type="user",
+        target_id=referred_user.id,
+        actor_id=admin.id,
+        actor_email=admin.email,
+        details={
+            "old_role": old_role,
+            "new_role": referral.target_role,
+            "user_email": referred_user.email,
+            "via_referral": True,
+            "referral_id": referral.id,
+        },
+        ip_address=get_actor_ip(request),
+    )
+    
+    # Create audit log for referral approval
+    create_audit_log(
+        db=db,
+        action_type="referral_approved",
+        target_type="referral",
+        target_id=referral.id,
+        actor_id=admin.id,
+        actor_email=admin.email,
+        details={
+            "referred_user_id": referred_user.id,
+            "referred_user_email": referred_user.email,
+            "target_role": referral.target_role,
+            "admin_notes": review_data.admin_notes,
+        },
+        ip_address=get_actor_ip(request),
+    )
+    
+    return {
+        "ok": True,
+        "message": f"Referral approved and user promoted to {referral.target_role}",
+    }
+
+
+@router.put("/referrals/{referral_id}/reject", status_code=status.HTTP_200_OK)
+def reject_referral(
+    referral_id: int,
+    review_data: ReferralReview,
+    request: Request,
+    admin: UserCtx = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """
+    Reject a promotion referral.
+    Admin only.
+    """
+    referral = db.get(PromotionReferral, referral_id)
+    if not referral:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Referral not found",
+        )
+    
+    # Can only reject pending referrals
+    if referral.status != "pending":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot reject referral with status '{referral.status}'",
+        )
+    
+    # Update referral status
+    referral.status = "rejected"
+    referral.reviewed_at = datetime.now(timezone.utc)
+    referral.reviewed_by_admin_id = admin.id
+    referral.admin_notes = review_data.admin_notes
+    
+    db.commit()
+    db.refresh(referral)
+    
+    # Create audit log
+    create_audit_log(
+        db=db,
+        action_type="referral_rejected",
+        target_type="referral",
+        target_id=referral.id,
+        actor_id=admin.id,
+        actor_email=admin.email,
+        details={
+            "referred_user_id": referral.referred_user_id,
+            "target_role": referral.target_role,
+            "admin_notes": review_data.admin_notes,
+        },
+        ip_address=get_actor_ip(request),
+    )
+    
+    return {
+        "ok": True,
+        "message": "Referral rejected",
+    }
 

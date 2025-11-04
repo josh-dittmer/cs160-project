@@ -142,7 +142,7 @@ def login(credentials: UserLogin, response: Response, db: Session = Depends(get_
 # ============ Google OAuth Endpoints ============
 
 @router.post("/google", response_model=Token)
-def google_auth(google_data: GoogleAuthRequest, response: Response, db: Session = Depends(get_db)):
+def google_auth(google_data: GoogleAuthRequest, request: Request, response: Response, db: Session = Depends(get_db)):
     """
     Authenticate or register using Google ID token.
     This is the modern client-side OAuth flow.

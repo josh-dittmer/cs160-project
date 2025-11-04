@@ -147,3 +147,28 @@ class AuditLog(Base):
     )
 
     actor = relationship(User)
+
+class PromotionReferral(Base):
+    __tablename__ = "promotion_referrals"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    referred_user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    referring_manager_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    target_role: Mapped[str] = mapped_column(String(20))  # "manager"
+    reason: Mapped[str] = mapped_column(Text)  # Required justification
+    status: Mapped[str] = mapped_column(String(20), default="pending", index=True)  # pending, approved, rejected, cancelled
+    admin_notes: Mapped[str | None] = mapped_column(Text, nullable=True)  # Optional admin feedback
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    reviewed_by_admin_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
+
+    # Relationships
+    referred_user = relationship(User, foreign_keys=[referred_user_id])
+    referring_manager = relationship(User, foreign_keys=[referring_manager_id])
+    reviewed_by_admin = relationship(User, foreign_keys=[reviewed_by_admin_id])

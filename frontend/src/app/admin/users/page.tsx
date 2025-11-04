@@ -2,15 +2,31 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth';
-import { listUsers, updateUserRole, blockUser, type UserAdmin } from '@/lib/api/admin';
-import { useSearchParams } from 'next/navigation';
+import { 
+  listUsers, 
+  updateUserRole, 
+  blockUser, 
+  managerUpdateUserRole,
+  managerBlockUser,
+  createReferral,
+  type UserAdmin 
+} from '@/lib/api/admin';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 export default function UsersManagement() {
   const { token, user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [filter, setFilter] = useState<string>('all');
+  const [showReferralModal, setShowReferralModal] = useState(false);
+  const [referralUser, setReferralUser] = useState<UserAdmin | null>(null);
+  const [referralReason, setReferralReason] = useState('');
+  const [submittingReferral, setSubmittingReferral] = useState(false);
+
+  const isAdmin = currentUser?.role === 'admin';
+  const isManager = currentUser?.role === 'manager';
 
   useEffect(() => {
     // Set filter from URL parameter if present
@@ -48,7 +64,11 @@ export default function UsersManagement() {
     }
 
     try {
-      await updateUserRole(token, userId, newRole);
+      if (isManager) {
+        await managerUpdateUserRole(token, userId, newRole);
+      } else {
+        await updateUserRole(token, userId, newRole);
+      }
       alert('User role updated successfully');
       fetchUsers();
     } catch (error: any) {
@@ -66,13 +86,51 @@ export default function UsersManagement() {
     }
 
     try {
-      await blockUser(token, userId, !currentStatus);
+      if (isManager) {
+        await managerBlockUser(token, userId, !currentStatus);
+      } else {
+        await blockUser(token, userId, !currentStatus);
+      }
       alert(`User ${action}ed successfully`);
       fetchUsers();
     } catch (error: any) {
       console.error(`Failed to ${action} user:`, error);
       alert(error.message || `Failed to ${action} user`);
     }
+  };
+
+  const handleReferForManager = (user: UserAdmin) => {
+    setReferralUser(user);
+    setShowReferralModal(true);
+  };
+
+  const handleSubmitReferral = async () => {
+    if (!token || !referralUser || !referralReason.trim() || referralReason.length < 20) {
+      alert('Please provide a reason (minimum 20 characters)');
+      return;
+    }
+
+    try {
+      setSubmittingReferral(true);
+      await createReferral(token, referralUser.id, referralReason);
+      alert('Referral created successfully!');
+      setShowReferralModal(false);
+      setReferralUser(null);
+      setReferralReason('');
+      router.push('/admin/referrals');
+    } catch (error: any) {
+      console.error('Failed to create referral:', error);
+      alert(error.message || 'Failed to create referral');
+    } finally {
+      setSubmittingReferral(false);
+    }
+  };
+
+  // Helper to check if manager can modify this user
+  const canManagerModifyUser = (user: UserAdmin): boolean => {
+    if (!isManager) return true; // Admin can modify anyone
+    // Manager cannot modify admins, managers, or themselves
+    return user.role !== 'admin' && user.role !== 'manager' && user.id !== currentUser?.id;
   };
 
   const filteredUsers = users.filter(user => {
@@ -170,13 +228,39 @@ export default function UsersManagement() {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  {user.role === 'admin' ? (
-                    // Display admin role as badge (non-editable)
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeColor('admin')}`}>
-                      Admin
+                  {user.role === 'admin' || (isManager && user.role === 'manager') ? (
+                    // Display admin/manager role as badge (non-editable)
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeColor(user.role)}`}>
+                      {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                     </span>
+                  ) : (isManager && user.role === 'customer') ? (
+                    // Manager can only promote customers to employees
+                    <div className="flex items-center gap-2">
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeColor(user.role)}`}>
+                        Customer
+                      </span>
+                      <button
+                        onClick={() => handleRoleChange(user.id, 'employee')}
+                        className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                      >
+                        Promote to Employee
+                      </button>
+                    </div>
+                  ) : (isManager && user.role === 'employee') ? (
+                    // Show employee badge with "Refer for Manager" button
+                    <div className="flex items-center gap-2">
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeColor('employee')}`}>
+                        Employee
+                      </span>
+                      <button
+                        onClick={() => handleReferForManager(user)}
+                        className="text-xs px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700"
+                      >
+                        Refer for Manager
+                      </button>
+                    </div>
                   ) : (
-                    // Allow changing role for non-admin users
+                    // Admin can change roles freely
                     <select
                       value={user.role}
                       onChange={(e) => handleRoleChange(user.id, e.target.value)}
@@ -204,25 +288,85 @@ export default function UsersManagement() {
                   {new Date(user.created_at).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button
-                    onClick={() => handleBlockToggle(user.id, user.is_active)}
-                    disabled={user.id === currentUser?.id}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                      user.is_active
-                        ? 'bg-red-600 hover:bg-red-700 text-white'
-                        : 'bg-green-600 hover:bg-green-700 text-white'
-                    } ${
-                      user.id === currentUser?.id ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                  >
-                    {user.is_active ? 'Block' : 'Unblock'}
-                  </button>
+                  {canManagerModifyUser(user) ? (
+                    <button
+                      onClick={() => handleBlockToggle(user.id, user.is_active)}
+                      disabled={user.id === currentUser?.id}
+                      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                        user.is_active
+                          ? 'bg-red-600 hover:bg-red-700 text-white'
+                          : 'bg-green-600 hover:bg-green-700 text-white'
+                      } ${
+                        user.id === currentUser?.id ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      {user.is_active ? 'Block' : 'Unblock'}
+                    </button>
+                  ) : (
+                    <span className="text-gray-400 text-xs">No access</span>
+                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* Referral Modal */}
+      {showReferralModal && referralUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">
+              Refer {referralUser.full_name || referralUser.email} for Manager
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-600 mb-2">
+                  Employee: <span className="font-medium">{referralUser.email}</span>
+                </p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Reason for Promotion (minimum 20 characters)
+                </label>
+                <textarea
+                  value={referralReason}
+                  onChange={(e) => setReferralReason(e.target.value)}
+                  placeholder="Explain why this employee should be promoted to manager..."
+                  className="w-full px-3 py-2 border rounded-md"
+                  rows={4}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {referralReason.length} / 20 characters minimum
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleSubmitReferral}
+                disabled={submittingReferral || referralReason.length < 20}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {submittingReferral ? 'Submitting...' : 'Submit Referral'}
+              </button>
+              <button
+                onClick={() => {
+                  setShowReferralModal(false);
+                  setReferralUser(null);
+                  setReferralReason('');
+                }}
+                disabled={submittingReferral}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
