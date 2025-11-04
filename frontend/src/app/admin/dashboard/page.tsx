@@ -6,7 +6,7 @@ import { listUsers, listItems, listOrders, getAuditLogStats } from '@/lib/api/ad
 import Link from 'next/link';
 
 export default function AdminDashboard() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalItems: 0,
@@ -117,7 +117,7 @@ export default function AdminDashboard() {
           Dashboard Overview
         </h2>
         <p className="text-gray-600">
-          Welcome to the admin dashboard. Manage users and inventory from here.
+          Welcome to the {user?.role === 'admin' ? 'admin' : 'manager'} dashboard. Manage users and inventory from here.
         </p>
       </div>
 

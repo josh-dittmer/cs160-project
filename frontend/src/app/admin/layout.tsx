@@ -24,17 +24,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
   
-  // Determine panel title based on role
+  // Determine panel title and path prefix based on role
   const panelTitle = user?.role === 'admin' ? 'Admin Panel' : 'Manager Panel';
+  const pathPrefix = user?.role === 'admin' ? '/admin' : '/manager';
 
-  // Show Referrals nav item based on role
+  // Navigation items with dynamic path prefix
   const navItems = [
-    { name: 'Dashboard', href: '/admin/dashboard' },
-    { name: 'Users', href: '/admin/users' },
-    { name: 'Inventory', href: '/admin/inventory' },
-    { name: 'Orders', href: '/admin/orders' },
-    { name: 'Audit Logs', href: '/admin/audit-logs' },
-    { name: 'Referrals', href: '/admin/referrals' },
+    { name: 'Dashboard', href: `${pathPrefix}/dashboard` },
+    { name: 'Users', href: `${pathPrefix}/users` },
+    { name: 'Inventory', href: `${pathPrefix}/inventory` },
+    { name: 'Orders', href: `${pathPrefix}/orders` },
+    { name: 'Audit Logs', href: `${pathPrefix}/audit-logs` },
+    { name: 'Referrals', href: `${pathPrefix}/referrals` },
   ];
 
   return (
@@ -45,7 +46,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-8">
               {/* OFS Logo */}
-              <Link href="/admin/dashboard" className="flex items-center">
+              <Link href={`${pathPrefix}/dashboard`} className="flex items-center">
                 <img
                   src="/logo.png"
                   alt="OFS Logo"

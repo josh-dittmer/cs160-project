@@ -117,7 +117,9 @@ export default function UsersManagement() {
       setShowReferralModal(false);
       setReferralUser(null);
       setReferralReason('');
-      router.push('/admin/referrals');
+      // Redirect to the appropriate referrals page based on role
+      const pathPrefix = currentUser?.role === 'admin' ? '/admin' : '/manager';
+      router.push(`${pathPrefix}/referrals`);
     } catch (error: any) {
       console.error('Failed to create referral:', error);
       alert(error.message || 'Failed to create referral');
