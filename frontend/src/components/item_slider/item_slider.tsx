@@ -6,11 +6,15 @@ import { motion } from "motion/react";
 import { useRef } from "react";
 import { Mousewheel, Navigation } from 'swiper/modules';
 import { Swiper, SwiperClass, SwiperSlide } from "swiper/react";
+import Link from "next/link";
 
 import { useUpsertCartItemMutation } from "@/lib/mutations/cart_item/upsert";
+import ItemCard from "@/components/item/item";
 import 'swiper/css';
 import 'swiper/css/pagination';
 
+// For this function Item, it is not used because item.tsx is created as a component. 
+// Decide remove or keep
 function Item({ item }: { item: ItemT }) {
     const { mutate } = useUpsertCartItemMutation();
 
@@ -77,8 +81,15 @@ export default function ItemSlider({ title, items }: { title: string, items: Ite
 
     return (
         <div className="w-full">
-            <div className="p-2 border-bg-dark border-b">
+            <div className="flex justify-between items-center p-2 border-bg-dark border-b">
                 <h1 className="text-2xl text-fg-dark">{title}</h1>
+                <Link
+                    href={`/home/seeAllItems?category=${encodeURIComponent(title)}`}>
+                    <button
+                        className="hover:bg-green-300 text-black text-sm font-semibold py-1.5 px-4 rounded-full transition duration-200">
+                         See All
+                    </button>
+                </Link>
             </div>
             <div className="grid grid-cols-[0.1fr_1fr_0.1fr] p-2">
                 <div className="flex justify-center items-center">
@@ -107,7 +118,7 @@ export default function ItemSlider({ title, items }: { title: string, items: Ite
                 >
                     {currItems.map((item) => (
                         <SwiperSlide key={item.id} className="max-w-72 lg:max-w-full">
-                            <Item item={item} />
+                            <ItemCard item={item} />
                         </SwiperSlide>
                     ))}
                 </Swiper>
