@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth';
 import { listAuditLogs, type AuditLog, type AuditLogFilters } from '@/lib/api/admin';
 
@@ -90,6 +90,99 @@ export default function AuditLogsPage() {
     } catch {
       return detailsJson;
     }
+  };
+
+  const formatDetailValue = (key: string, value: any) => {
+    // Format role values - capitalize first letter
+    if (key.includes('role') && typeof value === 'string') {
+      return value.charAt(0).toUpperCase() + value.slice(1);
+    }
+    
+    // Format status values
+    if (key.includes('status') && typeof value === 'boolean') {
+      return value ? 'Active' : 'Blocked';
+    }
+    
+    // Format boolean values
+    if (typeof value === 'boolean') {
+      return value ? 'Yes' : 'No';
+    }
+    
+    // Format null/undefined
+    if (value === null || value === undefined) {
+      return <span className="text-gray-400 italic">Not set</span>;
+    }
+    
+    // Default: return as string
+    return String(value);
+  };
+
+  const formatDetailLabel = (key: string) => {
+    // Convert snake_case to Title Case with better labels
+    const labelMap: Record<string, string> = {
+      old_role: 'Previous Role',
+      new_role: 'New Role',
+      user_email: 'Target User',
+      changed_by_role: 'Changed By (Role)',
+      changed_by_email: 'Changed By (Email)',
+      changed_by_name: 'Changed By (Name)',
+      action_by_role: 'Action By (Role)',
+      action_by_email: 'Action By (Email)',
+      action_by_name: 'Action By (Name)',
+      old_status: 'Previous Status',
+      new_status: 'New Status',
+      referred_user_id: 'Referred User ID',
+      referred_user_email: 'Referred User',
+      target_role: 'Target Role',
+      reason: 'Reason',
+      admin_notes: 'Admin Notes',
+      auth_method: 'Authentication Method',
+      full_name: 'Full Name',
+      via_referral: 'Via Referral',
+      referral_id: 'Referral ID',
+    };
+    
+    return labelMap[key] || key.split('_').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
+  };
+
+  const renderFormattedDetails = (details: any) => {
+    if (!details || typeof details !== 'object') {
+      return <span className="text-gray-400">No details</span>;
+    }
+
+    const entries = Object.entries(details);
+    if (entries.length === 0) {
+      return <span className="text-gray-400">No details</span>;
+    }
+
+    return (
+      <table className="min-w-full border border-gray-300">
+        <thead>
+          <tr className="bg-gray-100">
+            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b border-r border-gray-300">
+              Field
+            </th>
+            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b border-gray-300">
+              Value
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {entries.map(([key, value], index) => (
+            <tr key={key} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+              <td className="px-4 py-2 text-sm text-gray-700 border-b border-r border-gray-300 whitespace-nowrap">
+                {formatDetailLabel(key)}
+              </td>
+              <td className="px-4 py-2 text-sm text-gray-900 border-b border-gray-300">
+                {formatDetailValue(key, value)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
   };
 
   const getActionColor = (actionType: string) => {
@@ -264,13 +357,21 @@ export default function AuditLogsPage() {
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600">
                           {details ? (
-                            <details className="cursor-pointer">
-                              <summary className="text-blue-600 hover:underline">
+                            <details 
+                              className="cursor-pointer"
+                              onToggle={(e) => {
+                                const summary = e.currentTarget.querySelector('summary');
+                                if (summary) {
+                                  summary.textContent = e.currentTarget.open ? 'Close details' : 'View details';
+                                }
+                              }}
+                            >
+                              <summary className="text-blue-600 hover:underline font-medium">
                                 View details
                               </summary>
-                              <pre className="mt-2 text-xs bg-gray-100 p-2 rounded overflow-x-auto">
-                                {JSON.stringify(details, null, 2)}
-                              </pre>
+                              <div className="mt-3 p-3 bg-gray-50 rounded border border-gray-200">
+                                {renderFormattedDetails(details)}
+                              </div>
                             </details>
                           ) : (
                             <span className="text-gray-400">—</span>

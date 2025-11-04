@@ -67,6 +67,9 @@ def update_user_role(
     db.commit()
     db.refresh(user)
     
+    # Get manager's full user object to include name in audit log
+    manager_user = db.get(User, manager.id)
+    
     # Create audit log
     create_audit_log(
         db=db,
@@ -79,7 +82,9 @@ def update_user_role(
             "old_role": old_role,
             "new_role": role_update.role,
             "user_email": user.email,
-            "changed_by": manager.role,
+            "changed_by_role": manager.role,
+            "changed_by_email": manager.email,
+            "changed_by_name": manager_user.full_name if manager_user and manager_user.full_name else None,
         },
         ip_address=get_actor_ip(request),
     )
@@ -131,6 +136,9 @@ def block_user(
     db.commit()
     db.refresh(user)
     
+    # Get manager's full user object to include name in audit log
+    manager_user = db.get(User, manager.id)
+    
     # Create audit log
     action_type = "user_unblocked" if block_update.is_active else "user_blocked"
     create_audit_log(
@@ -144,7 +152,9 @@ def block_user(
             "old_status": old_status,
             "new_status": block_update.is_active,
             "user_email": user.email,
-            "blocked_by": manager.role,
+            "action_by_role": manager.role,
+            "action_by_email": manager.email,
+            "action_by_name": manager_user.full_name if manager_user and manager_user.full_name else None,
         },
         ip_address=get_actor_ip(request),
     )
