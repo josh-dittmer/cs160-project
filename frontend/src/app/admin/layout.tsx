@@ -42,15 +42,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen bg-white dark:bg-white">
       {/* Admin Header */}
       <header className="bg-white dark:bg-white shadow border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-8">
+        <div className="max-w-full mx-auto px-6">
+          <div className="flex justify-between items-center py-3">
+            <div className="flex items-center space-x-6">
               {/* OFS Logo */}
               <Link href={`${pathPrefix}/dashboard`} className="flex items-center">
                 <img
                   src="/logo.png"
                   alt="OFS Logo"
-                  className="h-12 w-auto cursor-pointer"
+                  className="h-14 w-auto cursor-pointer"
                 />
               </Link>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-900">

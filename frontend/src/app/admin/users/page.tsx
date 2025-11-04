@@ -230,52 +230,48 @@ export default function UsersManagement() {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  {user.role === 'admin' || (isManager && user.role === 'manager') ? (
-                    // Display admin/manager role as badge (non-editable)
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeColor(user.role)}`}>
-                      {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                    </span>
-                  ) : (isManager && user.role === 'customer') ? (
-                    // Manager can only promote customers to employees
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    {user.role === 'admin' || (isManager && (user.role === 'manager' || user.id === currentUser?.id)) ? (
+                      // Display admin/manager role as badge (non-editable for managers)
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeColor(user.role)}`}>
-                        Customer
+                        {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                       </span>
-                      <button
-                        onClick={() => handleRoleChange(user.id, 'employee')}
-                        className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    ) : isManager ? (
+                      // Manager can change between customer and employee
+                      <select
+                        value={user.role}
+                        onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeColor(user.role)} cursor-pointer`}
                       >
-                        Promote to Employee
-                      </button>
-                    </div>
-                  ) : (isManager && user.role === 'employee') ? (
-                    // Show employee badge with "Refer for Manager" button
-                    <div className="flex items-center gap-2">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeColor('employee')}`}>
-                        Employee
-                      </span>
+                        <option value="customer">Customer</option>
+                        <option value="employee">Employee</option>
+                      </select>
+                    ) : (
+                      // Admin can change roles freely (except to admin)
+                      <select
+                        value={user.role}
+                        onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                        disabled={user.id === currentUser?.id}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeColor(user.role)} ${
+                          user.id === currentUser?.id ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                        }`}
+                      >
+                        <option value="manager">Manager</option>
+                        <option value="employee">Employee</option>
+                        <option value="customer">Customer</option>
+                      </select>
+                    )}
+                    
+                    {/* Show "Refer for Manager" button for employees (manager only) */}
+                    {isManager && user.role === 'employee' && (
                       <button
                         onClick={() => handleReferForManager(user)}
-                        className="text-xs px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700"
+                        className="text-xs px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 whitespace-nowrap"
                       >
                         Refer for Manager
                       </button>
-                    </div>
-                  ) : (
-                    // Admin can change roles freely
-                    <select
-                      value={user.role}
-                      onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                      disabled={user.id === currentUser?.id}
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeColor(user.role)} ${
-                        user.id === currentUser?.id ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                      }`}
-                    >
-                      <option value="manager">Manager</option>
-                      <option value="employee">Employee</option>
-                      <option value="customer">Customer</option>
-                    </select>
-                  )}
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
