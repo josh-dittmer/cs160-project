@@ -198,6 +198,38 @@ export default function AuditLogsPage() {
     return 'text-gray-600';
   };
 
+  const getTargetDisplay = (log: AuditLog, details: any) => {
+    // Try to extract meaningful information from details
+    if (details && typeof details === 'object') {
+      // For user-related actions, show the user email
+      if (log.target_type === 'user' && details.user_email) {
+        return `User: ${details.user_email}`;
+      }
+      
+      // For referral actions, show the referred user
+      if (log.target_type === 'referral' && details.referred_user_email) {
+        return `Referral: ${details.referred_user_email}`;
+      }
+      
+      // For item actions, show the item name if available
+      if (log.target_type === 'item' && details.item_name) {
+        return `Item: ${details.item_name}`;
+      }
+      
+      // For order actions, show order ID with user email if available
+      if (log.target_type === 'order') {
+        if (details.user_email) {
+          return `Order #${log.target_id} (${details.user_email})`;
+        }
+        return `Order #${log.target_id}`;
+      }
+    }
+    
+    // Fallback to original format with capitalized type
+    const capitalizedType = log.target_type.charAt(0).toUpperCase() + log.target_type.slice(1);
+    return `${capitalizedType} #${log.target_id}`;
+  };
+
   const clearFilters = () => {
     setActionTypeFilter('');
     setActorEmailFilter('');
@@ -353,7 +385,7 @@ export default function AuditLogsPage() {
                           {log.action_type}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                          {log.target_type} #{log.target_id}
+                          {getTargetDisplay(log, details)}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600">
                           {details ? (
