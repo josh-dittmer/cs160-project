@@ -24,10 +24,14 @@ export default function UsersManagement() {
   const [showManagerSelectModal, setShowManagerSelectModal] = useState(false);
   const [managerSelectData, setManagerSelectData] = useState<{
     userId: number;
+    oldRole: string;
     newRole: string;
     availableManagers: UserAdmin[];
+    subordinates?: UserAdmin[];
+    initialAssignments?: Record<number, number>;
   } | null>(null);
   const [selectedManagerId, setSelectedManagerId] = useState<number | null>(null);
+  const [subordinateAssignments, setSubordinateAssignments] = useState<Record<number, number>>({});
 
   const isAdmin = currentUser?.role === 'admin';
   const isManager = currentUser?.role === 'manager';
@@ -39,6 +43,13 @@ export default function UsersManagement() {
       setFilter(roleParam);
     }
   }, [searchParams]);
+
+  // Debug: Log when subordinateAssignments changes
+  useEffect(() => {
+    if (Object.keys(subordinateAssignments).length > 0) {
+      console.log('Subordinate Assignments State Updated:', subordinateAssignments);
+    }
+  }, [subordinateAssignments]);
 
   useEffect(() => {
     if (!token) return;
@@ -89,7 +100,7 @@ export default function UsersManagement() {
           return; // User cancelled
         }
       } else if (targetUser.role === 'manager') {
-        // Demoting a manager to employee - need to select which manager they'll report to
+        // Demoting a manager to employee - need to check for subordinates
         const availableManagers = users.filter(u => u.role === 'manager' && u.id !== userId);
         
         if (availableManagers.length === 0) {
@@ -103,9 +114,43 @@ export default function UsersManagement() {
           return;
         }
         
+        // Check if this manager has subordinates
+        const subordinates = users.filter(u => u.reports_to === userId);
+        
+        // Initialize subordinate assignments with first available manager as default
+        const initialAssignments: Record<number, number> = {};
+        subordinates.forEach(sub => {
+          initialAssignments[sub.id] = availableManagers[0].id;
+        });
+        
+        console.log('=== Setting up Manager Demotion Modal ===');
+        console.log('Subordinates found:', subordinates.length);
+        console.log('Subordinates:', subordinates.map(s => ({ id: s.id, email: s.email })));
+        console.log('Initial Assignments:', initialAssignments);
+        console.log('Available Managers:', availableManagers.map(m => ({ id: m.id, email: m.email })));
+        
+        // Show modal to select manager and reassign subordinates
+        // Store initialAssignments in modal data so it's always available
+        setManagerSelectData({
+          userId,
+          oldRole: targetUser.role,
+          newRole,
+          availableManagers,
+          subordinates: subordinates.length > 0 ? subordinates : undefined,
+          initialAssignments
+        });
+        setSubordinateAssignments(initialAssignments);
+        setSelectedManagerId(availableManagers[0].id); // Default to first manager
+        setShowManagerSelectModal(true);
+        return; // Exit here, will continue in handleManagerSelectConfirm
+      } else {
+        // Promoting customer to employee - need to select which manager they'll report to
+        const availableManagers = users.filter(u => u.role === 'manager' && u.is_active);
+        
         // Show modal to select manager
         setManagerSelectData({
           userId,
+          oldRole: targetUser.role,
           newRole,
           availableManagers
         });
@@ -165,11 +210,37 @@ export default function UsersManagement() {
     if (!token || !managerSelectData || selectedManagerId === null) return;
     
     try {
-      await updateUserRole(token, managerSelectData.userId, managerSelectData.newRole, selectedManagerId);
+      // If there are subordinates, merge user changes with initial assignments
+      let subordinateReassignments: Record<number, number> | undefined = undefined;
+      
+      if (managerSelectData.subordinates && managerSelectData.subordinates.length > 0) {
+        // Start with initial assignments, then apply any user changes
+        subordinateReassignments = {
+          ...managerSelectData.initialAssignments,
+          ...subordinateAssignments
+        };
+      }
+      
+      console.log('=== FRONTEND: Demoting Manager ===');
+      console.log('User ID:', managerSelectData.userId);
+      console.log('New Role:', managerSelectData.newRole);
+      console.log('Selected Manager ID:', selectedManagerId);
+      console.log('Initial Assignments:', managerSelectData.initialAssignments);
+      console.log('User Changed Assignments:', subordinateAssignments);
+      console.log('Final Subordinate Reassignments to send:', subordinateReassignments);
+      
+      await updateUserRole(
+        token, 
+        managerSelectData.userId, 
+        managerSelectData.newRole, 
+        selectedManagerId,
+        subordinateReassignments
+      );
       alert('User role updated successfully');
       setShowManagerSelectModal(false);
       setManagerSelectData(null);
       setSelectedManagerId(null);
+      setSubordinateAssignments({});
       fetchUsers();
     } catch (error: any) {
       console.error('Failed to update user role:', error);
@@ -376,33 +447,82 @@ export default function UsersManagement() {
 
       {/* Manager Selection Modal */}
       {showManagerSelectModal && managerSelectData && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 my-8">
             <h3 className="text-xl font-bold text-gray-900 mb-4">
-              Select Manager
+              {managerSelectData.oldRole === 'manager' ? 'Demote Manager to Employee' : 'Select Manager for Employee'}
             </h3>
             
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600">
-                This user is being demoted from Manager to Employee. 
-                Please select which manager they will report to:
-              </p>
+            <div className="space-y-6">
+              {/* Subordinates Section (only shown when demoting manager with subordinates) */}
+              {managerSelectData.subordinates && managerSelectData.subordinates.length > 0 && (
+                <div className="border border-yellow-300 bg-yellow-50 rounded-lg p-4">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                    ⚠️ Reassign Subordinates
+                  </h4>
+                  <p className="text-sm text-gray-700 mb-4">
+                    This manager currently has {managerSelectData.subordinates.length} subordinate(s). 
+                    Please assign each employee to a new manager before proceeding:
+                  </p>
+                  
+                  <div className="space-y-3">
+                    {managerSelectData.subordinates.map((subordinate) => (
+                      <div key={subordinate.id} className="bg-white rounded-md p-3 border border-gray-200">
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900">
+                              {subordinate.full_name || subordinate.email}
+                            </p>
+                            <p className="text-xs text-gray-500">{subordinate.email}</p>
+                          </div>
+                          <div className="flex-1">
+                            <select
+                              value={subordinateAssignments[subordinate.id] || managerSelectData.initialAssignments?.[subordinate.id] || ''}
+                              onChange={(e) => setSubordinateAssignments({
+                                ...subordinateAssignments,
+                                [subordinate.id]: Number(e.target.value)
+                              })}
+                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                              {managerSelectData.availableManagers.map((mgr) => (
+                                <option key={mgr.id} value={mgr.id}>
+                                  {mgr.full_name || mgr.email}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               
+              {/* Manager Selection for the demoted user or new employee */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Manager:
-                </label>
-                <select
-                  value={selectedManagerId || ''}
-                  onChange={(e) => setSelectedManagerId(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {managerSelectData.availableManagers.map((mgr) => (
-                    <option key={mgr.id} value={mgr.id}>
-                      {mgr.full_name || mgr.email} ({mgr.email})
-                    </option>
-                  ))}
-                </select>
+                <p className="text-sm text-gray-600 mb-3">
+                  {managerSelectData.oldRole === 'manager' 
+                    ? 'Select which manager this user will report to as an employee:'
+                    : 'Select which manager this new employee will report to:'
+                  }
+                </p>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Reporting Manager:
+                  </label>
+                  <select
+                    value={selectedManagerId || ''}
+                    onChange={(e) => setSelectedManagerId(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {managerSelectData.availableManagers.map((mgr) => (
+                      <option key={mgr.id} value={mgr.id}>
+                        {mgr.full_name || mgr.email} ({mgr.email})
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
             
@@ -418,6 +538,7 @@ export default function UsersManagement() {
                   setShowManagerSelectModal(false);
                   setManagerSelectData(null);
                   setSelectedManagerId(null);
+                  setSubordinateAssignments({});
                 }}
                 className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
               >

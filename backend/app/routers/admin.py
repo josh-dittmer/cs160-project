@@ -56,7 +56,7 @@ def update_user_role(
     Admin cannot demote themselves.
     Only one admin is allowed in the system.
     When promoting to employee: requires manager_id.
-    When promoting to manager: auto-sets reports_to to admin.
+    When promoting to manager: sets reports_to to None (managers don't report to anyone).
     When demoting from manager: requires subordinate_reassignments if has subordinates.
     Admin only.
     """
@@ -85,8 +85,98 @@ def update_user_role(
     old_role = user.role
     old_reports_to = user.reports_to
     
-    # Check if user is being promoted to employee
-    if role_update.role == "employee":
+    # Check if user is being demoted from manager FIRST (before other role checks)
+    if old_role == "manager" and role_update.role in ["employee", "customer"]:
+        # Check if manager has subordinates
+        subordinate_count = db.query(func.count(User.id)).filter(User.reports_to == user_id).scalar()
+        
+        print(f"\n=== BACKEND: Demoting Manager {user_id} ===")
+        print(f"Subordinate count: {subordinate_count}")
+        print(f"New role: {role_update.role}")
+        print(f"Subordinate reassignments received: {role_update.subordinate_reassignments}")
+        
+        if subordinate_count > 0:
+            # Require subordinate_reassignments
+            if not role_update.subordinate_reassignments:
+                subordinates = db.query(User).filter(User.reports_to == user_id).all()
+                subordinate_list = [{"id": s.id, "email": s.email, "full_name": s.full_name} for s in subordinates]
+                print(f"ERROR: No subordinate reassignments provided! Subordinates: {subordinate_list}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Cannot demote manager with {subordinate_count} subordinate(s). Provide subordinate_reassignments mapping.",
+                    headers={"X-Subordinates": str(subordinate_list)},
+                )
+            
+            # Validate all subordinates are included in reassignments
+            subordinates = db.query(User).filter(User.reports_to == user_id).all()
+            subordinate_ids = {s.id for s in subordinates}
+            # Convert keys to int in case they come as strings from JSON
+            reassignments_dict = {int(k): v for k, v in role_update.subordinate_reassignments.items()}
+            provided_ids = set(reassignments_dict.keys())
+            
+            print(f"Subordinate IDs in DB: {subordinate_ids}")
+            print(f"Provided reassignment IDs: {provided_ids}")
+            print(f"Reassignments dict: {reassignments_dict}")
+            
+            if subordinate_ids != provided_ids:
+                missing = subordinate_ids - provided_ids
+                extra = provided_ids - subordinate_ids
+                error_parts = []
+                if missing:
+                    error_parts.append(f"Missing subordinate IDs: {missing}")
+                if extra:
+                    error_parts.append(f"Extra IDs (not subordinates): {extra}")
+                print(f"ERROR: Mismatch! {' '.join(error_parts)}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Subordinate reassignments mismatch. {' '.join(error_parts)}",
+                )
+            
+            # Validate all new managers exist and are managers
+            for subordinate_id, new_manager_id in reassignments_dict.items():
+                new_manager = db.get(User, new_manager_id)
+                if not new_manager:
+                    print(f"ERROR: New manager {new_manager_id} not found")
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail=f"New manager with id {new_manager_id} not found",
+                    )
+                if new_manager.role != "manager":
+                    print(f"ERROR: User {new_manager_id} is not a manager (role: {new_manager.role})")
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"User {new_manager_id} ({new_manager.email}) is not a manager",
+                    )
+            
+            # Perform atomic transfer of all subordinates
+            print("Starting subordinate reassignments:")
+            for subordinate in subordinates:
+                old_reports_to = subordinate.reports_to
+                new_reports_to = reassignments_dict[subordinate.id]
+                subordinate.reports_to = new_reports_to
+                print(f"  - Subordinate {subordinate.id} ({subordinate.email}): {old_reports_to} -> {new_reports_to}")
+        
+        # Set reports_to for demoted user
+        if role_update.role == "customer":
+            user.reports_to = None
+        elif role_update.role == "employee":
+            # If demoting to employee, require manager_id
+            if not role_update.manager_id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="manager_id is required when demoting manager to employee",
+                )
+            # Validate manager
+            manager = db.get(User, role_update.manager_id)
+            if not manager or manager.role != "manager":
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid manager_id",
+                )
+            user.reports_to = role_update.manager_id
+    
+    # Check if user is being promoted to employee (but not demoted from manager - that's handled above)
+    elif role_update.role == "employee":
         # Require manager_id when promoting to employee
         if not role_update.manager_id:
             # Check if there are any managers in the system
@@ -119,79 +209,8 @@ def update_user_role(
     
     # Check if user is being promoted to manager
     elif role_update.role == "manager":
-        # Auto-set reports_to to admin
-        user.reports_to = admin.id
-    
-    # Check if user is being demoted from manager
-    elif old_role == "manager" and role_update.role in ["employee", "customer"]:
-        # Check if manager has subordinates
-        subordinate_count = db.query(func.count(User.id)).filter(User.reports_to == user_id).scalar()
-        
-        if subordinate_count > 0:
-            # Require subordinate_reassignments
-            if not role_update.subordinate_reassignments:
-                subordinates = db.query(User).filter(User.reports_to == user_id).all()
-                subordinate_list = [{"id": s.id, "email": s.email, "full_name": s.full_name} for s in subordinates]
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Cannot demote manager with {subordinate_count} subordinate(s). Provide subordinate_reassignments mapping.",
-                    headers={"X-Subordinates": str(subordinate_list)},
-                )
-            
-            # Validate all subordinates are included in reassignments
-            subordinates = db.query(User).filter(User.reports_to == user_id).all()
-            subordinate_ids = {s.id for s in subordinates}
-            provided_ids = set(role_update.subordinate_reassignments.keys())
-            
-            if subordinate_ids != provided_ids:
-                missing = subordinate_ids - provided_ids
-                extra = provided_ids - subordinate_ids
-                error_parts = []
-                if missing:
-                    error_parts.append(f"Missing subordinate IDs: {missing}")
-                if extra:
-                    error_parts.append(f"Extra IDs (not subordinates): {extra}")
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Subordinate reassignments mismatch. {' '.join(error_parts)}",
-                )
-            
-            # Validate all new managers exist and are managers
-            for subordinate_id, new_manager_id in role_update.subordinate_reassignments.items():
-                new_manager = db.get(User, new_manager_id)
-                if not new_manager:
-                    raise HTTPException(
-                        status_code=status.HTTP_404_NOT_FOUND,
-                        detail=f"New manager with id {new_manager_id} not found",
-                    )
-                if new_manager.role != "manager":
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=f"User {new_manager_id} ({new_manager.email}) is not a manager",
-                    )
-            
-            # Perform atomic transfer of all subordinates
-            for subordinate in subordinates:
-                subordinate.reports_to = role_update.subordinate_reassignments[subordinate.id]
-        
-        # Clear reports_to for demoted user
-        if role_update.role == "customer":
-            user.reports_to = None
-        elif role_update.role == "employee":
-            # If demoting to employee, require manager_id
-            if not role_update.manager_id:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="manager_id is required when demoting manager to employee",
-                )
-            # Validate manager
-            manager = db.get(User, role_update.manager_id)
-            if not manager or manager.role != "manager":
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Invalid manager_id",
-                )
-            user.reports_to = role_update.manager_id
+        # Managers don't report to anyone (like admins and customers)
+        user.reports_to = None
     
     # Check if user is being set to customer (from any non-manager role)
     elif role_update.role == "customer":

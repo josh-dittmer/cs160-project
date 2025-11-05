@@ -6,7 +6,7 @@
 
 A complete reporting hierarchy system has been implemented where:
 - **Employees** must report to a manager
-- **Managers** report to the admin
+- **Managers** report to no one
 - **Admin** reports to no one
 - **Customers** have no reporting relationship
 
@@ -54,7 +54,7 @@ New table for employee referrals (employees referring customers):
 - When promoting to `employee`: requires `manager_id` parameter
   - Validates manager exists and has role "manager"
   - Enforces "first hire must be manager" rule
-- When promoting to `manager`: auto-sets `reports_to` to admin's ID
+- When promoting to `manager`: sets `reports_to` to None (managers don't report to anyone)
 - When demoting from `manager`: 
   - If has subordinates: requires `subordinate_reassignments` mapping
   - Validates all subordinates are reassigned atomically

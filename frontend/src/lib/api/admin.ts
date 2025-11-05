@@ -79,11 +79,15 @@ export async function updateUserRole(
   token: string,
   userId: number,
   role: string,
-  managerId?: number
+  managerId?: number,
+  subordinateReassignments?: Record<number, number>
 ): Promise<any> {
   const body: any = { role };
   if (managerId !== undefined) {
     body.manager_id = managerId;
+  }
+  if (subordinateReassignments !== undefined) {
+    body.subordinate_reassignments = subordinateReassignments;
   }
   
   const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/role`, {
