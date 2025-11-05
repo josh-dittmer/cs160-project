@@ -211,6 +211,11 @@ class UserBlockUpdate(BaseModel):
     subordinate_reassignments: dict[int, int] | None = None  # {employee_id: new_manager_id} - Required when blocking manager with subordinates
 
 
+class UserManagerUpdate(BaseModel):
+    """Schema for updating employee's manager"""
+    manager_id: int
+
+
 class ItemCreate(BaseModel):
     """Schema for creating a new item"""
     name: constr(min_length=1, max_length=255)

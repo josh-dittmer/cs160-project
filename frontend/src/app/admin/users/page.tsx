@@ -5,7 +5,8 @@ import { useAuth } from '@/contexts/auth';
 import { 
   listUsers, 
   updateUserRole, 
-  blockUser, 
+  blockUser,
+  updateEmployeeManager,
   managerUpdateUserRole,
   managerBlockUser,
   type UserAdmin 
@@ -252,6 +253,18 @@ export default function UsersManagement() {
     }
   };
 
+  const handleManagerChange = async (userId: number, newManagerId: number) => {
+    if (!token) return;
+    
+    try {
+      await updateEmployeeManager(token, userId, newManagerId);
+      await fetchUsers(); // Refresh the user list
+    } catch (error: any) {
+      console.error('Failed to update employee manager:', error);
+      alert(error.message || 'Failed to update employee manager');
+    }
+  };
+
   // Helper to check if manager can modify this user
   const canManagerModifyUser = (user: UserAdmin): boolean => {
     if (!isManager) return true; // Admin can modify anyone
@@ -392,7 +405,25 @@ export default function UsersManagement() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">
-                    {user.reports_to ? (
+                    {user.role === 'employee' && isAdmin ? (
+                      // Editable dropdown for employees (admin only)
+                      <select
+                        value={user.reports_to || ''}
+                        onChange={(e) => handleManagerChange(user.id, Number(e.target.value))}
+                        className="px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer bg-white"
+                      >
+                        {!user.reports_to && <option value="">Select Manager</option>}
+                        {users
+                          .filter(u => u.role === 'manager' && u.is_active)
+                          .map(manager => (
+                            <option key={manager.id} value={manager.id}>
+                              {manager.full_name || manager.email}
+                            </option>
+                          ))
+                        }
+                      </select>
+                    ) : user.reports_to ? (
+                      // Display only for non-employees or managers
                       (() => {
                         const manager = users.find(u => u.id === user.reports_to);
                         return manager ? (

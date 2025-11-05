@@ -11,6 +11,7 @@ from ..schemas import (
     UserListAdmin,
     UserRoleUpdate,
     UserBlockUpdate,
+    UserManagerUpdate,
     ItemCreate,
     ItemUpdate,
     ItemActivateUpdate,
@@ -360,6 +361,92 @@ def block_user(
     return {
         "ok": True,
         "message": f"User {action} successfully",
+        "user": UserListAdmin.model_validate(user),
+    }
+
+
+@router.put("/users/{user_id}/manager", status_code=status.HTTP_200_OK)
+def update_employee_manager(
+    user_id: int,
+    manager_update: UserManagerUpdate,
+    request: Request,
+    admin: UserCtx = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """
+    Update an employee's manager.
+    Admin only.
+    """
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    
+    # Only employees can have their manager changed
+    if user.role != "employee":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot change manager for {user.role}. Only employees report to managers.",
+        )
+    
+    # Validate new manager exists and is actually a manager
+    new_manager = db.get(User, manager_update.manager_id)
+    if not new_manager:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Manager with id {manager_update.manager_id} not found",
+        )
+    
+    if new_manager.role != "manager":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"User {manager_update.manager_id} ({new_manager.email}) is not a manager",
+        )
+    
+    if not new_manager.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Manager {new_manager.email} is blocked and cannot accept subordinates",
+        )
+    
+    # Store old manager for audit log
+    old_manager_id = user.reports_to
+    old_manager_email = None
+    if old_manager_id:
+        old_manager = db.get(User, old_manager_id)
+        if old_manager:
+            old_manager_email = old_manager.email
+    
+    # Update the employee's manager
+    user.reports_to = manager_update.manager_id
+    db.commit()
+    db.refresh(user)
+    
+    # Create audit log
+    create_audit_log(
+        db=db,
+        action_type="user_manager_changed",
+        target_type="user",
+        target_id=user.id,
+        actor_id=admin.id,
+        actor_email=admin.email,
+        details={
+            "user_email": user.email,
+            "user_name": user.full_name,
+            "old_manager_id": old_manager_id,
+            "old_manager_email": old_manager_email,
+            "new_manager_id": manager_update.manager_id,
+            "new_manager_email": new_manager.email,
+            "new_manager_name": new_manager.full_name,
+        },
+        ip_address=get_actor_ip(request),
+    )
+    
+    return {
+        "ok": True,
+        "message": f"Employee {user.email} now reports to {new_manager.email}",
         "user": UserListAdmin.model_validate(user),
     }
 

@@ -129,6 +129,28 @@ export async function blockUser(
   return response.json();
 }
 
+export async function updateEmployeeManager(
+  token: string,
+  userId: number,
+  managerId: number
+): Promise<any> {
+  const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/manager`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ manager_id: managerId }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to update employee manager');
+  }
+
+  return response.json();
+}
+
 // ============ Inventory Management ============
 
 export interface ListItemsParams {
