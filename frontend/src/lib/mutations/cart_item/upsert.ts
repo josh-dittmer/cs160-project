@@ -16,6 +16,8 @@ export const useUpsertCartItemMutation = () => {
         mutationKey: ['upsertCartItem'],
         onSuccess: () => {
             client.invalidateQueries({ queryKey: ['cartItems'] });
+            client.invalidateQueries({ queryKey: ['paymentIntent'] });
+
         }
     });
 }

@@ -1,13 +1,19 @@
+import { AddressContext } from "@/contexts/address";
+import { useAuth } from "@/contexts/auth";
 import { usePaymentIntentQuery } from "@/lib/queries/payment_intent";
 import { stripePromise } from "@/lib/stripe";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { Appearance, StripePaymentElementOptions } from "@stripe/stripe-js";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useContext, useState } from "react";
 
 function CheckoutForm({ totalCents }: { totalCents: number }) {
+    const { user } = useAuth();
+
     const stripe = useStripe();
     const elements = useElements();
+
+    const addressContext = useContext(AddressContext);
 
     const [message, setMessage] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
@@ -40,22 +46,30 @@ function CheckoutForm({ totalCents }: { totalCents: number }) {
     };
 
     return (
-        <form onSubmit={handleSubmit}>
-            <div className="flex flex-col gap-4 justify-center items-center">
-                <div className="w-full">
-                    <PaymentElement options={paymentElementOptions} />
-                </div>
+        <div className="flex flex-col gap-4 justify-center items-center">
+            <div className="w-full">
+                <PaymentElement options={paymentElementOptions} />
+            </div>
+            {!user?.address && (
+                <button
+                    className="w-full p-4 rounded-xl bg-bg-dark hover:bg-bg-accent font-bold"
+                    onClick={() => addressContext?.setWindowVisible(true)}
+                >
+                    Select Address
+                </button>
+            )}
+            {user?.address && (
                 <motion.button
                     whileTap={{ scale: 0.99 }}
                     disabled={loading || !stripe || !elements}
-                    type="submit"
+                    onClick={handleSubmit}
                     className="w-full p-4 rounded-xl bg-bg-dark hover:bg-bg-accent font-bold"
                 >
                     <span>{loading ? "Loading..." : `Pay $${(totalCents / 100).toFixed(2)} now`}</span>
                 </motion.button>
-                {message && <div className="mt-4 text-red-500">{message}</div>}
-            </div>
-        </form>
+            )}
+            {message && <div className="mt-4 text-red-500">{message}</div>}
+        </div>
     )
 }
 

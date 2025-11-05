@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, update
 from .database import engine, SessionLocal, Base
-from .models import Item, Review, Order, OrderItem, User
+from .models import Item, Review, Order, OrderItem, User, OrderStatus
 from .auth import get_password_hash
 from datetime import datetime
 from .payment import create_stripe_customer
@@ -732,22 +732,36 @@ SAMPLE_ORDERS = [
     dict(
         user_id=1,
         created_at=datetime.strptime("2025-01-01 10:00:00", "%Y-%m-%d %H:%M:%S"),
-        delivered_at=datetime.strptime("2025-01-01 10:30:00", "%Y-%m-%d %H:%M:%S")
+        delivered_at=datetime.strptime("2025-01-01 10:30:00", "%Y-%m-%d %H:%M:%S"),
+        display_address="123 Main St, San Jose, CA 95112",
+        longitude=-121.8863,
+        latitude=37.3382,
     ),
     dict(
         user_id=1,
         created_at=datetime.strptime("2025-02-14 12:00:00", "%Y-%m-%d %H:%M:%S"),
         delivered_at=datetime.strptime("2025-02-14 12:45:00", "%Y-%m-%d %H:%M:%S"),
+        display_address="123 Main St, San Jose, CA 95112",
+        longitude=-121.8863,
+        latitude=37.3382,
     ),
     dict(
         user_id=1,
         created_at=datetime.strptime("2025-03-03 18:30:00", "%Y-%m-%d %H:%M:%S"),
         delivered_at=datetime.strptime("2025-03-03 19:10:00", "%Y-%m-%d %H:%M:%S"),
+        status=OrderStatus.DELIVERED,
+        display_address="123 Main St, San Jose, CA 95112",
+        longitude=-121.8863,
+        latitude=37.3382,
     ),
     dict(
         user_id=1,
         created_at=datetime.strptime("2025-04-10 09:15:00", "%Y-%m-%d %H:%M:%S"),
         delivered_at=None,
+        status=OrderStatus.DELIVERED,
+        display_address="123 Main St, San Jose, CA 95112",
+        longitude=-121.8863,
+        latitude=37.3382,
     ),
 ]
 

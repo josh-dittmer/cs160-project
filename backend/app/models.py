@@ -13,7 +13,9 @@ from sqlalchemy import (
 )
 from sqlalchemy.sql import func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.types import Enum as SQLEnum
 from .database import Base
+import enum
 
 
 class Item(Base):
@@ -62,6 +64,8 @@ class User(Base):
     city: Mapped[str | None] = mapped_column(String(100), nullable=True)
     zipcode: Mapped[str | None] = mapped_column(String(10), nullable=True)
     state: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     profile_picture: Mapped[str | None] = mapped_column(Text, nullable=True)  # base64 or URL
     
     # Role-based access control
@@ -105,6 +109,12 @@ class CartItem(Base):
     item = relationship(Item)
     user = relationship(User)
 
+class OrderStatus(enum.Enum):
+    PACKING = "packing"
+    SHIPPED = "shipped"
+    DELIVERED = "delivered"
+    CANCELED = "canceled"
+
 class Order(Base):
     __tablename__ = "orders"
 
@@ -117,6 +127,12 @@ class Order(Base):
         DateTime(timezone=True), nullable=True
     )
     payment_intent_id: Mapped[str | None] = mapped_column(String(255), index=True)
+    display_address: Mapped[str] = mapped_column(String(255))
+    latitude: Mapped[float] = mapped_column(Float)
+    longitude: Mapped[float] = mapped_column(Float)
+    status: Mapped[OrderStatus] = mapped_column(
+        SQLEnum(OrderStatus), default=OrderStatus.PACKING, index=True
+    )
 
     user = relationship(User)
 

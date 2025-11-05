@@ -39,7 +39,10 @@ def confirm_payment(
     order = Order(
         user_id=user.id,
         payment_intent_id=intent.id,
-        delivered_at=datetime.now()
+        delivered_at=None,
+        display_address=payload.displayAddress,
+        latitude=payload.latitude,
+        longitude=payload.longitude
     )
 
     db.add(order)

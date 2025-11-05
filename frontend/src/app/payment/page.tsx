@@ -2,14 +2,14 @@
 
 import ProfilePicture from "@/components/profile_picture/profile_picture";
 import StripePayment from "@/components/stripe_payment/stripe_payment";
+import { AddressContext } from "@/contexts/address";
 import { useAuth } from "@/contexts/auth";
-import { CartContext } from "@/contexts/cart";
 import { useUpsertCartItemMutation } from "@/lib/mutations/cart_item/upsert";
 import { useCartItemsQuery } from "@/lib/queries/cart_items";
 import { Trash } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import "./payment.css";
 
 
@@ -22,7 +22,7 @@ type PayMethod = "card" | "paypal" | "applepay";
 
 export default function PaymentPage() {
     const { data: cartItems, isPending } = useCartItemsQuery();
-    const cartContext = useContext(CartContext);
+    const addressContext = useContext(AddressContext);
     const router = useRouter();
     const { mutate, isPending: isMutating } = useUpsertCartItemMutation();
     const { user } = useAuth();
@@ -43,6 +43,13 @@ export default function PaymentPage() {
         // set quantity to 0 to remove
         mutate({ item_id: itemId, quantity: 0 });
     };
+
+    useEffect(() => {
+        // If cart is empty, redirect to home or products page
+        if (!isPending && cartItems && cartItems.items.length === 0) {
+            router.push('/');
+        }
+    }, [isPending, cartItems, router]);
 
     if (!cartItems) return;
 
@@ -77,7 +84,14 @@ export default function PaymentPage() {
                                     <ProfilePicture user={user ?? undefined} size={10} />
                                     <span className="avatar__name">{user?.full_name}</span>
                                 </div>
-                                <button className="link">Change address</button>
+                                {user?.address && (
+                                    <button
+                                        className="link"
+                                        onClick={() => addressContext?.setWindowVisible(true)}
+                                    >
+                                        Change address
+                                    </button>
+                                )}
                             </div>
 
                             <div className="card__body grid grid-cols-[1fr_1fr] gap-4">
@@ -87,9 +101,19 @@ export default function PaymentPage() {
                                 </div>
                                 <div className="overflow-hidden">
                                     <div className="meta__label">Address</div>
-                                    <div className="meta__value truncate text-ellipsis">
-                                        {user?.address}
-                                    </div>
+                                    {user?.address && (
+                                        <div className="meta__value truncate text-ellipsis">
+                                            {user?.address}
+                                        </div>
+                                    )}
+                                    {!user?.address && (
+                                        <button
+                                            className="link"
+                                            onClick={() => addressContext?.setWindowVisible(true)}
+                                        >
+                                            Select address
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         </div>

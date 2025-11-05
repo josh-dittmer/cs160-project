@@ -1,6 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel, conint, constr, EmailStr
-
+from .models import OrderStatus
 
 class ItemListOut(BaseModel):
     """Shape for list view."""
@@ -71,6 +71,8 @@ class UserOut(BaseModel):
     city: str | None = None
     zipcode: str | None = None
     state: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
     profile_picture: str | None = None
     role: str
     is_active: bool
@@ -101,6 +103,8 @@ class UserProfileUpdate(BaseModel):
     city: str | None = None
     zipcode: str | None = None
     state: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
     profile_picture: str | None = None
 
 
@@ -155,11 +159,14 @@ class OrderOut(BaseModel):
     total_weight_oz: int
     created_at: datetime
     delivered_at: datetime | None
+    status: OrderStatus
+    display_address: str
+    latitude: float
+    longitude: float
     items: list[CartItemOut]
 
     class Config:
         from_attributes = True
-
 
 class OrderItemsResponse(BaseModel):
     orders: list[OrderOut]
@@ -167,6 +174,9 @@ class OrderItemsResponse(BaseModel):
 class ConfirmPaymentRequest(BaseModel):
     intentId: str
     clientSecret: str
+    displayAddress: str
+    latitude: float
+    longitude: float
 
 class ConfirmPaymentResponse(BaseModel):
     orderId: int

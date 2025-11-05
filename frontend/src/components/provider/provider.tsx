@@ -1,5 +1,6 @@
 'use client';
 
+import { AddressProvider } from "@/contexts/address";
 import { AuthProvider } from "@/contexts/auth";
 import { CartProvider } from "@/contexts/cart";
 import { PaymentWindowProvider } from "@/contexts/payment_window";
@@ -18,7 +19,9 @@ export default function Provider({ children }: { children: ReactNode }) {
                     <UserWindowProvider>
                         <PaymentWindowProvider>
                             <CartProvider>
-                                {children}
+                                <AddressProvider>
+                                    {children}
+                                </AddressProvider>
                             </CartProvider>
                         </PaymentWindowProvider>
                     </UserWindowProvider>

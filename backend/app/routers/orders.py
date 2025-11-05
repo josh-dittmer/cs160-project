@@ -33,6 +33,10 @@ def list_order_items(
                 total_weight_oz=0,
                 created_at=o.created_at,
                 delivered_at=o.delivered_at,
+                status=o.status.value,
+                display_address=o.display_address,
+                latitude=o.latitude,
+                longitude=o.longitude,
                 items=[]
             )
 

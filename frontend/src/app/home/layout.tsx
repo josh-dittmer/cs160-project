@@ -18,7 +18,7 @@ export default function HomeLayout({ children }: { children: ReactNode }) {
             {isAdmin && (
                 <div className="bg-green-600 text-white px-4 py-2 flex items-center justify-between shadow-md">
                     <span className="text-sm font-medium">
-                        🔍 Customer View Mode - You are viewing the site as a customer
+                        You are viewing the site as a customer
                     </span>
                     <Link
                         href="/admin/dashboard"
@@ -28,8 +28,7 @@ export default function HomeLayout({ children }: { children: ReactNode }) {
                     </Link>
                 </div>
             )}
-
-            <TopBar></TopBar>
+            <TopBar />
             <div className="grid grid-cols-[75px_auto] md:grid-cols-[200px_auto] overflow-hidden">
                 <div className="relative border-bg-dark border-r bg-bg-light p-3">
                     <Sidebar />

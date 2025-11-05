@@ -1,12 +1,13 @@
 "use client";
 
-import { ChevronDown, MapPin, X, Crosshair } from "lucide-react";
-import { useAuth } from "@/contexts/auth";
-import { useState, useEffect, useContext } from "react";
-import { GoogleMap, useLoadScript, Marker, OverlayView } from "@react-google-maps/api";
 import GooglePlacesAutocomplete from "@/components/google_places_autocomplete/GooglePlacesAutocomplete";
-import { updateProfile } from "@/lib/api/profile";
+import { AddressContext } from "@/contexts/address";
+import { useAuth } from "@/contexts/auth";
 import { ThemeContext } from "@/contexts/theme";
+import { updateProfile } from "@/lib/api/profile";
+import { GoogleMap, Marker, OverlayView, useLoadScript } from "@react-google-maps/api";
+import { ChevronDown, Crosshair, MapPin, X } from "lucide-react";
+import { useContext, useEffect, useState } from "react";
 
 const mapContainerStyle = {
     width: '100%',
@@ -29,31 +30,32 @@ function areLocationsSame(
     loc2: { lat: number; lng: number } | null
 ): boolean {
     if (!loc1 || !loc2) return false;
-    
+
     const threshold = 0.0005; // ~50 meters
-    return Math.abs(loc1.lat - loc2.lat) < threshold && 
-           Math.abs(loc1.lng - loc2.lng) < threshold;
+    return Math.abs(loc1.lat - loc2.lat) < threshold &&
+        Math.abs(loc1.lng - loc2.lng) < threshold;
 }
 
 export default function AddressSelector() {
+    const addressContext = useContext(AddressContext);
+
     const { user, token, updateUser } = useAuth();
     const themeContext = useContext(ThemeContext);
     const isDark = themeContext?.theme.name === 'dark';
     const [showMap, setShowMap] = useState(false);
-    const [showAddressInput, setShowAddressInput] = useState(false);
     const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
     const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
     const [isGeocoding, setIsGeocoding] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isLocating, setIsLocating] = useState(false);
-    
+
     // Load Google Maps API with a unique ID to prevent duplicate loading
     const { isLoaded: isMapsLoaded } = useLoadScript({
         googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
         libraries,
         id: 'google-maps-script', // Same ID as GooglePlacesAutocomplete to share the script
     });
-    
+
     // Address form state
     const [addressData, setAddressData] = useState({
         address: '',
@@ -67,16 +69,16 @@ export default function AddressSelector() {
         if (!user?.address) {
             return "Set delivery address";
         }
-        
+
         // If we have a full address, show the street address
         if (user.address) {
             // Truncate if too long
             const maxLength = 20;
-            return user.address.length > maxLength 
-                ? user.address.substring(0, maxLength) + "..." 
+            return user.address.length > maxLength
+                ? user.address.substring(0, maxLength) + "..."
                 : user.address;
         }
-        
+
         return "Set delivery address";
     };
 
@@ -89,7 +91,7 @@ export default function AddressSelector() {
                 user.state,
                 user.zipcode
             ].filter(Boolean).join(', ');
-            
+
             // Reset coordinates to trigger re-geocoding
             console.log('Address changed, resetting coordinates for:', currentFullAddress);
             setCoordinates(null);
@@ -106,16 +108,16 @@ export default function AddressSelector() {
     // Geocode address when map is opened
     const geocodeAddress = () => {
         if (!user?.address || isGeocoding || !isMapsLoaded) return;
-        
+
         // Check if Google Maps API is loaded
         if (typeof window === 'undefined' || !window.google || !window.google.maps) {
             console.warn('Google Maps API not loaded yet, using default center');
             setCoordinates(defaultCenter);
             return;
         }
-        
+
         setIsGeocoding(true);
-        
+
         try {
             // Build full address
             const fullAddress = [
@@ -136,7 +138,7 @@ export default function AddressSelector() {
                     console.log('Geocoded address:', fullAddress);
                     console.log('Coordinates:', coords);
                     console.log('San Jose should be: lat ~37.3, lng ~-121.9');
-                    
+
                     // Validate coordinates are in reasonable range for San Jose
                     if (coords.lat < 36 || coords.lat > 38 || coords.lng > -120 || coords.lng < -123) {
                         console.error('⚠️ Coordinates seem incorrect for San Jose!', coords);
@@ -158,6 +160,12 @@ export default function AddressSelector() {
             setIsGeocoding(false);
         }
     };
+
+    useEffect(() => {
+        if (addressContext?.windowVisible) {
+            geocodeAddress();
+        }
+    }, [addressContext?.windowVisible])
 
     const handleClick = () => {
         if (user?.address) {
@@ -181,7 +189,7 @@ export default function AddressSelector() {
                 );
             }
         } else {
-            setShowAddressInput(true);
+            addressContext?.setWindowVisible(true);
         }
     };
 
@@ -191,7 +199,7 @@ export default function AddressSelector() {
     };
 
     const handleCloseAddressInput = () => {
-        setShowAddressInput(false);
+        addressContext?.setWindowVisible(false);
         setAddressData({
             address: '',
             city: '',
@@ -210,7 +218,7 @@ export default function AddressSelector() {
         });
         // Close map and open address input
         setShowMap(false);
-        setShowAddressInput(true);
+        addressContext?.setWindowVisible(true);
     };
 
     const handleAddressChange = (value: string) => {
@@ -237,7 +245,7 @@ export default function AddressSelector() {
         navigator.geolocation.getCurrentPosition(
             async (position) => {
                 const { latitude, longitude } = position.coords;
-                
+
                 // Reverse geocode to get address
                 try {
                     if (!window.google?.maps) {
@@ -252,7 +260,7 @@ export default function AddressSelector() {
                     geocoder.geocode({ location: latlng }, (results, status) => {
                         if (status === 'OK' && results && results[0]) {
                             const place = results[0];
-                            
+
                             let streetNumber = '';
                             let route = '';
                             let city = '';
@@ -363,9 +371,11 @@ export default function AddressSelector() {
                 address: addressData.address,
                 city: addressData.city,
                 state: addressData.state,
-                zipcode: addressData.zipcode
+                zipcode: addressData.zipcode,
+                longitude: coordinates?.lng,
+                latitude: coordinates?.lat
             });
-            
+
             updateUser(updatedUser);
             // Reset coordinates so they'll be geocoded again with new address
             setCoordinates(null);
@@ -383,10 +393,9 @@ export default function AddressSelector() {
 
     return (
         <>
-            <div 
-                className={`flex items-center gap-3 bg-bg-medium p-2 rounded-full transition-all cursor-pointer ${
-                    isDark ? 'hover:bg-gray-600' : 'hover:bg-gray-300'
-                }`}
+            <div
+                className={`flex items-center gap-3 bg-bg-medium p-2 rounded-full transition-all cursor-pointer ${isDark ? 'hover:bg-gray-600' : 'hover:bg-gray-300'
+                    }`}
                 onClick={handleClick}
                 role="button"
                 aria-label={user?.address ? "View delivery address on map" : "Set delivery address"}
@@ -399,12 +408,12 @@ export default function AddressSelector() {
             </div>
 
             {/* Address Input Modal (when no address is set) */}
-            {showAddressInput && (
-                <div 
+            {addressContext?.windowVisible && (
+                <div
                     className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
                     onClick={handleCloseAddressInput}
                 >
-                    <div 
+                    <div
                         className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-xl w-full max-w-2xl`}
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -435,11 +444,10 @@ export default function AddressSelector() {
                                     type="button"
                                     onClick={handleUseCurrentLocation}
                                     disabled={isLocating || isSaving}
-                                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-colors font-medium border-2 ${
-                                        isDark 
-                                            ? 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600 disabled:bg-blue-800 disabled:border-blue-800' 
-                                            : 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600 disabled:bg-blue-400 disabled:border-blue-400'
-                                    } disabled:cursor-not-allowed disabled:opacity-60`}
+                                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-colors font-medium border-2 ${isDark
+                                        ? 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600 disabled:bg-blue-800 disabled:border-blue-800'
+                                        : 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600 disabled:bg-blue-400 disabled:border-blue-400'
+                                        } disabled:cursor-not-allowed disabled:opacity-60`}
                                 >
                                     {isLocating ? (
                                         <>
@@ -477,11 +485,10 @@ export default function AddressSelector() {
                                         onChange={handleAddressChange}
                                         onPlaceSelected={handlePlaceSelected}
                                         placeholder="Start typing your address..."
-                                        className={`w-full px-4 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                            isDark 
-                                                ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-400' 
-                                                : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
-                                        }`}
+                                        className={`w-full px-4 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${isDark
+                                            ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-400'
+                                            : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
+                                            }`}
                                     />
                                     {addressData.address && (
                                         <button
@@ -494,9 +501,8 @@ export default function AddressSelector() {
                                                     zipcode: ''
                                                 });
                                             }}
-                                            className={`absolute right-3 top-1/2 -translate-y-1/2 ${
-                                                isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
-                                            }`}
+                                            className={`absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+                                                }`}
                                             aria-label="Clear address"
                                         >
                                             <X width={18} height={18} />
@@ -511,14 +517,12 @@ export default function AddressSelector() {
 
                             {/* Show parsed address components if available */}
                             {(addressData.city || addressData.state || addressData.zipcode) && (
-                                <div className={`p-4 border-2 rounded-lg space-y-2 ${
-                                    isDark 
-                                        ? 'bg-green-900/20 border-green-800' 
-                                        : 'bg-green-50 border-green-200'
-                                }`}>
-                                    <p className={`text-sm font-semibold flex items-center gap-2 ${
-                                        isDark ? 'text-green-100' : 'text-green-900'
+                                <div className={`p-4 border-2 rounded-lg space-y-2 ${isDark
+                                    ? 'bg-green-900/20 border-green-800'
+                                    : 'bg-green-50 border-green-200'
                                     }`}>
+                                    <p className={`text-sm font-semibold flex items-center gap-2 ${isDark ? 'text-green-100' : 'text-green-900'
+                                        }`}>
                                         ✓ Address Details:
                                     </p>
                                     {addressData.address && (
@@ -549,11 +553,10 @@ export default function AddressSelector() {
                         <div className={`flex justify-end gap-3 p-6 border-t ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
                             <button
                                 onClick={handleCloseAddressInput}
-                                className={`px-5 py-2.5 rounded-lg transition-colors font-medium ${
-                                    isDark 
-                                        ? 'bg-gray-600 text-white hover:bg-gray-500' 
-                                        : 'bg-gray-200 text-gray-900 hover:bg-gray-300'
-                                }`}
+                                className={`px-5 py-2.5 rounded-lg transition-colors font-medium ${isDark
+                                    ? 'bg-gray-600 text-white hover:bg-gray-500'
+                                    : 'bg-gray-200 text-gray-900 hover:bg-gray-300'
+                                    }`}
                                 disabled={isSaving}
                             >
                                 Cancel
@@ -580,11 +583,11 @@ export default function AddressSelector() {
 
             {/* Map Modal (when address is already set) */}
             {showMap && (
-                <div 
+                <div
                     className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
                     onClick={handleCloseMap}
                 >
-                    <div 
+                    <div
                         className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-xl w-full max-w-3xl`}
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -606,11 +609,10 @@ export default function AddressSelector() {
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={handleEditAddress}
-                                    className={`px-3 py-1.5 text-sm rounded-lg transition-colors font-medium ${
-                                        isDark 
-                                            ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' 
-                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                    }`}
+                                    className={`px-3 py-1.5 text-sm rounded-lg transition-colors font-medium ${isDark
+                                        ? 'bg-gray-700 text-gray-200 hover:bg-gray-600'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                        }`}
                                 >
                                     Edit Address
                                 </button>
@@ -627,17 +629,15 @@ export default function AddressSelector() {
                         {/* Map Container */}
                         <div className="p-4">
                             {!apiKey ? (
-                                <div className={`flex items-center justify-center h-[400px] rounded ${
-                                    isDark ? 'bg-gray-700' : 'bg-gray-100'
-                                }`}>
+                                <div className={`flex items-center justify-center h-[400px] rounded ${isDark ? 'bg-gray-700' : 'bg-gray-100'
+                                    }`}>
                                     <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>
                                         Google Maps API key not configured
                                     </p>
                                 </div>
                             ) : !isMapsLoaded ? (
-                                <div className={`flex items-center justify-center h-[400px] rounded ${
-                                    isDark ? 'bg-gray-700' : 'bg-gray-100'
-                                }`}>
+                                <div className={`flex items-center justify-center h-[400px] rounded ${isDark ? 'bg-gray-700' : 'bg-gray-100'
+                                    }`}>
                                     <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>
                                         Loading map...
                                     </p>
@@ -661,7 +661,7 @@ export default function AddressSelector() {
                                 >
                                     {(() => {
                                         const locationsAreSame = areLocationsSame(coordinates, currentLocation);
-                                        
+
                                         if (locationsAreSame) {
                                             // Combined pulsating marker when delivery address and current location are the same
                                             return coordinates && (
@@ -669,7 +669,7 @@ export default function AddressSelector() {
                                                     position={coordinates}
                                                     mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
                                                 >
-                                                    <div 
+                                                    <div
                                                         className="relative w-16 h-16 flex items-center justify-center"
                                                         title="You are at your delivery location"
                                                     >
@@ -685,13 +685,13 @@ export default function AddressSelector() {
                                                 </OverlayView>
                                             );
                                         }
-                                        
+
                                         // Show separate markers when they're different
                                         return (
                                             <>
                                                 {/* Delivery Address Marker (Red) - Prominent */}
                                                 {coordinates && (
-                                                    <Marker 
+                                                    <Marker
                                                         position={coordinates}
                                                         title={user?.address || "Delivery Location"}
                                                         icon={{
@@ -711,7 +711,7 @@ export default function AddressSelector() {
                                                         animation={window.google.maps.Animation.DROP}
                                                     />
                                                 )}
-                                                
+
                                                 {/* Current Location - Pulsating Blue Dot */}
                                                 {currentLocation && (
                                                     <OverlayView
@@ -741,13 +741,12 @@ export default function AddressSelector() {
                             <div className="flex gap-4 text-sm flex-wrap">
                                 {(() => {
                                     const locationsAreSame = areLocationsSame(coordinates, currentLocation);
-                                    
+
                                     if (locationsAreSame) {
                                         // Show combined legend when at the same location
                                         return (
-                                            <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-                                                isDark ? 'bg-green-900/30 border border-green-700' : 'bg-green-100 border border-green-300'
-                                            }`}>
+                                            <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${isDark ? 'bg-green-900/30 border border-green-700' : 'bg-green-100 border border-green-300'
+                                                }`}>
                                                 <span className="text-lg">📍</span>
                                                 <span className={isDark ? 'text-green-300 font-medium' : 'text-green-800 font-medium'}>
                                                     You're at your delivery location
@@ -755,7 +754,7 @@ export default function AddressSelector() {
                                             </div>
                                         );
                                     }
-                                    
+
                                     // Show separate legend items when different
                                     return (
                                         <>
@@ -773,7 +772,7 @@ export default function AddressSelector() {
                                     );
                                 })()}
                             </div>
-                            
+
                             <button
                                 onClick={handleCloseMap}
                                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -781,8 +780,8 @@ export default function AddressSelector() {
                                 Close
                             </button>
                         </div>
-            </div>
-        </div>
+                    </div>
+                </div>
             )}
         </>
     );

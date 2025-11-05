@@ -47,6 +47,15 @@ export const Order = t.type({
     total_weight_oz: t.number,
     created_at: t.string,
     delivered_at: t.union([t.string, t.null]),
+    display_address: t.string,
+    latitude: t.number,
+    longitude: t.number,
+    status: t.union([
+        t.literal('packing'),
+        t.literal('shipped'),
+        t.literal('delivered'),
+        t.literal('canceled')
+    ]),
     items: t.array(CartItem)
 })
 
@@ -98,7 +107,10 @@ export type OrderResponseT = t.TypeOf<typeof OrderResponse>;
 
 export const ConfirmPaymentRequest = t.type({
     intentId: t.string,
-    clientSecret: t.string
+    clientSecret: t.string,
+    displayAddress: t.string,
+    latitude: t.number,
+    longitude: t.number
 });
 
 export type ConfirmPaymentRequestT = t.TypeOf<typeof ConfirmPaymentRequest>;
