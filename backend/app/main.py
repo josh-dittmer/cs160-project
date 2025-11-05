@@ -8,6 +8,7 @@ from .routers import cart as cart_router
 from .routers import orders as orders_router
 from .routers import admin as admin_router
 from .routers import manager as manager_router
+from .routers import employee as employee_router
 from .routers import payment as payment_router
 import stripe
 import os
@@ -41,6 +42,7 @@ app.include_router(cart_router.router)
 app.include_router(orders_router.router)
 app.include_router(admin_router.router)
 app.include_router(manager_router.router)
+app.include_router(employee_router.router)
 app.include_router(payment_router.router)
 app.include_router(image_generation_router.router)
 app.include_router(video_generation_router.router)

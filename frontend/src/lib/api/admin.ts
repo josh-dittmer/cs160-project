@@ -12,6 +12,7 @@ export interface UserAdmin {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  reports_to: number | null;
 }
 
 export interface ItemAdmin {
@@ -77,15 +78,21 @@ export async function listUsers(token: string): Promise<UserAdmin[]> {
 export async function updateUserRole(
   token: string,
   userId: number,
-  role: string
+  role: string,
+  managerId?: number
 ): Promise<any> {
+  const body: any = { role };
+  if (managerId !== undefined) {
+    body.manager_id = managerId;
+  }
+  
   const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/role`, {
     method: 'PUT',
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ role }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {

@@ -67,12 +67,28 @@ class User(Base):
     # Role-based access control
     role: Mapped[str] = mapped_column(String(20), default="customer", index=True)
     
+    # Reporting hierarchy - self-referential foreign key
+    reports_to: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
+    
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    
+    # Relationships for reporting hierarchy
+    subordinates: Mapped[list["User"]] = relationship(
+        "User",
+        back_populates="manager",
+        foreign_keys=[reports_to]
+    )
+    manager: Mapped["User | None"] = relationship(
+        "User",
+        back_populates="subordinates",
+        remote_side=[id],
+        foreign_keys=[reports_to]
     )
 
 
@@ -172,3 +188,25 @@ class PromotionReferral(Base):
     referred_user = relationship(User, foreign_keys=[referred_user_id])
     referring_manager = relationship(User, foreign_keys=[referring_manager_id])
     reviewed_by_admin = relationship(User, foreign_keys=[reviewed_by_admin_id])
+
+class EmployeeReferral(Base):
+    __tablename__ = "employee_referrals"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    referred_user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    referring_employee_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    reviewing_manager_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    reason: Mapped[str] = mapped_column(Text)  # Required justification
+    status: Mapped[str] = mapped_column(String(20), default="pending", index=True)  # pending, approved, rejected, cancelled
+    manager_notes: Mapped[str | None] = mapped_column(Text, nullable=True)  # Optional manager feedback
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    # Relationships
+    referred_user = relationship(User, foreign_keys=[referred_user_id])
+    referring_employee = relationship(User, foreign_keys=[referring_employee_id])
+    reviewing_manager = relationship(User, foreign_keys=[reviewing_manager_id])

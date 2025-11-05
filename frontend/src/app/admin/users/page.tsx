@@ -24,6 +24,15 @@ export default function UsersManagement() {
   const [referralUser, setReferralUser] = useState<UserAdmin | null>(null);
   const [referralReason, setReferralReason] = useState('');
   const [submittingReferral, setSubmittingReferral] = useState(false);
+  
+  // Manager selection modal state
+  const [showManagerSelectModal, setShowManagerSelectModal] = useState(false);
+  const [managerSelectData, setManagerSelectData] = useState<{
+    userId: number;
+    newRole: string;
+    availableManagers: UserAdmin[];
+  } | null>(null);
+  const [selectedManagerId, setSelectedManagerId] = useState<number | null>(null);
 
   const isAdmin = currentUser?.role === 'admin';
   const isManager = currentUser?.role === 'manager';
@@ -59,6 +68,58 @@ export default function UsersManagement() {
   const handleRoleChange = async (userId: number, newRole: string) => {
     if (!token) return;
     
+    const targetUser = users.find(u => u.id === userId);
+    if (!targetUser) return;
+    
+    let managerId: number | undefined = undefined;
+    
+    // Check if trying to promote to employee when no managers exist
+    if (newRole === 'employee' && isAdmin) {
+      const hasManagers = users.some(u => u.role === 'manager');
+      
+      if (!hasManagers) {
+        // Show informational popup and offer to promote to manager instead
+        const shouldPromoteToManager = confirm(
+          '📋 First Hire Guideline\n\n' +
+          'You\'re about to hire your first team member! Since no managers exist yet, ' +
+          'the first hire should be a manager who can later supervise employees.\n\n' +
+          '👉 Would you like to promote this user to "Manager" instead?\n\n' +
+          'Click OK to promote to Manager, or Cancel to abort.'
+        );
+        
+        if (shouldPromoteToManager) {
+          // Change the role to manager instead
+          newRole = 'manager';
+        } else {
+          return; // User cancelled
+        }
+      } else if (targetUser.role === 'manager') {
+        // Demoting a manager to employee - need to select which manager they'll report to
+        const availableManagers = users.filter(u => u.role === 'manager' && u.id !== userId);
+        
+        if (availableManagers.length === 0) {
+          alert(
+            '⚠️ Cannot Demote Last Manager\n\n' +
+            'This is the only manager in the system. You cannot demote them to employee.\n\n' +
+            'To proceed, either:\n' +
+            '• Promote another user to manager first, or\n' +
+            '• Change their role to customer instead'
+          );
+          return;
+        }
+        
+        // Show modal to select manager
+        setManagerSelectData({
+          userId,
+          newRole,
+          availableManagers
+        });
+        setSelectedManagerId(availableManagers[0].id); // Default to first manager
+        setShowManagerSelectModal(true);
+        return; // Exit here, will continue in handleManagerSelectConfirm
+      }
+    }
+    
     if (!confirm(`Are you sure you want to change this user's role to ${newRole}?`)) {
       return;
     }
@@ -67,13 +128,19 @@ export default function UsersManagement() {
       if (isManager) {
         await managerUpdateUserRole(token, userId, newRole);
       } else {
-        await updateUserRole(token, userId, newRole);
+        await updateUserRole(token, userId, newRole, managerId);
       }
       alert('User role updated successfully');
       fetchUsers();
     } catch (error: any) {
       console.error('Failed to update user role:', error);
-      alert(error.message || 'Failed to update user role');
+      
+      // Extract the user-friendly part after the colon for other errors
+      const errorMessage = error.message || 'Failed to update user role';
+      const friendlyMessage = errorMessage.includes(':') 
+        ? errorMessage.split(':').slice(1).join(':').trim()
+        : errorMessage;
+      alert(friendlyMessage);
     }
   };
 
@@ -96,6 +163,26 @@ export default function UsersManagement() {
     } catch (error: any) {
       console.error(`Failed to ${action} user:`, error);
       alert(error.message || `Failed to ${action} user`);
+    }
+  };
+
+  const handleManagerSelectConfirm = async () => {
+    if (!token || !managerSelectData || selectedManagerId === null) return;
+    
+    try {
+      await updateUserRole(token, managerSelectData.userId, managerSelectData.newRole, selectedManagerId);
+      alert('User role updated successfully');
+      setShowManagerSelectModal(false);
+      setManagerSelectData(null);
+      setSelectedManagerId(null);
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Failed to update user role:', error);
+      const errorMessage = error.message || 'Failed to update user role';
+      const friendlyMessage = errorMessage.includes(':') 
+        ? errorMessage.split(':').slice(1).join(':').trim()
+        : errorMessage;
+      alert(friendlyMessage);
     }
   };
 
@@ -206,6 +293,9 @@ export default function UsersManagement() {
                 Role
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Reports To
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -270,6 +360,24 @@ export default function UsersManagement() {
                       >
                         Refer for Manager
                       </button>
+                    )}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900">
+                    {user.reports_to ? (
+                      (() => {
+                        const manager = users.find(u => u.id === user.reports_to);
+                        return manager ? (
+                          <span className="text-gray-700">
+                            {manager.full_name || manager.email}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 italic">Unknown</span>
+                        );
+                      })()
+                    ) : (
+                      <span className="text-gray-400">—</span>
                     )}
                   </div>
                 </td>
@@ -357,6 +465,60 @@ export default function UsersManagement() {
                   setReferralReason('');
                 }}
                 disabled={submittingReferral}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manager Selection Modal */}
+      {showManagerSelectModal && managerSelectData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">
+              Select Manager
+            </h3>
+            
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                This user is being demoted from Manager to Employee. 
+                Please select which manager they will report to:
+              </p>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Manager:
+                </label>
+                <select
+                  value={selectedManagerId || ''}
+                  onChange={(e) => setSelectedManagerId(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {managerSelectData.availableManagers.map((mgr) => (
+                    <option key={mgr.id} value={mgr.id}>
+                      {mgr.full_name || mgr.email} ({mgr.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleManagerSelectConfirm}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => {
+                  setShowManagerSelectModal(false);
+                  setManagerSelectData(null);
+                  setSelectedManagerId(null);
+                }}
                 className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
               >
                 Cancel

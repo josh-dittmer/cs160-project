@@ -73,6 +73,7 @@ class UserOut(BaseModel):
     state: str | None = None
     profile_picture: str | None = None
     role: str
+    reports_to: int | None = None
     is_active: bool
     created_at: datetime
 
@@ -188,6 +189,7 @@ class UserListAdmin(BaseModel):
     email: str
     full_name: str | None
     role: str
+    reports_to: int | None = None
     is_active: bool
     created_at: datetime
     updated_at: datetime
@@ -199,11 +201,14 @@ class UserListAdmin(BaseModel):
 class UserRoleUpdate(BaseModel):
     """Schema for updating user role"""
     role: constr(pattern="^(admin|employee|manager|customer)$")
+    manager_id: int | None = None  # Required when promoting to employee
+    subordinate_reassignments: dict[int, int] | None = None  # {employee_id: new_manager_id} - Required when demoting manager with subordinates
 
 
 class UserBlockUpdate(BaseModel):
     """Schema for blocking/unblocking user"""
     is_active: bool
+    subordinate_reassignments: dict[int, int] | None = None  # {employee_id: new_manager_id} - Required when blocking manager with subordinates
 
 
 class ItemCreate(BaseModel):
@@ -359,3 +364,36 @@ class ReferralOut(BaseModel):
 class ReferralReview(BaseModel):
     """Schema for admin reviewing a referral"""
     admin_notes: str | None = None
+
+
+# ============ Employee Referral Schemas ============
+
+class EmployeeReferralCreate(BaseModel):
+    """Schema for creating an employee referral (employee referring customer)"""
+    referred_user_id: int
+    reason: constr(min_length=20)
+
+
+class EmployeeReferralOut(BaseModel):
+    """Schema for employee referral output"""
+    id: int
+    referred_user_id: int
+    referred_user_email: str
+    referred_user_name: str | None
+    referring_employee_id: int
+    referring_employee_email: str
+    reviewing_manager_id: int
+    reviewing_manager_email: str
+    reason: str
+    status: str
+    manager_notes: str | None
+    created_at: datetime
+    reviewed_at: datetime | None
+    
+    class Config:
+        from_attributes = True
+
+
+class EmployeeReferralReview(BaseModel):
+    """Schema for manager reviewing an employee referral"""
+    manager_notes: str | None = None

@@ -102,6 +102,7 @@ class UserCtx(BaseModel):
     email: str
     role: str
     stripe_customer_id: str
+    reports_to: int | None = None
 
 
 def get_current_user(
@@ -149,7 +150,13 @@ def get_current_user(
             detail="Inactive user",
         )
     
-    return UserCtx(id=user.id, email=user.email, role=user.role, stripe_customer_id=user.stripe_customer_id)
+    return UserCtx(
+        id=user.id,
+        email=user.email,
+        role=user.role,
+        stripe_customer_id=user.stripe_customer_id,
+        reports_to=user.reports_to
+    )
 
 
 def require_user(x_user_id: int | None = Header(default=None, alias="X-User-Id")) -> UserCtx:
@@ -204,6 +211,19 @@ def require_manager(current_user: UserCtx = Depends(get_current_user)) -> UserCt
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Manager or admin access required",
+        )
+    return current_user
+
+
+def require_employee(current_user: UserCtx = Depends(get_current_user)) -> UserCtx:
+    """
+    Dependency to require employee role (or higher).
+    Raises 403 if user is not an employee, manager, or admin.
+    """
+    if current_user.role not in ["employee", "manager", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Employee, manager, or admin access required",
         )
     return current_user
 

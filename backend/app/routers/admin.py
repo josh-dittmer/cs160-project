@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, or_, func
 
 from ..database import get_db
-from ..models import User, Item, Order, OrderItem, AuditLog, PromotionReferral
+from ..models import User, Item, Order, OrderItem, AuditLog, PromotionReferral, EmployeeReferral, CartItem, Review
 from ..audit import create_audit_log, get_actor_ip
 from ..schemas import (
     UserListAdmin,
@@ -57,6 +57,9 @@ def update_user_role(
     Change a user's role.
     Admin cannot demote themselves.
     Only one admin is allowed in the system.
+    When promoting to employee: requires manager_id.
+    When promoting to manager: auto-sets reports_to to admin.
+    When demoting from manager: requires subordinate_reassignments if has subordinates.
     Admin only.
     """
     # Prevent admin from demoting themselves
@@ -82,7 +85,121 @@ def update_user_role(
     
     # Store old role for audit log
     old_role = user.role
+    old_reports_to = user.reports_to
     
+    # Check if user is being promoted to employee
+    if role_update.role == "employee":
+        # Require manager_id when promoting to employee
+        if not role_update.manager_id:
+            # Check if there are any managers in the system
+            manager_count = db.query(func.count(User.id)).filter(User.role == "manager").scalar()
+            if manager_count == 0:
+                # First hire scenario - must be a manager
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="FIRST_HIRE_MUST_BE_MANAGER: No managers exist in the system. The first hire must be promoted to 'manager' role before any employees can be hired. Please change this user's role to 'manager' instead.",
+                )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="manager_id is required when promoting to employee",
+            )
+        
+        # Validate manager exists and is actually a manager
+        manager = db.get(User, role_update.manager_id)
+        if not manager:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Manager with id {role_update.manager_id} not found",
+            )
+        if manager.role != "manager":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"User {role_update.manager_id} is not a manager",
+            )
+        
+        user.reports_to = role_update.manager_id
+    
+    # Check if user is being promoted to manager
+    elif role_update.role == "manager":
+        # Auto-set reports_to to admin
+        user.reports_to = admin.id
+    
+    # Check if user is being demoted from manager
+    elif old_role == "manager" and role_update.role in ["employee", "customer"]:
+        # Check if manager has subordinates
+        subordinate_count = db.query(func.count(User.id)).filter(User.reports_to == user_id).scalar()
+        
+        if subordinate_count > 0:
+            # Require subordinate_reassignments
+            if not role_update.subordinate_reassignments:
+                subordinates = db.query(User).filter(User.reports_to == user_id).all()
+                subordinate_list = [{"id": s.id, "email": s.email, "full_name": s.full_name} for s in subordinates]
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Cannot demote manager with {subordinate_count} subordinate(s). Provide subordinate_reassignments mapping.",
+                    headers={"X-Subordinates": str(subordinate_list)},
+                )
+            
+            # Validate all subordinates are included in reassignments
+            subordinates = db.query(User).filter(User.reports_to == user_id).all()
+            subordinate_ids = {s.id for s in subordinates}
+            provided_ids = set(role_update.subordinate_reassignments.keys())
+            
+            if subordinate_ids != provided_ids:
+                missing = subordinate_ids - provided_ids
+                extra = provided_ids - subordinate_ids
+                error_parts = []
+                if missing:
+                    error_parts.append(f"Missing subordinate IDs: {missing}")
+                if extra:
+                    error_parts.append(f"Extra IDs (not subordinates): {extra}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Subordinate reassignments mismatch. {' '.join(error_parts)}",
+                )
+            
+            # Validate all new managers exist and are managers
+            for subordinate_id, new_manager_id in role_update.subordinate_reassignments.items():
+                new_manager = db.get(User, new_manager_id)
+                if not new_manager:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail=f"New manager with id {new_manager_id} not found",
+                    )
+                if new_manager.role != "manager":
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"User {new_manager_id} ({new_manager.email}) is not a manager",
+                    )
+            
+            # Perform atomic transfer of all subordinates
+            for subordinate in subordinates:
+                subordinate.reports_to = role_update.subordinate_reassignments[subordinate.id]
+        
+        # Clear reports_to for demoted user
+        if role_update.role == "customer":
+            user.reports_to = None
+        elif role_update.role == "employee":
+            # If demoting to employee, require manager_id
+            if not role_update.manager_id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="manager_id is required when demoting manager to employee",
+                )
+            # Validate manager
+            manager = db.get(User, role_update.manager_id)
+            if not manager or manager.role != "manager":
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid manager_id",
+                )
+            user.reports_to = role_update.manager_id
+    
+    # Check if user is being set to customer (from any non-manager role)
+    elif role_update.role == "customer":
+        user.reports_to = None
+    
+    # Update role
     user.role = role_update.role
     db.commit()
     db.refresh(user)
@@ -98,7 +215,10 @@ def update_user_role(
         details={
             "old_role": old_role,
             "new_role": role_update.role,
+            "old_reports_to": old_reports_to,
+            "new_reports_to": user.reports_to,
             "user_email": user.email,
+            "subordinate_reassignments": role_update.subordinate_reassignments if role_update.subordinate_reassignments else None,
         },
         ip_address=get_actor_ip(request),
     )
@@ -121,6 +241,7 @@ def block_user(
     """
     Block or unblock a user (set is_active).
     Admin cannot block themselves.
+    When blocking a manager: requires subordinate_reassignments if has subordinates.
     Admin only.
     """
     # Prevent admin from blocking themselves
@@ -140,6 +261,62 @@ def block_user(
     # Store old status for audit log
     old_status = user.is_active
     
+    # If blocking a manager, check for subordinates
+    if not block_update.is_active and user.role == "manager":
+        subordinate_count = db.query(func.count(User.id)).filter(User.reports_to == user_id).scalar()
+        
+        if subordinate_count > 0:
+            # Require subordinate_reassignments
+            if not block_update.subordinate_reassignments:
+                subordinates = db.query(User).filter(User.reports_to == user_id).all()
+                subordinate_list = [{"id": s.id, "email": s.email, "full_name": s.full_name} for s in subordinates]
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Cannot block manager with {subordinate_count} subordinate(s). Provide subordinate_reassignments mapping.",
+                    headers={"X-Subordinates": str(subordinate_list)},
+                )
+            
+            # Validate all subordinates are included in reassignments
+            subordinates = db.query(User).filter(User.reports_to == user_id).all()
+            subordinate_ids = {s.id for s in subordinates}
+            provided_ids = set(block_update.subordinate_reassignments.keys())
+            
+            if subordinate_ids != provided_ids:
+                missing = subordinate_ids - provided_ids
+                extra = provided_ids - subordinate_ids
+                error_parts = []
+                if missing:
+                    error_parts.append(f"Missing subordinate IDs: {missing}")
+                if extra:
+                    error_parts.append(f"Extra IDs (not subordinates): {extra}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Subordinate reassignments mismatch. {' '.join(error_parts)}",
+                )
+            
+            # Validate all new managers exist and are managers
+            for subordinate_id, new_manager_id in block_update.subordinate_reassignments.items():
+                new_manager = db.get(User, new_manager_id)
+                if not new_manager:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail=f"New manager with id {new_manager_id} not found",
+                    )
+                if new_manager.role != "manager":
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"User {new_manager_id} ({new_manager.email}) is not a manager",
+                    )
+                if not new_manager.is_active:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"New manager {new_manager_id} ({new_manager.email}) is blocked",
+                    )
+            
+            # Perform atomic transfer of all subordinates
+            for subordinate in subordinates:
+                subordinate.reports_to = block_update.subordinate_reassignments[subordinate.id]
+    
     user.is_active = block_update.is_active
     db.commit()
     db.refresh(user)
@@ -157,6 +334,7 @@ def block_user(
             "old_status": old_status,
             "new_status": block_update.is_active,
             "user_email": user.email,
+            "subordinate_reassignments": block_update.subordinate_reassignments if block_update.subordinate_reassignments else None,
         },
         ip_address=get_actor_ip(request),
     )
@@ -165,6 +343,105 @@ def block_user(
     return {
         "ok": True,
         "message": f"User {action} successfully",
+        "user": UserListAdmin.model_validate(user),
+    }
+
+
+@router.get("/users/{user_id}/subordinates", response_model=List[UserListAdmin])
+def get_user_subordinates(
+    user_id: int,
+    admin: UserCtx = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """
+    Get all users reporting to a specific user (direct subordinates).
+    Admin only.
+    """
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    
+    subordinates = db.query(User).filter(User.reports_to == user_id).order_by(User.full_name).all()
+    return subordinates
+
+
+@router.put("/users/{user_id}/transfer", status_code=status.HTTP_200_OK)
+def transfer_employee(
+    user_id: int,
+    new_manager_id: int = Query(..., description="ID of the new manager"),
+    request: Request = None,
+    admin: UserCtx = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """
+    Transfer an employee to a different manager.
+    Admin only.
+    """
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    
+    # Can only transfer employees
+    if user.role != "employee":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Can only transfer employees. User is a {user.role}",
+        )
+    
+    # Validate new manager
+    new_manager = db.get(User, new_manager_id)
+    if not new_manager:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Manager with id {new_manager_id} not found",
+        )
+    
+    if new_manager.role != "manager":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Target user {new_manager_id} is not a manager",
+        )
+    
+    if not new_manager.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Target manager {new_manager_id} is blocked",
+        )
+    
+    # Store old manager for audit log
+    old_manager_id = user.reports_to
+    
+    # Transfer
+    user.reports_to = new_manager_id
+    db.commit()
+    db.refresh(user)
+    
+    # Create audit log
+    create_audit_log(
+        db=db,
+        action_type="employee_transferred",
+        target_type="user",
+        target_id=user.id,
+        actor_id=admin.id,
+        actor_email=admin.email,
+        details={
+            "user_email": user.email,
+            "old_manager_id": old_manager_id,
+            "new_manager_id": new_manager_id,
+            "new_manager_email": new_manager.email,
+        },
+        ip_address=get_actor_ip(request),
+    )
+    
+    return {
+        "ok": True,
+        "message": f"Employee transferred to manager {new_manager.email}",
         "user": UserListAdmin.model_validate(user),
     }
 
@@ -457,7 +734,12 @@ def permanently_delete_item(
     db: Session = Depends(get_db),
 ):
     """
-    Permanently delete an item from the database.
+    Permanently delete an item from the database with cascade delete.
+    This will also delete:
+    - All reviews for this item
+    - All cart items containing this item
+    - All order items containing this item (order history will show the item as deleted)
+    
     This action cannot be undone.
     Manager or admin only.
     """
@@ -468,6 +750,11 @@ def permanently_delete_item(
             detail="Item not found",
         )
     
+    # Count related records for audit log
+    review_count = db.query(func.count(Review.id)).filter(Review.item_id == item_id).scalar() or 0
+    cart_count = db.query(func.count(CartItem.id)).filter(CartItem.item_id == item_id).scalar() or 0
+    order_item_count = db.query(func.count(OrderItem.id)).filter(OrderItem.item_id == item_id).scalar() or 0
+    
     # Store item details before deletion (important for permanent deletes!)
     item_details = {
         "item_name": item.name,
@@ -476,6 +763,11 @@ def permanently_delete_item(
         "weight_oz": item.weight_oz,
         "stock_qty": item.stock_qty,
         "description": item.description,
+        "cascade_deleted": {
+            "reviews": review_count,
+            "cart_items": cart_count,
+            "order_items": order_item_count,
+        }
     }
     
     # Create audit log BEFORE deleting
@@ -490,12 +782,42 @@ def permanently_delete_item(
         ip_address=get_actor_ip(request),
     )
     
+    # Cascade delete related records (in order to respect foreign keys)
+    # 1. Delete reviews (no dependencies)
+    if review_count > 0:
+        db.query(Review).filter(Review.item_id == item_id).delete()
+    
+    # 2. Delete cart items (no dependencies)
+    if cart_count > 0:
+        db.query(CartItem).filter(CartItem.item_id == item_id).delete()
+    
+    # 3. Delete order items (references orders and items)
+    if order_item_count > 0:
+        db.query(OrderItem).filter(OrderItem.item_id == item_id).delete()
+    
+    # 4. Finally delete the item itself
     db.delete(item)
     db.commit()
     
+    message_parts = [f"Item '{item.name}' permanently deleted"]
+    if review_count > 0 or cart_count > 0 or order_item_count > 0:
+        cascade_info = []
+        if review_count > 0:
+            cascade_info.append(f"{review_count} review(s)")
+        if cart_count > 0:
+            cascade_info.append(f"{cart_count} cart item(s)")
+        if order_item_count > 0:
+            cascade_info.append(f"{order_item_count} order item(s)")
+        message_parts.append(f"Also deleted: {', '.join(cascade_info)}")
+    
     return {
         "ok": True,
-        "message": "Item permanently deleted from database",
+        "message": ". ".join(message_parts),
+        "cascade_deleted": {
+            "reviews": review_count,
+            "cart_items": cart_count,
+            "order_items": order_item_count,
+        }
     }
 
 
@@ -946,11 +1268,14 @@ def approve_referral(
             detail="Referred user not found",
         )
     
-    # Store old role for audit log
+    # Store old role and reports_to for audit log
     old_role = referred_user.role
+    old_reports_to = referred_user.reports_to
     
     # Promote user to manager
     referred_user.role = referral.target_role
+    # All managers report to admin
+    referred_user.reports_to = admin.id
     
     # Update referral status
     referral.status = "approved"
@@ -973,6 +1298,8 @@ def approve_referral(
         details={
             "old_role": old_role,
             "new_role": referral.target_role,
+            "old_reports_to": old_reports_to,
+            "new_reports_to": admin.id,
             "user_email": referred_user.email,
             "via_referral": True,
             "referral_id": referral.id,
