@@ -27,83 +27,23 @@ def update_user_role(
     db: Session = Depends(get_db),
 ):
     """
-    Change a user's role (managers can only promote customers to employees).
-    Manager cannot change their own role.
-    When promoting customer to employee: auto-sets reports_to to current manager.
-    When demoting employee to customer: clears reports_to.
-    Manager or admin only.
+    Change a user's role.
+    Managers are NOT allowed to change any user roles.
+    Admin only.
     """
-    # Prevent manager from changing their own role
-    if user_id == manager.id:
+    # Managers cannot change any user roles (new requirement)
+    if manager.role == "manager":
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot change your own role",
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Managers do not have permission to change user roles",
         )
     
-    user = db.get(User, user_id)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
-    
-    # Check if this role change is allowed
-    if not can_modify_user_role(manager.role, user.role, role_update.role):
-        if manager.role == "manager":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Managers can only change roles between customer and employee.",
-            )
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Cannot perform this role change",
-            )
-    
-    # Store old role for audit log
-    old_role = user.role
-    old_reports_to = user.reports_to
-    
-    # Handle reporting hierarchy
-    if role_update.role == "employee" and old_role == "customer":
-        # When promoting customer to employee, auto-set reports_to to current manager
-        user.reports_to = manager.id
-    elif role_update.role == "customer" and old_role == "employee":
-        # When demoting employee to customer, clear reports_to
-        user.reports_to = None
-    
-    user.role = role_update.role
-    db.commit()
-    db.refresh(user)
-    
-    # Get manager's full user object to include name in audit log
-    manager_user = db.get(User, manager.id)
-    
-    # Create audit log
-    create_audit_log(
-        db=db,
-        action_type="user_role_updated",
-        target_type="user",
-        target_id=user.id,
-        actor_id=manager.id,
-        actor_email=manager.email,
-        details={
-            "old_role": old_role,
-            "new_role": role_update.role,
-            "old_reports_to": old_reports_to,
-            "new_reports_to": user.reports_to,
-            "user_email": user.email,
-            "changed_by_role": manager.role,
-            "changed_by_email": manager.email,
-            "changed_by_name": manager_user.full_name if manager_user and manager_user.full_name else None,
-        },
-        ip_address=get_actor_ip(request),
+    # This endpoint is now admin-only (but kept in manager router for backward compatibility)
+    # All actual logic is handled in the admin router
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Please use the admin endpoint for role changes",
     )
-    
-    return {
-        "ok": True,
-        "message": f"User role updated to {role_update.role}",
-    }
 
 
 @router.put("/users/{user_id}/block", status_code=status.HTTP_200_OK)

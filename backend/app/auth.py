@@ -101,7 +101,7 @@ class UserCtx(BaseModel):
     id: int
     email: str
     role: str
-    stripe_customer_id: str
+    stripe_customer_id: str | None = None
     reports_to: int | None = None
 
 
@@ -234,7 +234,7 @@ def can_modify_user_role(actor_role: str, target_role: str, new_role: str) -> bo
     
     Rules:
     - Cannot promote to admin
-    - Manager can change between customer and employee roles only
+    - Manager CANNOT change any user roles
     - Admin can change to any role except admin
     
     Args:
@@ -249,12 +249,9 @@ def can_modify_user_role(actor_role: str, target_role: str, new_role: str) -> bo
     if new_role == "admin":
         return False
     
-    # Manager can change between customer and employee (bidirectional)
+    # Manager CANNOT change any user roles (new requirement)
     if actor_role == "manager":
-        return (
-            target_role in ["customer", "employee"] and 
-            new_role in ["customer", "employee"]
-        )
+        return False
     
     # Admin can change to any role except admin
     if actor_role == "admin":

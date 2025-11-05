@@ -75,13 +75,98 @@ export default function UsersManagement() {
   const handleRoleChange = async (userId: number, newRole: string) => {
     if (!token) return;
     
+    // Managers cannot change any user roles (new requirement)
+    if (isManager) {
+      alert('Managers do not have permission to change user roles');
+      return;
+    }
+    
     const targetUser = users.find(u => u.id === userId);
     if (!targetUser) return;
     
     let managerId: number | undefined = undefined;
     
+    // Check if demoting a manager (to employee OR customer)
+    if (targetUser.role === 'manager' && (newRole === 'employee' || newRole === 'customer') && isAdmin) {
+      const availableManagers = users.filter(u => u.role === 'manager' && u.id !== userId);
+      
+      // Check if this manager has subordinates
+      const subordinates = users.filter(u => u.reports_to === userId);
+      
+      // If no other managers exist, check what we can do
+      if (availableManagers.length === 0) {
+        if (subordinates.length > 0) {
+          // Has subordinates - cannot demote at all (neither to employee nor customer)
+          alert(
+            '⚠️ Cannot Demote Last Manager\n\n' +
+            'This is the only manager in the system and they have ' + subordinates.length + ' subordinate(s). ' +
+            'You cannot demote them until:\n\n' +
+            '• Promote another user to manager first (so subordinates can be reassigned)'
+          );
+          return;
+        } else if (newRole === 'employee') {
+          // No subordinates - can become customer but not employee
+          alert(
+            '⚠️ Cannot Demote Last Manager to Employee\n\n' +
+            'This is the only manager in the system. You cannot demote them to employee ' +
+            '(employees need a manager to report to).\n\n' +
+            'To proceed, either:\n' +
+            '• Promote another user to manager first, or\n' +
+            '• Change their role to customer instead (customers don\'t need a manager)'
+          );
+          return;
+        }
+        // If becoming customer with no subordinates, allow it (continue to normal flow)
+      }
+      
+      if (subordinates.length > 0) {
+        // Manager has subordinates and there ARE other managers - need to reassign them
+        
+        // Initialize subordinate assignments with first available manager as default
+        const initialAssignments: Record<number, number> = {};
+        subordinates.forEach(sub => {
+          initialAssignments[sub.id] = availableManagers[0].id;
+        });
+        
+        console.log('=== Setting up Manager Demotion Modal ===');
+        console.log('Target Role:', newRole);
+        console.log('Subordinates found:', subordinates.length);
+        console.log('Subordinates:', subordinates.map(s => ({ id: s.id, email: s.email })));
+        console.log('Initial Assignments:', initialAssignments);
+        console.log('Available Managers:', availableManagers.map(m => ({ id: m.id, email: m.email })));
+        
+        // Show modal to select manager for ex-manager (if becoming employee) and reassign subordinates
+        setManagerSelectData({
+          userId,
+          oldRole: targetUser.role,
+          newRole,
+          availableManagers,
+          subordinates: subordinates.length > 0 ? subordinates : undefined,
+          initialAssignments
+        });
+        setSubordinateAssignments(initialAssignments);
+        // For employee demotion, we need to select where the demoted manager will report to
+        // For customer demotion, we don't need this, but we still need to set it for the modal
+        setSelectedManagerId(newRole === 'employee' ? availableManagers[0].id : null);
+        setShowManagerSelectModal(true);
+        return; // Exit here, will continue in handleManagerSelectConfirm
+      } else if (newRole === 'employee' && availableManagers.length > 0) {
+        // No subordinates, but demoting to employee still needs manager assignment
+        setManagerSelectData({
+          userId,
+          oldRole: targetUser.role,
+          newRole,
+          availableManagers
+        });
+        setSelectedManagerId(availableManagers[0].id);
+        setShowManagerSelectModal(true);
+        return;
+      }
+      // If demoting to customer with no subordinates, continue to normal flow
+    }
+    
     // Check if trying to promote to employee when no managers exist
-    if (newRole === 'employee' && isAdmin) {
+    if (newRole === 'employee' && targetUser.role !== 'manager' && isAdmin) {
       const hasManagers = users.some(u => u.role === 'manager');
       
       if (!hasManagers) {
@@ -100,50 +185,6 @@ export default function UsersManagement() {
         } else {
           return; // User cancelled
         }
-      } else if (targetUser.role === 'manager') {
-        // Demoting a manager to employee - need to check for subordinates
-        const availableManagers = users.filter(u => u.role === 'manager' && u.id !== userId);
-        
-        if (availableManagers.length === 0) {
-          alert(
-            '⚠️ Cannot Demote Last Manager\n\n' +
-            'This is the only manager in the system. You cannot demote them to employee.\n\n' +
-            'To proceed, either:\n' +
-            '• Promote another user to manager first, or\n' +
-            '• Change their role to customer instead'
-          );
-          return;
-        }
-        
-        // Check if this manager has subordinates
-        const subordinates = users.filter(u => u.reports_to === userId);
-        
-        // Initialize subordinate assignments with first available manager as default
-        const initialAssignments: Record<number, number> = {};
-        subordinates.forEach(sub => {
-          initialAssignments[sub.id] = availableManagers[0].id;
-        });
-        
-        console.log('=== Setting up Manager Demotion Modal ===');
-        console.log('Subordinates found:', subordinates.length);
-        console.log('Subordinates:', subordinates.map(s => ({ id: s.id, email: s.email })));
-        console.log('Initial Assignments:', initialAssignments);
-        console.log('Available Managers:', availableManagers.map(m => ({ id: m.id, email: m.email })));
-        
-        // Show modal to select manager and reassign subordinates
-        // Store initialAssignments in modal data so it's always available
-        setManagerSelectData({
-          userId,
-          oldRole: targetUser.role,
-          newRole,
-          availableManagers,
-          subordinates: subordinates.length > 0 ? subordinates : undefined,
-          initialAssignments
-        });
-        setSubordinateAssignments(initialAssignments);
-        setSelectedManagerId(availableManagers[0].id); // Default to first manager
-        setShowManagerSelectModal(true);
-        return; // Exit here, will continue in handleManagerSelectConfirm
       } else {
         // Promoting customer to employee - need to select which manager they'll report to
         const availableManagers = users.filter(u => u.role === 'manager' && u.is_active);
@@ -166,11 +207,8 @@ export default function UsersManagement() {
     }
 
     try {
-      if (isManager) {
-        await managerUpdateUserRole(token, userId, newRole);
-      } else {
-        await updateUserRole(token, userId, newRole, managerId);
-      }
+      // Only admins should reach this point due to earlier checks
+      await updateUserRole(token, userId, newRole, managerId);
       alert('User role updated successfully');
       fetchUsers();
     } catch (error: any) {
@@ -208,7 +246,13 @@ export default function UsersManagement() {
   };
 
   const handleManagerSelectConfirm = async () => {
-    if (!token || !managerSelectData || selectedManagerId === null) return;
+    if (!token || !managerSelectData) return;
+    
+    // For employee role, we need a manager selected
+    if (managerSelectData.newRole === 'employee' && selectedManagerId === null) {
+      alert('Please select a manager');
+      return;
+    }
     
     try {
       // If there are subordinates, merge user changes with initial assignments
@@ -222,19 +266,26 @@ export default function UsersManagement() {
         };
       }
       
-      console.log('=== FRONTEND: Demoting Manager ===');
+      console.log('=== FRONTEND: Role Change ===');
       console.log('User ID:', managerSelectData.userId);
+      console.log('Old Role:', managerSelectData.oldRole);
       console.log('New Role:', managerSelectData.newRole);
       console.log('Selected Manager ID:', selectedManagerId);
       console.log('Initial Assignments:', managerSelectData.initialAssignments);
       console.log('User Changed Assignments:', subordinateAssignments);
       console.log('Final Subordinate Reassignments to send:', subordinateReassignments);
       
+      // For customer demotion, don't pass manager_id (undefined)
+      // For employee, pass the selected manager (convert null to undefined if needed)
+      const managerIdToSend = managerSelectData.newRole === 'employee' 
+        ? (selectedManagerId !== null ? selectedManagerId : undefined)
+        : undefined;
+      
       await updateUserRole(
         token, 
         managerSelectData.userId, 
         managerSelectData.newRole, 
-        selectedManagerId,
+        managerIdToSend,
         subordinateReassignments
       );
       alert('User role updated successfully');
@@ -371,30 +422,18 @@ export default function UsersManagement() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center gap-2">
-                    {user.role === 'admin' || (isManager && (user.role === 'manager' || user.id === currentUser?.id)) ? (
-                      // Display admin/manager role as badge (non-editable for managers)
+                    {isManager || user.role === 'admin' || user.id === currentUser?.id ? (
+                      // Managers cannot change roles (new requirement)
+                      // Display all roles as badge (non-editable for managers or when viewing admin/self)
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeColor(user.role)}`}>
                         {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                       </span>
-                    ) : isManager ? (
-                      // Manager can change between customer and employee
+                    ) : (
+                      // Admin can change roles freely (except to admin, except for themselves)
                       <select
                         value={user.role}
                         onChange={(e) => handleRoleChange(user.id, e.target.value)}
                         className={`px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeColor(user.role)} cursor-pointer`}
-                      >
-                        <option value="customer">Customer</option>
-                        <option value="employee">Employee</option>
-                      </select>
-                    ) : (
-                      // Admin can change roles freely (except to admin)
-                      <select
-                        value={user.role}
-                        onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                        disabled={user.id === currentUser?.id}
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeColor(user.role)} ${
-                          user.id === currentUser?.id ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                        }`}
                       >
                         <option value="manager">Manager</option>
                         <option value="employee">Employee</option>
@@ -481,7 +520,12 @@ export default function UsersManagement() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 my-8">
             <h3 className="text-xl font-bold text-gray-900 mb-4">
-              {managerSelectData.oldRole === 'manager' ? 'Demote Manager to Employee' : 'Select Manager for Employee'}
+              {managerSelectData.oldRole === 'manager' && managerSelectData.newRole === 'employee' 
+                ? 'Demote Manager to Employee'
+                : managerSelectData.oldRole === 'manager' && managerSelectData.newRole === 'customer'
+                ? 'Demote Manager to Customer'
+                : 'Select Manager for Employee'
+              }
             </h3>
             
             <div className="space-y-6">
@@ -529,32 +573,34 @@ export default function UsersManagement() {
                 </div>
               )}
               
-              {/* Manager Selection for the demoted user or new employee */}
-              <div>
-                <p className="text-sm text-gray-600 mb-3">
-                  {managerSelectData.oldRole === 'manager' 
-                    ? 'Select which manager this user will report to as an employee:'
-                    : 'Select which manager this new employee will report to:'
-                  }
-                </p>
-                
+              {/* Manager Selection for the demoted user or new employee (NOT for customer demotion) */}
+              {managerSelectData.newRole === 'employee' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Reporting Manager:
-                  </label>
-                  <select
-                    value={selectedManagerId || ''}
-                    onChange={(e) => setSelectedManagerId(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {managerSelectData.availableManagers.map((mgr) => (
-                      <option key={mgr.id} value={mgr.id}>
-                        {mgr.full_name || mgr.email} ({mgr.email})
-                      </option>
-                    ))}
-                  </select>
+                  <p className="text-sm text-gray-600 mb-3">
+                    {managerSelectData.oldRole === 'manager' 
+                      ? 'Select which manager this user will report to as an employee:'
+                      : 'Select which manager this new employee will report to:'
+                    }
+                  </p>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Reporting Manager:
+                    </label>
+                    <select
+                      value={selectedManagerId || ''}
+                      onChange={(e) => setSelectedManagerId(Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {managerSelectData.availableManagers.map((mgr) => (
+                        <option key={mgr.id} value={mgr.id}>
+                          {mgr.full_name || mgr.email} ({mgr.email})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
             
             <div className="flex gap-3 mt-6">
@@ -562,7 +608,10 @@ export default function UsersManagement() {
                 onClick={handleManagerSelectConfirm}
                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               >
-                Confirm
+                {managerSelectData.oldRole === 'manager' 
+                  ? `Confirm Demotion to ${managerSelectData.newRole.charAt(0).toUpperCase() + managerSelectData.newRole.slice(1)}`
+                  : 'Confirm'
+                }
               </button>
               <button
                 onClick={() => {
