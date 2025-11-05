@@ -71,12 +71,28 @@ class User(Base):
     # Role-based access control
     role: Mapped[str] = mapped_column(String(20), default="customer", index=True)
     
+    # Reporting hierarchy - self-referential foreign key
+    reports_to: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
+    
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    
+    # Relationships for reporting hierarchy
+    subordinates: Mapped[list["User"]] = relationship(
+        "User",
+        back_populates="manager",
+        foreign_keys=[reports_to]
+    )
+    manager: Mapped["User | None"] = relationship(
+        "User",
+        back_populates="subordinates",
+        remote_side=[id],
+        foreign_keys=[reports_to]
     )
 
 
@@ -146,3 +162,20 @@ class OrderItem(Base):
 
     order = relationship(Order)
     item = relationship(Item)
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    action_type: Mapped[str] = mapped_column(String(100), index=True)
+    actor_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), index=True, nullable=True)
+    actor_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    target_type: Mapped[str] = mapped_column(String(50), index=True)
+    target_id: Mapped[int] = mapped_column(Integer, index=True)
+    details: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON string
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)  # IPv6 max length
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), index=True
+    )
+
+    actor = relationship(User)

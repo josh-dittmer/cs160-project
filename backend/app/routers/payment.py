@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from typing import List
 from ..models import Item, CartItem, Order, OrderItem
 from ..schemas import CartItemOut, ConfirmPaymentRequest, ConfirmPaymentResponse, CreatePaymentIntentResponse, CreateSetupIntenetResponse
@@ -7,6 +7,7 @@ from sqlalchemy import select
 from ..database import get_db
 from ..auth import get_current_user, UserCtx
 from ..cart import calculate_cart_total, CartPriceData
+from ..audit import create_audit_log, get_actor_ip
 import stripe
 import os
 from datetime import datetime
@@ -16,6 +17,7 @@ router = APIRouter(prefix="/api/payment", tags=["cart"])
 @router.post("/confirm-payment/", response_model=ConfirmPaymentResponse)
 def confirm_payment(
     payload: ConfirmPaymentRequest,
+    request: Request,
     user: UserCtx = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -51,9 +53,13 @@ def confirm_payment(
 
     print("Creating order with ID:", order.id)
 
+    # Collect cart items for audit log
     cart_items = db.query(CartItem, Item).join(Item).filter(
         CartItem.user_id == user.id
     ).all()
+    
+    order_items_details = []
+    total_amount = 0
 
     for row in cart_items:
         ci: CartItem = row[0]
@@ -66,10 +72,38 @@ def confirm_payment(
         print("Adding order item: ", it.name)
         db.add(order_item)
         db.delete(ci)
+        
+        # Collect details for audit log
+        order_items_details.append({
+            "item_id": it.id,
+            "item_name": it.name,
+            "quantity": ci.quantity,
+            "price_cents": it.price_cents,
+        })
+        total_amount += it.price_cents * ci.quantity
+        
         db.commit()
         db.refresh(order_item)
 
     db.commit()
+    
+    # Create audit log for order creation
+    create_audit_log(
+        db=db,
+        action_type="order_created",
+        target_type="order",
+        target_id=order.id,
+        actor_id=user.id,
+        actor_email=user.email,
+        details={
+            "order_id": order.id,
+            "payment_intent_id": intent.id,
+            "total_amount_cents": total_amount,
+            "item_count": len(order_items_details),
+            "items": order_items_details,
+        },
+        ip_address=get_actor_ip(request),
+    )
 
     return ConfirmPaymentResponse(orderId=order.id)
         

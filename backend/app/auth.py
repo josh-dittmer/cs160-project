@@ -101,7 +101,8 @@ class UserCtx(BaseModel):
     id: int
     email: str
     role: str
-    stripe_customer_id: str
+    stripe_customer_id: str | None = None
+    reports_to: int | None = None
 
 
 def get_current_user(
@@ -149,7 +150,13 @@ def get_current_user(
             detail="Inactive user",
         )
     
-    return UserCtx(id=user.id, email=user.email, role=user.role, stripe_customer_id=user.stripe_customer_id)
+    return UserCtx(
+        id=user.id,
+        email=user.email,
+        role=user.role,
+        stripe_customer_id=user.stripe_customer_id,
+        reports_to=user.reports_to
+    )
 
 
 def require_user(x_user_id: int | None = Header(default=None, alias="X-User-Id")) -> UserCtx:
@@ -193,3 +200,85 @@ def require_role(allowed_roles: list[str]):
             )
         return current_user
     return role_checker
+
+
+def require_manager(current_user: UserCtx = Depends(get_current_user)) -> UserCtx:
+    """
+    Dependency to require manager or admin role.
+    Raises 403 if user is not a manager or admin.
+    """
+    if current_user.role not in ["manager", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Manager or admin access required",
+        )
+    return current_user
+
+
+def require_employee(current_user: UserCtx = Depends(get_current_user)) -> UserCtx:
+    """
+    Dependency to require employee role (or higher).
+    Raises 403 if user is not an employee, manager, or admin.
+    """
+    if current_user.role not in ["employee", "manager", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Employee, manager, or admin access required",
+        )
+    return current_user
+
+
+def can_modify_user_role(actor_role: str, target_role: str, new_role: str) -> bool:
+    """
+    Check if actor can change target user's role.
+    
+    Rules:
+    - Cannot promote to admin
+    - Manager CANNOT change any user roles
+    - Admin can change to any role except admin
+    
+    Args:
+        actor_role: Role of the user performing the action
+        target_role: Current role of the target user
+        new_role: Desired new role for the target user
+    
+    Returns:
+        True if the role change is allowed, False otherwise
+    """
+    # Cannot promote to admin
+    if new_role == "admin":
+        return False
+    
+    # Manager CANNOT change any user roles (new requirement)
+    if actor_role == "manager":
+        return False
+    
+    # Admin can change to any role except admin
+    if actor_role == "admin":
+        return new_role in ["customer", "employee", "manager"]
+    
+    return False
+
+
+def can_block_user(actor_role: str, target_role: str) -> bool:
+    """
+    Check if actor can block target user.
+    
+    Rules:
+    - Manager can block customers and employees
+    - Admin can block anyone except themselves (checked elsewhere)
+    
+    Args:
+        actor_role: Role of the user performing the action
+        target_role: Role of the target user
+    
+    Returns:
+        True if blocking is allowed, False otherwise
+    """
+    if actor_role == "manager":
+        return target_role in ["customer", "employee"]
+    
+    if actor_role == "admin":
+        return True  # Admin can block anyone (self-blocking prevented in endpoint)
+    
+    return False

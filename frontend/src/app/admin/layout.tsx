@@ -14,39 +14,46 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/login');
-    } else if (user?.role !== 'admin') {
-      // Redirect non-admin users to customer dashboard
+    } else if (user?.role !== 'admin' && user?.role !== 'manager') {
+      // Redirect non-admin/non-manager users to customer dashboard
       router.push('/home/dashboard');
     }
   }, [isAuthenticated, user, router]);
 
-  if (!isAuthenticated || user?.role !== 'admin') {
+  if (!isAuthenticated || (user?.role !== 'admin' && user?.role !== 'manager')) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
+  
+  // Determine panel title and path prefix based on role
+  const panelTitle = user?.role === 'admin' ? 'Admin Panel' : 'Manager Panel';
+  const pathPrefix = user?.role === 'admin' ? '/admin' : '/manager';
 
+  // Navigation items with dynamic path prefix
   const navItems = [
-    { name: 'Dashboard', href: '/admin/dashboard' },
-    { name: 'Users', href: '/admin/users' },
-    { name: 'Inventory', href: '/admin/inventory' },
+    { name: 'Dashboard', href: `${pathPrefix}/dashboard` },
+    { name: 'Users', href: `${pathPrefix}/users` },
+    { name: 'Inventory', href: `${pathPrefix}/inventory` },
+    { name: 'Orders', href: `${pathPrefix}/orders` },
+    { name: 'Audit Logs', href: `${pathPrefix}/audit-logs` },
   ];
 
   return (
     <div className="min-h-screen bg-white dark:bg-white">
       {/* Admin Header */}
       <header className="bg-white dark:bg-white shadow border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-8">
+        <div className="max-w-full mx-auto px-6">
+          <div className="flex justify-between items-center py-3">
+            <div className="flex items-center space-x-6">
               {/* OFS Logo */}
-              <Link href="/admin/dashboard" className="flex items-center">
+              <Link href={`${pathPrefix}/dashboard`} className="flex items-center">
                 <img
                   src="/logo.png"
                   alt="OFS Logo"
-                  className="h-12 w-auto cursor-pointer"
+                  className="h-14 w-auto cursor-pointer"
                 />
               </Link>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-900">
-                Admin Panel
+                {panelTitle}
               </h1>
               <nav className="flex space-x-4">
                 {navItems.map((item) => (

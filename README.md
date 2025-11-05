@@ -184,9 +184,10 @@ cs160-project/
 
 - **Role-Based Access Control**
   - Four user roles: Admin, Manager, Employee, Customer
-  - Admin panel for user and inventory management
+  - Admin panel for user, inventory, and order management
   - Default admin login: `admin@sjsu.edu` / `admin123`
   - See [docs/ADMIN.md](docs/ADMIN.md) for complete admin documentation
+  - See [docs/ORDER_MANAGEMENT.md](docs/ORDER_MANAGEMENT.md) for order management details
 
 - **AI-Powered Image Generation**
   - Generate product images from text descriptions using Google Gemini AI

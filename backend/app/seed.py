@@ -796,14 +796,50 @@ def seed():
                 hashed_password=get_password_hash(admin_password),
                 full_name="System Administrator",
                 role="admin",
+                reports_to=None,  # Admin reports to no one
                 stripe_customer_id=create_stripe_customer(admin_email).id,
                 is_active=True
             )
             db.add(admin_user)
             db.commit()
+            db.refresh(admin_user)
             print(f"✓ Admin user created: {admin_email} / {admin_password}")
         else:
+            # Ensure admin has reports_to = None
+            if admin_user.reports_to is not None:
+                admin_user.reports_to = None
+                db.commit()
             print(f"✓ Admin user already exists: {admin_email}")
+        
+        # Create sample customer users
+        sample_customers = [
+            {"name": "Alice", "email": "alice@sjsu.edu", "password": "alice12345"},
+            {"name": "Bob", "email": "bob@sjsu.edu", "password": "bob12345"},
+            {"name": "Mike", "email": "mike@sjsu.edu", "password": "mike12345"},
+            {"name": "George", "email": "george@sjsu.edu", "password": "george12345"},
+            {"name": "Trudy", "email": "trudy@sjsu.edu", "password": "trudy12345"},
+            {"name": "Alex", "email": "alex@sjsu.edu", "password": "alex12345"},
+            {"name": "John", "email": "john@sjsu.edu", "password": "john12345"},
+        ]
+        
+        for customer in sample_customers:
+            existing_user = db.query(User).filter(User.email == customer["email"]).first()
+            if not existing_user:
+                new_customer = User(
+                    email=customer["email"],
+                    hashed_password=get_password_hash(customer["password"]),
+                    full_name=customer["name"],
+                    role="customer",
+                    reports_to=None,  # Customers don't report to anyone
+                    stripe_customer_id=create_stripe_customer(customer["email"]).id,
+                    is_active=True
+                )
+                db.add(new_customer)
+                db.commit()
+                db.refresh(new_customer)
+                print(f"✓ Customer created: {customer['email']} / {customer['password']}")
+            else:
+                print(f"✓ Customer already exists: {customer['email']}")
         
         # Seed items
         if db.query(Item).count() == 0:
