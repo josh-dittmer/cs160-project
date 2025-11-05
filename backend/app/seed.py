@@ -782,13 +782,19 @@ def seed():
                 hashed_password=get_password_hash(admin_password),
                 full_name="System Administrator",
                 role="admin",
+                reports_to=None,  # Admin reports to no one
                 stripe_customer_id=create_stripe_customer(admin_email).id,
                 is_active=True
             )
             db.add(admin_user)
             db.commit()
+            db.refresh(admin_user)
             print(f"✓ Admin user created: {admin_email} / {admin_password}")
         else:
+            # Ensure admin has reports_to = None
+            if admin_user.reports_to is not None:
+                admin_user.reports_to = None
+                db.commit()
             print(f"✓ Admin user already exists: {admin_email}")
         
         # Seed items

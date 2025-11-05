@@ -33,6 +33,8 @@ export default function LoginPage() {
             // Redirect based on user role
             if (response.user.role === 'admin') {
                 router.push("/admin/dashboard");
+            } else if (response.user.role === 'manager') {
+                router.push("/manager/dashboard");
             } else {
                 router.push("/home/dashboard");
             }
@@ -56,6 +58,8 @@ export default function LoginPage() {
             // Redirect based on user role
             if (response.user.role === 'admin') {
                 router.push("/admin/dashboard");
+            } else if (response.user.role === 'manager') {
+                router.push("/manager/dashboard");
             } else {
                 router.push("/home/dashboard");
             }

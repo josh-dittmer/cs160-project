@@ -11,20 +11,22 @@ import { ReactNode } from "react";
 export default function HomeLayout({ children }: { children: ReactNode }) {
     const { user } = useAuth();
     const isAdmin = user?.role === 'admin';
+    const isManager = user?.role === 'manager';
+    const showBanner = isAdmin || isManager;
 
     return (
-        <div className={`w-svw h-svh grid ${isAdmin ? 'grid-rows-[40px_60px_auto_30px]' : 'grid-rows-[60px_auto_30px]'}`}>
-            {/* Admin Customer View Banner */}
-            {isAdmin && (
+        <div className={`w-svw h-svh grid ${showBanner ? 'grid-rows-[40px_60px_auto_30px]' : 'grid-rows-[60px_auto_30px]'}`}>
+            {/* Admin/Manager Customer View Banner */}
+            {showBanner && (
                 <div className="bg-green-600 text-white px-4 py-2 flex items-center justify-between shadow-md">
                     <span className="text-sm font-medium">
                         🔍 Customer View Mode - You are viewing the site as a customer
                     </span>
                     <Link
-                        href="/admin/dashboard"
+                        href={isAdmin ? "/admin/dashboard" : "/manager/dashboard"}
                         className="px-3 py-1 bg-white text-green-600 hover:bg-gray-100 rounded font-medium text-sm transition-colors"
                     >
-                        Switch to Admin view
+                        Switch to {isAdmin ? 'Admin' : 'Manager'} view
                     </Link>
                 </div>
             )}
