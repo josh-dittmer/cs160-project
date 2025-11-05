@@ -131,15 +131,8 @@ export default function AuditLogsPage() {
       action_by_name: 'Action By (Name)',
       old_status: 'Previous Status',
       new_status: 'New Status',
-      referred_user_id: 'Referred User ID',
-      referred_user_email: 'Referred User',
-      target_role: 'Target Role',
-      reason: 'Reason',
-      admin_notes: 'Admin Notes',
       auth_method: 'Authentication Method',
       full_name: 'Full Name',
-      via_referral: 'Via Referral',
-      referral_id: 'Referral ID',
     };
     
     return labelMap[key] || key.split('_').map(word => 
@@ -204,11 +197,6 @@ export default function AuditLogsPage() {
       // For user-related actions, show the user email
       if (log.target_type === 'user' && details.user_email) {
         return `User: ${details.user_email}`;
-      }
-      
-      // For referral actions, show the referred user
-      if (log.target_type === 'referral' && details.referred_user_email) {
-        return `Referral: ${details.referred_user_email}`;
       }
       
       // For item actions, show the item name if available

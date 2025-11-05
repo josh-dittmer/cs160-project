@@ -1,5 +1,7 @@
 # Reporting Hierarchy Implementation Summary
 
+> **⚠️ NOTE**: The employee referral system (EmployeeReferral model) described in this document has been removed from the codebase. Employees can no longer create referrals to promote customers to employees. Only managers can promote customers to employees.
+
 ## Overview
 
 A complete reporting hierarchy system has been implemented where:

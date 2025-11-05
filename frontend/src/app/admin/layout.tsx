@@ -35,7 +35,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Inventory', href: `${pathPrefix}/inventory` },
     { name: 'Orders', href: `${pathPrefix}/orders` },
     { name: 'Audit Logs', href: `${pathPrefix}/audit-logs` },
-    { name: 'Referrals', href: `${pathPrefix}/referrals` },
   ];
 
   return (

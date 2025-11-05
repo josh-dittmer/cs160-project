@@ -8,7 +8,6 @@ import {
   blockUser, 
   managerUpdateUserRole,
   managerBlockUser,
-  createReferral,
   type UserAdmin 
 } from '@/lib/api/admin';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -20,10 +19,6 @@ export default function UsersManagement() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [filter, setFilter] = useState<string>('all');
-  const [showReferralModal, setShowReferralModal] = useState(false);
-  const [referralUser, setReferralUser] = useState<UserAdmin | null>(null);
-  const [referralReason, setReferralReason] = useState('');
-  const [submittingReferral, setSubmittingReferral] = useState(false);
   
   // Manager selection modal state
   const [showManagerSelectModal, setShowManagerSelectModal] = useState(false);
@@ -186,35 +181,6 @@ export default function UsersManagement() {
     }
   };
 
-  const handleReferForManager = (user: UserAdmin) => {
-    setReferralUser(user);
-    setShowReferralModal(true);
-  };
-
-  const handleSubmitReferral = async () => {
-    if (!token || !referralUser || !referralReason.trim() || referralReason.length < 20) {
-      alert('Please provide a reason (minimum 20 characters)');
-      return;
-    }
-
-    try {
-      setSubmittingReferral(true);
-      await createReferral(token, referralUser.id, referralReason);
-      alert('Referral created successfully!');
-      setShowReferralModal(false);
-      setReferralUser(null);
-      setReferralReason('');
-      // Redirect to the appropriate referrals page based on role
-      const pathPrefix = currentUser?.role === 'admin' ? '/admin' : '/manager';
-      router.push(`${pathPrefix}/referrals`);
-    } catch (error: any) {
-      console.error('Failed to create referral:', error);
-      alert(error.message || 'Failed to create referral');
-    } finally {
-      setSubmittingReferral(false);
-    }
-  };
-
   // Helper to check if manager can modify this user
   const canManagerModifyUser = (user: UserAdmin): boolean => {
     if (!isManager) return true; // Admin can modify anyone
@@ -351,16 +317,6 @@ export default function UsersManagement() {
                         <option value="customer">Customer</option>
                       </select>
                     )}
-                    
-                    {/* Show "Refer for Manager" button for employees (manager only) */}
-                    {isManager && user.role === 'employee' && (
-                      <button
-                        onClick={() => handleReferForManager(user)}
-                        className="text-xs px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 whitespace-nowrap"
-                      >
-                        Refer for Manager
-                      </button>
-                    )}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -417,62 +373,6 @@ export default function UsersManagement() {
           </tbody>
         </table>
       </div>
-
-      {/* Referral Modal */}
-      {showReferralModal && referralUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
-              Refer {referralUser.full_name || referralUser.email} for Manager
-            </h3>
-            
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-gray-600 mb-2">
-                  Employee: <span className="font-medium">{referralUser.email}</span>
-                </p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Reason for Promotion (minimum 20 characters)
-                </label>
-                <textarea
-                  value={referralReason}
-                  onChange={(e) => setReferralReason(e.target.value)}
-                  placeholder="Explain why this employee should be promoted to manager..."
-                  className="w-full px-3 py-2 border rounded-md"
-                  rows={4}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  {referralReason.length} / 20 characters minimum
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={handleSubmitReferral}
-                disabled={submittingReferral || referralReason.length < 20}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {submittingReferral ? 'Submitting...' : 'Submit Referral'}
-              </button>
-              <button
-                onClick={() => {
-                  setShowReferralModal(false);
-                  setReferralUser(null);
-                  setReferralReason('');
-                }}
-                disabled={submittingReferral}
-                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Manager Selection Modal */}
       {showManagerSelectModal && managerSelectData && (
