@@ -1,4 +1,5 @@
 export type Status = "In Stock" | "Out of Stock" | "Low Stock";
+export type ConditionFlag = 'Expired' | 'Damaged' | null;
 
 export type Product = {
     id: string;
@@ -7,4 +8,6 @@ export type Product = {
     quantity: number;
     status: Status;
     ImageUrl?: string;
+    condition?: ConditionFlag;
+
 };
