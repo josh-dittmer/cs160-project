@@ -5,7 +5,9 @@ import type { Product, Status } from "@/lib/api/tableTypes";
 import { CardTable } from "@/components/employee_table/card_table";
 import { StatusBadge } from "@/components/employee_table/status_badge";
 import { Icons } from "@/components/employee_table/icons";
+import { useAlerts, getFlagged } from "@/lib/alerts/alerts-context";
 import  Modal  from "@/components/modal/modal"
+
 
 type FlagKind = 'Expired' | 'Damaged';
 
@@ -21,12 +23,17 @@ export default function StockManagementPage(){
     const [qtyOpen, setQtyOpen] = useState(false);
     const [activeId, setActiveId] = useState<string | null>(null);
     const [qtyInput, setQtyInput] = useState<string>('0');
+    const { setFlaggedItems } = useAlerts();
 
     const asInt = (s: string) => Math.max(0, parseInt(s || '0', 10) || 0);
     //Currently filler data this needs  to connect to back end
     useEffect(()=> {
         fetchProducts().then((rows) => setProducts(rows));
     }, []);
+
+    useEffect(() => {
+        setFlaggedItems(getFlagged(products));
+    }, [products, setFlaggedItems]);
 
     const categories = useMemo(() => ['All',...Array.from(new Set(products.map((p)=> p.category)))],
     [products]);
@@ -59,6 +66,7 @@ export default function StockManagementPage(){
         if(!activeId) return;
 
         updateProduct(activeId, (p)=> {
+            p.condition = kind;
             p.status = 'Out of Stock';
             p.quantity = 0;
             return p;

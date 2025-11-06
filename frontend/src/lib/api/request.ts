@@ -53,7 +53,7 @@ export async function request<C extends t.Mixed>(path: string, data: RequestData
     const url = Endpoints.mainApiInternal + path;
 
     const response = await fetch(url, data.request);
-
+    
     if (response.status === 401) {
         // todo: redirect to login
         throw new Error('unauthorized');

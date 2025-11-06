@@ -1,8 +1,31 @@
+'use client';
 import "./employee.css";
 import Link from "next/link";
+import { AlertsProvider, useAlerts } from "@/lib/alerts/alerts-context";
+import AlertsModal from "@/components/alerts/alert_modal";
+
+function AlertsNavItem() {
+  const { openWith, flaggedItems } = useAlerts();
+
+  return (
+    <li>
+      <a
+        href="#"
+        onClick={(e) => {
+          e.preventDefault();
+          // Use the flagged items from context so client-side flags show immediately
+          openWith(flaggedItems);
+        }}
+      >
+        Alerts
+      </a>
+    </li>
+  );
+}
 
 export default function EmployeeLayout({ children }: { children: React.ReactNode }) {
   return (
+    <AlertsProvider>
     <div className="employee-container">
       {/* Sidebar */}
       <aside className="sidebar">
@@ -21,7 +44,7 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
             <li><Link href="/employee/dashboard">Dashboard</Link></li>
             <li><Link href="/employee/inventory">Inventory</Link></li>
             <li><Link href="/employee/stock-management">Stock Management</Link></li>
-            <li><Link href="/employee/alerts">Alerts</Link></li>
+            <li><AlertsNavItem /></li>
           </ul>
 
           <p className="menu-title">SETTINGS</p>
@@ -40,5 +63,7 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
       {/* Main Content */}
       <main className="main-content">{children}</main>
     </div>
+    <AlertsModal />
+    </AlertsProvider>
   );
 }
