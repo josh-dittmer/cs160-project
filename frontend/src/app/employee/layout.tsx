@@ -44,7 +44,7 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
             <li><Link href="/employee/dashboard">Dashboard</Link></li>
             <li><Link href="/employee/inventory">Inventory</Link></li>
             <li><Link href="/employee/stock-management">Stock Management</Link></li>
-            <li><AlertsNavItem /></li>
+            <AlertsNavItem />
           </ul>
 
           <p className="menu-title">SETTINGS</p>
