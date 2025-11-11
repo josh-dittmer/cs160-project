@@ -365,6 +365,11 @@ def get_me(current_user: UserCtx = Depends(get_current_user), db: Session = Depe
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
+    
+    print(user.full_name)
+    print(user.longitude)
+    print(user.latitude)
+
     return UserOut.model_validate(user)
 
 

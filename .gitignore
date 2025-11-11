@@ -12,3 +12,4 @@ backend/sqlite.db-journal
 temp/
 .github/
 .pytest_cache/
+backend/keys.json

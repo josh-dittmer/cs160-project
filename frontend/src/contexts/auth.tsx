@@ -1,6 +1,6 @@
 "use client";
 
-import { UserInfo } from '@/lib/api/profile';
+import { getCurrentUser, UserInfo } from '@/lib/api/profile';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 interface AuthContextType {
@@ -25,13 +25,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const storedUser = localStorage.getItem('user_info');
         const storedExpires = localStorage.getItem('auth_expires');
 
+        const fetchUser = async (token: string) => {
+            const user = await getCurrentUser(token);
+
+            setToken(storedToken);
+            setUser(user);
+        };
+
         if (!storedExpires || parseInt(storedExpires, 10) > Date.now()) {
             return;
         }
 
         if (storedToken && storedUser) {
-            setToken(storedToken);
-            setUser(JSON.parse(storedUser));
+            fetchUser(storedToken);
         }
     }, []);
 

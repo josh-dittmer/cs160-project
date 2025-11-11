@@ -162,10 +162,10 @@ export default function AddressSelector() {
     };
 
     useEffect(() => {
-        if (addressContext?.windowVisible) {
+        if (addressContext?.windowVisible || showMap) {
             geocodeAddress();
         }
-    }, [addressContext?.windowVisible])
+    }, [addressContext?.windowVisible, showMap])
 
     const handleClick = () => {
         if (user?.address) {
@@ -347,6 +347,27 @@ export default function AddressSelector() {
         );
     };
 
+    const getSaveCoordinates = async (fullAddress: string): Promise<{ lat: number, lng: number }> => {
+        const geocoder = new google.maps.Geocoder();
+
+        return new Promise((resolve, reject) => geocoder.geocode({ address: fullAddress }, (results, status) => {
+            if (status === 'OK' && results && results[0]) {
+                const location = results[0].geometry.location;
+                const coords = {
+                    lat: location.lat(),
+                    lng: location.lng()
+                };
+                console.log('Save address: Geocoded address:', fullAddress);
+                console.log('Save address: Coordinates:', coords);
+                console.log('Save address: San Jose should be: lat ~37.3, lng ~-121.9');
+                resolve(coords);
+            } else {
+                console.error('Save address: Geocoding failed:', status);
+                reject(Error('Geocoding failed'));
+            }
+        }));
+    };
+
     const handleSaveAddress = async () => {
         if (!token) {
             alert('You must be logged in to save your address');
@@ -365,15 +386,24 @@ export default function AddressSelector() {
             return;
         }
 
+        const fullAddress = [
+            addressData.address,
+            addressData.city,
+            addressData.state,
+            addressData.zipcode
+        ].filter(Boolean).join(', ');
+
         setIsSaving(true);
         try {
+            const coords = await getSaveCoordinates(fullAddress);
+
             const updatedUser = await updateProfile(token, {
                 address: addressData.address,
                 city: addressData.city,
                 state: addressData.state,
                 zipcode: addressData.zipcode,
-                longitude: coordinates?.lng,
-                latitude: coordinates?.lat
+                longitude: coords.lng,
+                latitude: coords.lat
             });
 
             updateUser(updatedUser);
