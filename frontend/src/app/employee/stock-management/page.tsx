@@ -1,108 +1,153 @@
 'use client'
 import { useEffect, useMemo, useState } from "react";
-import { fetchProducts } from "@/lib/api/products";
-import type { Product, Status } from "@/lib/api/tableTypes";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/auth";
+import { listItems, updateItemStock, ItemEmployee } from "@/lib/api/employee";
 import { CardTable } from "@/components/employee_table/card_table";
 import { StatusBadge } from "@/components/employee_table/status_badge";
 import { Icons } from "@/components/employee_table/icons";
-import { useAlerts, getFlagged } from "@/lib/alerts/alerts-context";
 import  Modal  from "@/components/modal/modal"
 
 
-type FlagKind = 'Expired' | 'Damaged';
+type Status = 'In Stock' | 'Out of Stock' | 'Low Stock';
+
+function getStatus(stock_qty: number): Status {
+    if (stock_qty === 0) return 'Out of Stock';
+    if (stock_qty <= 10) return 'Low Stock';
+    return 'In Stock';
+}
 
 export default function StockManagementPage(){
+    const { token, user } = useAuth();
+    const router = useRouter();
+    
     //State for table and filtering
-    const[products, setProducts] = useState<Product[]>([]);
+    const[products, setProducts] = useState<ItemEmployee[]>([]);
     const[query, setQuery] = useState('');
     const[category, setCategory] = useState('All');
     const[status, setStatus] = useState< 'All' | Status>('All');
+    const[loading, setLoading] = useState(true);
+    const[error, setError] = useState<string | null>(null);
 
     //States for modals
-    const [flagOpen, setFlagOpen] = useState(false);
     const [qtyOpen, setQtyOpen] = useState(false);
-    const [activeId, setActiveId] = useState<string | null>(null);
+    const [activeId, setActiveId] = useState<number | null>(null);
     const [qtyInput, setQtyInput] = useState<string>('0');
-    const { setFlaggedItems } = useAlerts();
+    const [saving, setSaving] = useState(false);
 
     const asInt = (s: string) => Math.max(0, parseInt(s || '0', 10) || 0);
-    //Currently filler data this needs  to connect to back end
-    useEffect(()=> {
-        fetchProducts().then((rows) => setProducts(rows));
-    }, []);
 
     useEffect(() => {
-        setFlaggedItems(getFlagged(products));
-    }, [products, setFlaggedItems]);
+        if (!token) {
+            router.push('/login');
+            return;
+        }
 
-    const categories = useMemo(() => ['All',...Array.from(new Set(products.map((p)=> p.category)))],
+        if (user && !['employee', 'manager', 'admin'].includes(user.role)) {
+            router.push('/home/dashboard');
+            return;
+        }
+
+        loadProducts();
+    }, [token, user, router]);
+
+    const loadProducts = async () => {
+        if (!token) return;
+
+        try {
+            setLoading(true);
+            setError(null);
+            const items = await listItems(token, { status: 'all', limit: 200 });
+            setProducts(items);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to load products');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const categories = useMemo(() => ['All',...Array.from(new Set(products.map((p)=> p.category || 'Uncategorized')))],
     [products]);
 
     const filtered = useMemo(()=>{
         return products.filter((p) =>{
-            const matchesQuery = p.name.toLowerCase().includes(query.toLowerCase()) || p.id.includes(query);
+            const matchesQuery = p.name.toLowerCase().includes(query.toLowerCase()) || p.id.toString().includes(query);
             const matchesCategory = category === 'All' || p.category === category;
-            const matchesStatus = status === 'All' || p.status === status;
+            const itemStatus = getStatus(p.stock_qty);
+            const matchesStatus = status === 'All' || itemStatus === status;
             return matchesQuery && matchesCategory && matchesStatus;
-
         });
     },[products,query,category,status]);
 
-    const updateProduct = (id: string, mut: (p: Product) => Product) => {
-        setProducts((prev)=> prev.map((p)=> (p.id === id ? mut ({...p}) : p)));
-    };
-
-    const handleOpenFlag = (id: string) => {
-        setActiveId(id);
-        setFlagOpen(true);
-    }
-
-    /*
-    As of right now clicking either expire or damaged sets the status of the item to 'Out of Stock'
-    it also updates the products quantity to zero we can update/chnage this later based on what we want
-    it to do
-    */
-    const handleFlag = (kind: FlagKind) =>{
-        if(!activeId) return;
-
-        updateProduct(activeId, (p)=> {
-            p.condition = kind;
-            p.status = 'Out of Stock';
-            p.quantity = 0;
-            return p;
-        });
-        setFlagOpen(false);
-
-    }
-
     //Opens the update quantity modal
-    const handleOpenQty = (id:string) => {
-        const cur = products.find((p)=> p.id === id)?.quantity ?? 0;
+    const handleOpenQty = (id: number) => {
+        const cur = products.find((p)=> p.id === id)?.stock_qty ?? 0;
         setQtyInput(String(cur));
         setActiveId(id);
         setQtyOpen(true);
     }
 
     //Saves changes from the update quantity modal
-    const handleSaveQty = ()=>{
-        if (!activeId) return;
-        updateProduct(activeId, (p)=>{
-            const n = asInt(qtyInput)
-            p.quantity = n;
-            p.status = p.quantity === 0 ? 'Out of Stock' : p.quantity <= 10 ? 'Low Stock' : 'In Stock';
-            return p;
-        });
-        setQtyOpen(false);
+    const handleSaveQty = async ()=>{
+        if (!activeId || !token) return;
+        
+        try {
+            setSaving(true);
+            const newQty = asInt(qtyInput);
+            await updateItemStock(token, activeId, newQty);
+            
+            // Update local state
+            setProducts(prev => prev.map(p => 
+                p.id === activeId ? { ...p, stock_qty: newQty } : p
+            ));
+            
+            setQtyOpen(false);
+        } catch (err) {
+            alert(err instanceof Error ? err.message : 'Failed to update stock quantity');
+        } finally {
+            setSaving(false);
+        }
     }
 
     //Sets quantity to zero and marks item 'Out of Stock'
-    const handleMarkOOS = (id:string) =>{
-        updateProduct(id, (p) => {
-            p.quantity = 0;
-            p.status = 'Out of Stock';
-            return p;
-        } );
+    const handleMarkOOS = async (id: number) =>{
+        if (!token) return;
+        
+        try {
+            await updateItemStock(token, id, 0);
+            
+            // Update local state
+            setProducts(prev => prev.map(p => 
+                p.id === id ? { ...p, stock_qty: 0 } : p
+            ));
+        } catch (err) {
+            alert(err instanceof Error ? err.message : 'Failed to mark item out of stock');
+        }
     };
+
+    if (loading) {
+        return (
+            <div className="p-8">
+                <p>Loading products...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-8">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p className="text-red-800">{error}</p>
+                    <button
+                        onClick={loadProducts}
+                        className="mt-2 px-4 py-2 bg-red-100 hover:bg-red-200 rounded"
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return(
         <div className="p-8">
@@ -147,7 +192,7 @@ export default function StockManagementPage(){
                     <th className="px-4 py-3 font-medium">ID</th>
                     <th className="px-4 py-3 font-medium">Status</th>
                     <th className="px-4 py-3 font-medium">Quantity</th>
-                    <th className="px-4 py-3 font-medium">Actions</th>
+                    <th className="px-4 py-3 font-medium text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100">
@@ -155,7 +200,18 @@ export default function StockManagementPage(){
                         <tr key={p.id} className="hover:bg-zinc-50/60">
                             <td className="px-4 py-3">
                                 <div className="flex items-center gap-3">
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-zinc-100">
+                                    {p.image_url ? (
+                                        <img 
+                                            src={p.image_url} 
+                                            alt={p.name}
+                                            className="h-8 w-8 rounded-md object-cover"
+                                            onError={(e) => {
+                                                e.currentTarget.style.display = 'none';
+                                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                            }}
+                                        />
+                                    ) : null}
+                                    <div className={`flex h-8 w-8 items-center justify-center rounded-md bg-zinc-100 ${p.image_url ? 'hidden' : ''}`}>
                                         <Icons.Package2 className="h-4 w-4 text-zinc-500" />
                                     </div>
                                     <span className="font-medium text-zinc-900">{p.name}</span>
@@ -163,26 +219,22 @@ export default function StockManagementPage(){
                             </td>
                             <td className="px-4 py-3 text-zinc-600">{p.id}</td>
                             <td className="px-4 py-3">
-                                <StatusBadge status={p.status} />
+                                <StatusBadge status={getStatus(p.stock_qty)} />
                             </td>
                             <td className="px-4 py-3 text-center text-zinc-600">
                                 <div className="inline-flex h-6 w-10 items-center justify-center rounded-md bg-zinc-100 text-xs font-medium text-zinc-700">
-                                    {p.quantity}
+                                    {p.stock_qty}
                                 </div>
                             </td>
                             <td className="px-4 py-3">
-                                <div className="flex justify-end gap-3">
-                                    <button className="rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                                <div className="flex justify-start gap-3">
+                                    <button className="rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
                                     onClick={()=> handleMarkOOS(p.id)}>
                                     Mark OOS
                                     </button>
-                                    <button className="rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
-                                    onClick={()=> handleOpenFlag(p.id)}>
-                                    Flag D/E
-                                    </button>
-                                    <button className="rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                                    <button className="rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
                                     onClick={()=> handleOpenQty(p.id)}>
-                                    Update QYT
+                                    Update QTY
                                     </button>
                                 </div>
                             </td>
@@ -192,43 +244,26 @@ export default function StockManagementPage(){
                     {filtered.length === 0 && (
                         <tr>
                             <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
-                                No Products match the filers your selected
+                                No Products match the filters you selected
                             </td>
                         </tr>
                     )}
                 </tbody>
             </CardTable>
 
-            {/*Flag  Modal */}
-            <Modal open={flagOpen} onClose={()=> setFlagOpen(false)} title="Are you sure you want to flag these items?"
-            footer= {
-                <div className="flex gap-3">
-                    <button className="rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
-                    onClick={()=> handleFlag('Expired')}>
-                        Expired
-                     </button>
-                     <button className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-200"
-                    onClick={()=> handleFlag('Damaged')}>
-                        Damaged
-                     </button>
-                </div>
-            }
-            >
-            <p className="text-zinc-700">
-                *Warning!* By flagging these items either <b>Expired</b> or <b>Damaged</b>, we'll remove them from 
-                the customer catalog and will be unavailable for purchase.
-            </p>
-            </Modal>
-
             {/* Update Quantity Modal*/}
             <Modal open={qtyOpen} onClose={()=> setQtyOpen(false)} title="Update Quantity" footer={
                 <div className="flex gap-3">
-                    <button className="rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
-                    onClick={handleSaveQty}>
-                        Save
+                    <button 
+                        className="rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                        onClick={handleSaveQty}
+                        disabled={saving}
+                    >
+                        {saving ? 'Saving...' : 'Save'}
                     </button>
                     <button className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-200"
-                    onClick={()=>setQtyOpen(false)}>
+                    onClick={()=>setQtyOpen(false)}
+                    disabled={saving}>
                         Cancel
                     </button>
                 </div>
@@ -249,8 +284,6 @@ export default function StockManagementPage(){
                         else{
                             setQtyInput(String(parseInt(raw,10)))
                         }
-
-                        
                     }} />
 
                     <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-100 text-xl hover:bg-zinc-200"
