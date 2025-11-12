@@ -1,11 +1,12 @@
 "use client";
-import { useState } from "react";
 import { CheckCircle, Package, Truck, Home } from "lucide-react";
 
-export default function DeliveryProgress() {
-  // currentStep can be 1–4
-  const [currentStep, setCurrentStep] = useState(3);
+interface DeliveryProgressProps {
+  currentStep: number;
+  onNextStep: () => void;
+}
 
+export default function DeliveryProgress({ currentStep, onNextStep }: DeliveryProgressProps) {
   const steps = [
     { id: 1, label: "Order Placed", icon: <CheckCircle className="w-5 h-5" /> },
     { id: 2, label: "Shipped", icon: <Package className="w-5 h-5" /> },
@@ -48,10 +49,10 @@ export default function DeliveryProgress() {
         ))}
       </div>
 
-      {/* button for demo */}
+      {/* Button for demo */}
       <div className="flex justify-center mt-6">
         <button
-          onClick={() => setCurrentStep((prev) => (prev < 4 ? prev + 1 : 1))}
+          onClick={onNextStep}
           className="text-sm bg-green-500 text-white px-4 py-2 rounded-full hover:bg-green-600 transition"
         >
           Next Step
