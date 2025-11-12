@@ -1,31 +1,19 @@
 'use client';
 import "./employee.css";
 import Link from "next/link";
-import { AlertsProvider, useAlerts } from "@/lib/alerts/alerts-context";
-import AlertsModal from "@/components/alerts/alert_modal";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/auth";
 
-function AlertsNavItem() {
-  const { openWith, flaggedItems } = useAlerts();
+function EmployeeLayoutContent({ children }: { children: React.ReactNode }) {
+  const { user, logout } = useAuth();
+  const router = useRouter();
+
+  const handleSignOut = () => {
+    logout();
+    router.push('/login');
+  };
 
   return (
-    <li>
-      <a
-        href="#"
-        onClick={(e) => {
-          e.preventDefault();
-          // Use the flagged items from context so client-side flags show immediately
-          openWith(flaggedItems);
-        }}
-      >
-        Alerts
-      </a>
-    </li>
-  );
-}
-
-export default function EmployeeLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <AlertsProvider>
     <div className="employee-container">
       {/* Sidebar */}
       <aside className="sidebar">
@@ -44,26 +32,31 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
             <li><Link href="/employee/dashboard">Dashboard</Link></li>
             <li><Link href="/employee/inventory">Inventory</Link></li>
             <li><Link href="/employee/stock-management">Stock Management</Link></li>
-            <AlertsNavItem />
+            <li><Link href="/employee/orders">Orders</Link></li>
+            <li><Link href="/employee/alerts">Alerts</Link></li>
           </ul>
 
-          <p className="menu-title">SETTINGS</p>
-          <ul>
-            <li><Link href="/employee/notification">Notification</Link></li>
-            <li><Link href="/employee/settings">Settings</Link></li>
-          </ul>
+          {user && (
+            <div className="user-info" style={{ padding: '1rem', marginTop: '2rem', borderTop: '1px solid #e5e7eb' }}>
+              <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.25rem' }}>Logged in as</p>
+              <p style={{ fontSize: '0.875rem', fontWeight: '600' }}>{user.full_name || user.email}</p>
+              <p style={{ fontSize: '0.75rem', color: '#6b7280', textTransform: 'capitalize' }}>{user.role}</p>
+            </div>
+          )}
         </div>
 
         {/* Sign Out Button */}
         <div className="signout-container">
-          <button className="signout-btn">Sign Out</button>
+          <button className="signout-btn" onClick={handleSignOut}>Sign Out</button>
         </div>
       </aside>
 
       {/* Main Content */}
       <main className="main-content">{children}</main>
     </div>
-    <AlertsModal />
-    </AlertsProvider>
   );
+}
+
+export default function EmployeeLayout({ children }: { children: React.ReactNode }) {
+  return <EmployeeLayoutContent>{children}</EmployeeLayoutContent>;
 }
