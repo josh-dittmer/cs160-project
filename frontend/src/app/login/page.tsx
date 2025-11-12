@@ -35,6 +35,8 @@ export default function LoginPage() {
                 router.push("/admin/dashboard");
             } else if (response.user.role === 'manager') {
                 router.push("/manager/dashboard");
+            } else if (response.user.role === 'employee') {
+                router.push("/employee/dashboard");
             } else {
                 router.push("/home/dashboard");
             }
@@ -60,6 +62,8 @@ export default function LoginPage() {
                 router.push("/admin/dashboard");
             } else if (response.user.role === 'manager') {
                 router.push("/manager/dashboard");
+            } else if (response.user.role === 'employee') {
+                router.push("/employee/dashboard");
             } else {
                 router.push("/home/dashboard");
             }

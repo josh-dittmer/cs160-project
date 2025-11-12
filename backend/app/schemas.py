@@ -349,3 +349,43 @@ class AuditLogStats(BaseModel):
     top_actors: list[dict[str, str | int]]  # [{"actor_email": "...", "count": ...}]
 
 
+# ============ Employee Schemas ============
+
+class ItemStockUpdate(BaseModel):
+    """Schema for updating item stock quantity (employee-only field)"""
+    stock_qty: conint(ge=0)
+
+
+class OrderListEmployee(BaseModel):
+    """Schema for employee order list view (read-only)"""
+    id: int
+    user_id: int
+    user_email: str
+    user_full_name: str | None
+    total_cents: int
+    total_items: int
+    created_at: datetime
+    delivered_at: datetime | None
+    payment_intent_id: str | None
+    is_delivered: bool
+    
+    class Config:
+        from_attributes = True
+
+
+class OrderDetailEmployee(BaseModel):
+    """Schema for employee order detail view (read-only)"""
+    id: int
+    user: OrderUserInfo
+    items: list[OrderItemAdmin]
+    total_cents: int
+    total_weight_oz: int
+    created_at: datetime
+    delivered_at: datetime | None
+    payment_intent_id: str | None
+    is_delivered: bool
+    
+    class Config:
+        from_attributes = True
+
+
