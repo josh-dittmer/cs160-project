@@ -16,7 +16,9 @@ function ItemSnippet({ cartItem }: { cartItem: CartItemT }) {
 }
 
 export default function OrderSummary({ order }: { order: OrderT }) {
-    const maxItemsDisplayed = 3;
+    console.log(order.items);
+
+    const maxItemsDisplayed = 5;
 
     return (
         <div className="flex flex-col gap-2 w-full">

@@ -191,6 +191,9 @@ class CreateSetupIntenetResponse(BaseModel):
     clientSecret: str
     customerSessionClientSecret: str
 
+class OrderRouteResponse(BaseModel):
+    polyline: str | None
+
 # ============ Admin Schemas ============
 
 class UserListAdmin(BaseModel):
@@ -348,4 +351,6 @@ class AuditLogStats(BaseModel):
     top_actions: list[dict[str, str | int]]  # [{"action_type": "...", "count": ...}]
     top_actors: list[dict[str, str | int]]  # [{"actor_email": "...", "count": ...}]
 
-
+class DeliveryVehicleAuth(BaseModel):
+    id: int
+    secret: str

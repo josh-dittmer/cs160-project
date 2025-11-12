@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, update
 from .database import engine, SessionLocal, Base
-from .models import Item, Review, Order, OrderItem, User, OrderStatus
+from .models import Item, Review, Order, OrderItem, User, OrderStatus, DeliveryVehicle
 from .auth import get_password_hash
 from datetime import datetime
 from .payment import create_stripe_customer
@@ -729,22 +729,22 @@ SAMPLE_REVIEWS = [
 ]
 
 SAMPLE_ORDERS = [
-    dict(
-        user_id=1,
-        created_at=datetime.strptime("2025-01-01 10:00:00", "%Y-%m-%d %H:%M:%S"),
-        delivered_at=datetime.strptime("2025-01-01 10:30:00", "%Y-%m-%d %H:%M:%S"),
-        display_address="123 Main St, San Jose, CA 95112",
-        longitude=-121.8863,
-        latitude=37.3382,
-    ),
-    dict(
-        user_id=1,
-        created_at=datetime.strptime("2025-02-14 12:00:00", "%Y-%m-%d %H:%M:%S"),
-        delivered_at=datetime.strptime("2025-02-14 12:45:00", "%Y-%m-%d %H:%M:%S"),
-        display_address="123 Main St, San Jose, CA 95112",
-        longitude=-121.8863,
-        latitude=37.3382,
-    ),
+    #dict(
+    #    user_id=1,
+    #    created_at=datetime.strptime("2025-01-01 10:00:00", "%Y-%m-%d %H:%M:%S"),
+    #    delivered_at=datetime.strptime("2025-01-01 10:30:00", "%Y-%m-%d %H:%M:%S"),
+    #    display_address="123 Main St, San Jose, CA 95112",
+    #    longitude=-121.8863,
+    #    latitude=37.3382,
+    #),
+    #dict(
+    #    user_id=1,
+    #    created_at=datetime.strptime("2025-02-14 12:00:00", "%Y-%m-%d %H:%M:%S"),
+    #    delivered_at=datetime.strptime("2025-02-14 12:45:00", "%Y-%m-%d %H:%M:%S"),
+    #    display_address="123 Main St, San Jose, CA 95112",
+    #    longitude=-121.8863,
+    #    latitude=37.3382,
+    #),
     dict(
         user_id=1,
         created_at=datetime.strptime("2025-03-03 18:30:00", "%Y-%m-%d %H:%M:%S"),
@@ -779,6 +779,11 @@ SAMPLE_ORDER_ITEMS = [
 
     dict(order_id=4, item_id=2, quantity=6),
     dict(order_id=4, item_id=7, quantity=2),
+]
+
+SAMPLE_DELIVERY_VEHICLES = [
+    dict(id=1, secret_hash=get_password_hash("abc123")),
+    dict(id=2, secret_hash=get_password_hash("abc123")),
 ]
 
 def seed():
@@ -856,6 +861,11 @@ def seed():
         if db.query(OrderItem).count() == 0:
             for d in SAMPLE_ORDER_ITEMS:
                 db.add(OrderItem(**d))
+            db.commit()
+
+        if db.query(DeliveryVehicle).count() == 0:
+            for d in SAMPLE_DELIVERY_VEHICLES:
+                db.add(DeliveryVehicle(**d))
             db.commit()
 
         # add a few reviews if none

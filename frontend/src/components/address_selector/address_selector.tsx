@@ -3,9 +3,10 @@
 import GooglePlacesAutocomplete from "@/components/google_places_autocomplete/GooglePlacesAutocomplete";
 import { AddressContext } from "@/contexts/address";
 import { useAuth } from "@/contexts/auth";
+import { MapsContext } from "@/contexts/maps";
 import { ThemeContext } from "@/contexts/theme";
 import { updateProfile } from "@/lib/api/profile";
-import { GoogleMap, Marker, OverlayView, useLoadScript } from "@react-google-maps/api";
+import { GoogleMap, Marker, OverlayView } from "@react-google-maps/api";
 import { ChevronDown, Crosshair, MapPin, X } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 
@@ -50,11 +51,13 @@ export default function AddressSelector() {
     const [isLocating, setIsLocating] = useState(false);
 
     // Load Google Maps API with a unique ID to prevent duplicate loading
-    const { isLoaded: isMapsLoaded } = useLoadScript({
+    /*const { isLoaded: isMapsLoaded } = useLoadScript({
         googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
         libraries,
         id: 'google-maps-script', // Same ID as GooglePlacesAutocomplete to share the script
-    });
+    });*/
+
+    const mapsContext = useContext(MapsContext);
 
     // Address form state
     const [addressData, setAddressData] = useState({
@@ -100,14 +103,14 @@ export default function AddressSelector() {
 
     // Geocode address when map is opened and API is loaded
     useEffect(() => {
-        if (showMap && user?.address && !coordinates && !isGeocoding && isMapsLoaded) {
+        if (showMap && user?.address && !coordinates && !isGeocoding && mapsContext?.loaded) {
             geocodeAddress();
         }
-    }, [showMap, user?.address, isMapsLoaded, coordinates, isGeocoding]);
+    }, [showMap, user?.address, mapsContext?.loaded, coordinates, isGeocoding]);
 
     // Geocode address when map is opened
     const geocodeAddress = () => {
-        if (!user?.address || isGeocoding || !isMapsLoaded) return;
+        if (!user?.address || isGeocoding || !mapsContext?.loaded) return;
 
         // Check if Google Maps API is loaded
         if (typeof window === 'undefined' || !window.google || !window.google.maps) {
@@ -665,7 +668,7 @@ export default function AddressSelector() {
                                         Google Maps API key not configured
                                     </p>
                                 </div>
-                            ) : !isMapsLoaded ? (
+                            ) : !mapsContext?.loaded ? (
                                 <div className={`flex items-center justify-center h-[400px] rounded ${isDark ? 'bg-gray-700' : 'bg-gray-100'
                                     }`}>
                                     <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>

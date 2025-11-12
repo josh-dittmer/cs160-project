@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "cs160-project-sjsu",
+  "private_key_id": "0557a04893a68a9a19f5385a5b2f35fb1c55f07e",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC4fsCptPMjb46R\ndairC42KUEz+LMzVJlnZj0TuriuxauKaw3TrE+3tMQL+AAYjpUmrNckYJonwibSh\nobI0pdHx9XD/VCJt45flwDi4UQ5UR+lb3kYgHmxs5ZggUbbrlMXTlRnctm4UkVQI\nUIApaJwMHhZY6po/4GtK8f3v1QMelx78p3C6XHH8oraOZz+uFGnpsuA22NNvA4m4\nA3eBVyG4NtrW/odlAjFeCGC1C4iBuPJvJsumnzRKl3yBLCoYw2HnRiyu/xyrNIpU\nHZP9Xi/OC9I0Ja7c6XNTVDW5wffNTWgTRlySRaUC0PutEI3kUTJzsd9vKCL4kS31\nvYsbzHlrAgMBAAECggEAFrZj+YBxPjeJkZaugQAXGKPyFohlXwgtn37nuYpvjpPd\n+bd+OUJm1ABooeRW3SSIAS/J5dM4wAfz2MITMjAHvIW+t3AgHO8b0Ajt8qLn5LBF\npi2i7GlSZ8WMCM6GelICWJ3OZUGAI8AQXEWswWxDaap6jc+z1ZFHJB7OaCwNCkLS\nTh9XCjY48amEe8R9wsZqQvCYs8ww74pteDfXAEA3K7YTxykr6IGPOLvf3Dz4zpt9\nE3kzxn+GBr/No2IVpEsGgGIRDqmcm248wOF621itu1S4OeYMMguhXhh8amBldsIQ\n/ryJA6x6oipT00PB6v4I6Jmjkz3BsjsjIZJcnxP4gQKBgQD8XCFX/feH/HqnlnrI\nBawf8jfyJGdDXmsBmzNiRx+R9LOuvAKfkO+6HraQEYCTvHVJZrPRVUS8bJqePHib\necJRm+GafGvBdxUvPhPQZT448zs9WiTFVnic2ED+HQzn5+4BHaBHdSX0FdDzcqkh\ntPTWBd7x2kT0XFb9o+uCjwMCUQKBgQC7KAX/DHD/lLP8BDRBnNoatYR13X03Wv3o\n3pR0alhTWgBVMEbRkGBnb7SKcqbYewGLXct3N7zQxEqom0U655T3DlNkGh8/Hvab\nt4m1etIgnIutZCYIni45CzLeKzbH1ONH9x+NzyWVTMuM7+odJxzG1Q6TUA3MPyrq\nPJPFvmT0+wKBgQD6tTybAj/r5TSlUaXhGWGKy0QxV2EPWLnN+rXtqOMASa5IpZel\nloPSz7hnIDwwiUWsClASYzfKScrB8SmQrEIUeVyD8Z/Lr9Zn/LAKlMpgIaR0qx1k\nvydMCrtmuM2dhpi4mwokc4mlGBdiBENqrS+fgG2gsEtYyHPTwAm0xwciQQKBgDI5\nTFqkSRKdIiuoKSnOYM04FuLWXErllSvPx0DyZN+BUIOL4AVO3EAFvwpEODfx0nlG\n41oL0BSqCGr0uABVsykVZBWB2Q7ETWN+PmtAGXF88RLHxFkdscPHGJB8Qkgf/hoK\n3CHfC/Pj1t/sZgQKwfMtq6qmmf1MmkSfmvw+2rLPAoGBALa8TphOElB1HcG34djD\nbsseIooM3FVA4C8goSidObQKbgunEdMwN5kD6tllT1UJ1C2eORzyuSB3uariH5QY\nsCzujmjOlX5VTW9eAiiXpjGNHHVy9zmUF8luuJ1tDc+RW6ER5d6H3irvijzCMhky\n5zWqVCQEly/EcidviwWmjxPQ\n-----END PRIVATE KEY-----\n",
+  "client_email": "dev-environment-account@cs160-project-sjsu.iam.gserviceaccount.com",
+  "client_id": "107911078246028796392",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/dev-environment-account%40cs160-project-sjsu.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

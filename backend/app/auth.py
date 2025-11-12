@@ -104,7 +104,6 @@ class UserCtx(BaseModel):
     stripe_customer_id: str | None = None
     reports_to: int | None = None
 
-
 def get_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     db: Session = Depends(get_db),
@@ -120,7 +119,13 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    token = credentials.credentials
+    return get_user_from_token(token=credentials.credentials, db=db)
+
+def get_user_from_token(
+    token: str,
+    db: Session,
+) -> UserCtx:
+    token = token
     payload = decode_access_token(token)
     user_id_str = payload.get("sub")
     if user_id_str is None:

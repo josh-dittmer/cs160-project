@@ -136,6 +136,23 @@ export const CreateSetupIntentResponse = t.type({
 
 export type CreateSetupIntentResponseT = t.TypeOf<typeof CreateSetupIntentResponse>;
 
+export const OrderRouteResponse = t.type({
+    polyline: t.union([t.string, t.null])
+});
+
+export type OrderRouteResponseT = t.TypeOf<typeof OrderRouteResponse>;
+
+export const WebSocketMessage = t.type({
+    type: t.union([
+        t.literal('orderUpdate'),
+        t.literal('orderDelivered'),
+        t.literal('vehicleMoved')
+    ]),
+    data: t.unknown
+})
+
+export type WebSocketMessageT = t.TypeOf<typeof WebSocketMessage>;
+
 export const ItemsListResponse = t.array(Item);
 export const ItemsByCategoryResponse = t.record(t.string, t.array(Item));
 export const SearchSuggestionsResponse = t.array(SearchSuggestion);

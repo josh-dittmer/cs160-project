@@ -114,6 +114,24 @@ class Review(Base):
         CheckConstraint("rating BETWEEN 1 AND 5", name="ck_rating_range"),
     )
 
+class DeliveryVehicleStatus(enum.Enum):
+    READY = "ready"
+    DELIVERING = "delivering"
+    RETURNING = "returning"
+
+class DeliveryVehicle(Base):
+    __tablename__ = "delivery_vehicle"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    secret_hash: Mapped[str] = mapped_column(String(32))
+
+    last_latitude: Mapped[float] = mapped_column(Float, nullable=True)
+    last_longitude: Mapped[float] = mapped_column(Float, nullable=True)
+
+    status: Mapped[DeliveryVehicleStatus] = mapped_column(
+        SQLEnum(DeliveryVehicleStatus), default=DeliveryVehicleStatus.READY, index=True
+    )
+
 class CartItem(Base):
     __tablename__ = "cart_item"
 
@@ -143,14 +161,20 @@ class Order(Base):
         DateTime(timezone=True), nullable=True
     )
     payment_intent_id: Mapped[str | None] = mapped_column(String(255), index=True)
+
     display_address: Mapped[str] = mapped_column(String(255))
     latitude: Mapped[float] = mapped_column(Float)
     longitude: Mapped[float] = mapped_column(Float)
+
     status: Mapped[OrderStatus] = mapped_column(
         SQLEnum(OrderStatus), default=OrderStatus.PACKING, index=True
     )
 
+    polyline: Mapped[str] = mapped_column(String(255), nullable=True)
+    delivery_vehicle_id: Mapped[int] = mapped_column(ForeignKey("delivery_vehicle.id"), index=True, nullable=True)
+
     user = relationship(User)
+    delivery_vehicle = relationship(DeliveryVehicle)
 
 class OrderItem(Base):
     __tablename__ = "order_items"
