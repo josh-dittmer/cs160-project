@@ -191,7 +191,7 @@ export default function StockManagementPage(){
                     ))}
                     {filtered.length === 0 && (
                         <tr>
-                            <td colSpan={5} className="px-6 py-10 text-center text-zinc-500">
+                            <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
                                 No Products match the filers your selected
                             </td>
                         </tr>
