@@ -116,13 +116,13 @@ export default function StockManagementPage(){
                     value = {query}
                     onChange={(e)=> setQuery(e.target.value)}
                     placeholder="Search Products"
-                    className="h-10 w-[240px] rounded-xl border border-zinc-200 pl-9 pr-3 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-300"
+                    className="h-10 w-[280px] rounded-xl border border-zinc-200 pl-9 pr-3 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-300"
                     />      
                 </div>
                 <select 
                 value={category}
                 onChange = {(e)=> setCategory(e.target.value)}
-                className ="h-10 w-[180px] rounded-xl border border-zinc-200 bg-white px-3 text-sm focus:border-zinc-300">
+                className ="h-10 w-[200px] rounded-xl border border-zinc-200 bg-white px-3 text-sm focus:border-zinc-300">
                 {categories.map((c)=>(
                     <option key={c}>{c}</option>
                 ))}
@@ -131,7 +131,7 @@ export default function StockManagementPage(){
                 <select
                 value = {status}
                 onChange = {(e)=> setStatus(e.target.value as 'All' | Status)}
-                className="h-10 w-[160px] rounded-xl border border-zinc-200 bg-white px-3 text-sm focus:border-zinc-300"
+                className="h-10 w-[180px] rounded-xl border border-zinc-200 bg-white px-3 text-sm focus:border-zinc-300"
                 >
                 {['All', 'In Stock', 'Out of Stock', 'Low Stock'].map((s)=>(
                     <option key={s}>{s}</option>
@@ -141,46 +141,46 @@ export default function StockManagementPage(){
             </div>
 
             <CardTable>
-                <thead className="bg-zinc-50 text-zinc-600">
+                <thead className="bg-zinc-50 text-zinc-600 text-left">
                     <tr>
-                    <th className="px-4 py-3 font-medium">Name</th>
-                    <th className="px-4 py-3 font-medium">ID</th>
-                    <th className="px-4 py-3 font-medium">Status</th>
-                    <th className="px-4 py-3 font-medium">Quantity</th>
-                    <th className="px-4 py-3 font-medium">Actions</th>
+                    <th className="px-6 py-4 w-[28%] font-medium">Name</th>
+                    <th className="px-6 py-4 w-[14%] font-medium text-center">ID</th>
+                    <th className="px-6 py-4 w-[18%] font-medium">Status</th>
+                    <th className="px-6 py-4 w-[14%] font-medium text-center">Quantity</th>
+                    <th className="px-6 py-4 w-[26%] font-medium text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100">
                     {filtered.map((p)=>(
                         <tr key={p.id} className="hover:bg-zinc-50/60">
-                            <td className="px-4 py-3">
+                            <td className="px-6 py-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-zinc-100">
-                                        <Icons.Package2 className="h-4 w-4 text-zinc-500" />
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-md bg-zinc-100">
+                                        <Icons.Package2 className="h-5 w-5 text-zinc-500" />
                                     </div>
                                     <span className="font-medium text-zinc-900">{p.name}</span>
                                 </div>
                             </td>
-                            <td className="px-4 py-3 text-zinc-600">{p.id}</td>
-                            <td className="px-4 py-3">
+                            <td className="px-6 py-4 text-center text-zinc-600">{p.id}</td>
+                            <td className="px-6 py-4">
                                 <StatusBadge status={p.status} />
                             </td>
-                            <td className="px-4 py-3 text-center text-zinc-600">
-                                <div className="inline-flex h-6 w-10 items-center justify-center rounded-md bg-zinc-100 text-xs font-medium text-zinc-700">
+                            <td className="px-6 py-4 text-center text-zinc-600">
+                                <div className="inline-flex h-7 w-10 items-center justify-center rounded-md bg-zinc-100 text-sm font-medium text-zinc-700">
                                     {p.quantity}
                                 </div>
                             </td>
-                            <td className="px-4 py-3">
+                            <td className="px-6 py-4">
                                 <div className="flex justify-end gap-3">
-                                    <button className="rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                                    <button className="rounded-lg bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
                                     onClick={()=> handleMarkOOS(p.id)}>
                                     Mark OOS
                                     </button>
-                                    <button className="rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                                    <button className="rounded-lg bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
                                     onClick={()=> handleOpenFlag(p.id)}>
                                     Flag D/E
                                     </button>
-                                    <button className="rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                                    <button className="rounded-lg bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
                                     onClick={()=> handleOpenQty(p.id)}>
                                     Update QYT
                                     </button>
@@ -191,7 +191,7 @@ export default function StockManagementPage(){
                     ))}
                     {filtered.length === 0 && (
                         <tr>
-                            <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
+                            <td colSpan={5} className="px-6 py-10 text-center text-zinc-500">
                                 No Products match the filers your selected
                             </td>
                         </tr>

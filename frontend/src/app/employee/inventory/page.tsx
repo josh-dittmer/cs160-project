@@ -5,7 +5,6 @@ import type { Product, Status } from "@/lib/api/tableTypes";
 import { CardTable } from "@/components/employee_table/card_table";
 import { StatusBadge } from "@/components/employee_table/status_badge";
 import { Icons } from "@/components/employee_table/icons";
-import "./inventory.css";
 
 export default function InventoryPage() {
     const [products, setProducts] = useState<Product[]>([]);
@@ -32,71 +31,70 @@ export default function InventoryPage() {
     }, [products, query, category, status]);
 
     return (
-        <div className="inventory-page">
-            <h1 className="page-title">Query Inventory</h1>
+        <div className="p-8">
+            <h1 className="mb-6 text-5xl font-semibold tracking-tight">Query Inventory</h1>
 
-            <div className="filters-row">
-                <div className="search-wrap">
-                    <Icons.Search className="search-icon" />
+            <div className="mb-6 flex flex-wrap items-center gap-3">
+                <div className="relative">
+                    <Icons.Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                     <input
                         value={query}
                         onChange={e => setQuery(e.target.value)}
                         placeholder="Search Products"
-                        className="search-input" />
+                        className="h-10 w-[240px] rounded-xl border border-zinc-200 pl-9 pr-3 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-300" />
                 </div>
 
-                <div className="select-wrap">
-                    <select value= {category} onChange={e => setCategory(e.target.value)}
-                        className = "select">
-                        {categories.map(c => <option key={c}>{c}</option>)}       
-                    </select>
-                </div>
+                <select value= {category} onChange={e => setCategory(e.target.value)}
+                    className = "h-10 w-[180px] rounded-xl border border-zinc-200 bg-white px-3 text-sm focus:border-zinc-300">
+                    {categories.map(c => <option key={c}>{c}</option>)}       
+                </select>
 
-                <div className="select-wrap">
-                    <select value={status} onChange={e => setStatus(e.target.value as any)}
-                        className = "select">
-                        {["All", "In Stock", "Out of Stock", "Low Stock"].map(s =>
-                            <option key={s}>{s}</option>)}
-                    </select>
-                </div>
+                <select value={status} onChange={e => setStatus(e.target.value as any)}
+                    className = "h-10 w-[160px] rounded-xl border border-zinc-200 bg-white px-3 text-sm focus:border-zinc-300">
+                   {["All", "In Stock", "Out of Stock", "Low Stock"].map(s =>
+                        <option key={s}>{s}</option>)}
+                </select>
             </div>
 
             <CardTable>
-                <thead>
+                <thead className="bg-zinc-50 text-zinc-600 text-left">
                     <tr>
-                        <th>Product</th>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Quantity</th>
-                        <th>Status</th>
-                        <th style={ {textAlign: "right"}} />
+                        <th className="px-6 py-4 w-[25%] font-medium">Product</th>
+                        <th className="px-6 py-4 w-[15%] font-medium text-center">ID</th>
+                        <th className="px-6 py-4 w-[25%] font-medium">Name</th>
+                        <th className="px-6 py-4 w-[15%] font-medium text-center">Quantity</th>
+                        <th className="px-6 py-4 w-[20%] font-medium text-center">Status</th>
+                        <th className="px-6 py-4" />
                     </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-zinc-100">
                     {filteredProducts.map(p => (
-                        <tr key={p.id}>
-                            <td>
-                                <div className="product-cell">
-                                    <div className="product-thumb">
-                                        <Icons.Package2 className ="thumb-icon" />
+                        <tr key={p.id}  className="hover:bg-zinc-50/60">
+                            <td className="px-6 py-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-md bg-zinc-100 shrink-0">
+                                        <Icons.Package2 className ="h-5 w-5 text-zinc-500" />
                                     </div>
-                                    <span className ="product-name">{p.name}</span>
+                                    <span className ="font-medium text-zinc-900">{p.name}</span>
                                 </div>
                             </td>
-                            <td className="muted">{p.id}</td>
-                            <td className="muted">{p.name}</td>
-                            <td><span className="qty-pill">{p.quantity}</span></td>
-                            <td><StatusBadge status={p.status} /></td>
-                            <td style= {{textAlign: "right"}}>
-                                <button className="kebab-btn" aria-label="more">
-                                    <Icons.MoreVertical className="kebab-icon" />
-                                </button>
+                            <td className="px-6 py-4 text-center text-zinc-600">{p.id}</td>
+                            <td className="px-6 py-4 text-zinc-600">{p.name}</td>
+
+                            <td className="px-6 py-4 text-center">
+                                <span className="inline-flex h-7 min-w-10 items-center justify-center rounded-md border border-zinc-200 px-3 text-sm font-medium text-zinc-700">
+                                    {p.quantity}
+                                </span>
+                            </td>
+
+                            <td className="px-6 py-4 text-center">
+                                <StatusBadge status={p.status} />
                             </td>
                         </tr>
                     ))}
                     {filteredProducts.length === 0 && (
                         <tr>
-                            <td colSpan={6} style={{ textAlign: "center", padding: "32", color: "#71717a"}}>
+                            <td colSpan={6} className="px-4 py-8 text-center text-zinc-500">
                                 No products found. Try adjusting your search or filters.
                             </td>
                         </tr>

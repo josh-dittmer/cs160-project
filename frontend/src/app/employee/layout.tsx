@@ -47,11 +47,6 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
             <AlertsNavItem />
           </ul>
 
-          <p className="menu-title">SETTINGS</p>
-          <ul>
-            <li><Link href="/employee/notification">Notification</Link></li>
-            <li><Link href="/employee/settings">Settings</Link></li>
-          </ul>
         </div>
 
         {/* Sign Out Button */}
