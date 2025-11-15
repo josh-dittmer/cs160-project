@@ -43,6 +43,13 @@ class Item(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+    
+    # Relationship to users who favorited this item
+    favorited_by_users: Mapped[list["User"]] = relationship(
+        "User",
+        secondary="favorites",
+        back_populates="favorited_items"
+    )
 
 
 class User(Base):
@@ -93,6 +100,24 @@ class User(Base):
         back_populates="subordinates",
         remote_side=[id],
         foreign_keys=[reports_to]
+    )
+    
+    # Relationship to favorited items (many-to-many through Favorite table)
+    favorited_items: Mapped[list["Item"]] = relationship(
+        "Item",
+        secondary="favorites",
+        back_populates="favorited_by_users"
+    )
+
+
+class Favorite(Base):
+    """Join table for user favorites (many-to-many relationship)"""
+    __tablename__ = "favorites"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True, index=True)
+    item_id: Mapped[int] = mapped_column(ForeignKey("items.id"), primary_key=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
     )
 
 
