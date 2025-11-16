@@ -816,13 +816,72 @@ def seed():
                 db.commit()
             print(f"✓ Admin user already exists: {admin_email}")
         
-        # Create sample customer users
-        sample_customers = [
+        # Create manager user (Mike)
+        manager_email = "mike@sjsu.edu"
+        manager_password = "mike12345"
+        
+        manager_user = db.query(User).filter(User.email == manager_email).first()
+        if not manager_user:
+            manager_user = User(
+                email=manager_email,
+                hashed_password=get_password_hash(manager_password),
+                full_name="Mike",
+                role="manager",
+                reports_to=None,  # Managers don't report to anyone
+                stripe_customer_id=create_stripe_customer(manager_email).id,
+                is_active=True
+            )
+            db.add(manager_user)
+            db.commit()
+            db.refresh(manager_user)
+            print(f"✓ Manager created: {manager_email} / {manager_password}")
+        else:
+            # Update existing Mike to be a manager if not already
+            if manager_user.role != "manager" or manager_user.reports_to is not None:
+                manager_user.role = "manager"
+                manager_user.reports_to = None  # Managers don't report to anyone
+                db.commit()
+                db.refresh(manager_user)
+                print(f"✓ Updated Mike to manager role: {manager_email}")
+            else:
+                print(f"✓ Manager already exists: {manager_email}")
+        
+        # Create employee users (report to Mike)
+        sample_employees = [
             {"name": "Alice", "email": "alice@sjsu.edu", "password": "alice12345"},
             {"name": "Bob", "email": "bob@sjsu.edu", "password": "bob12345"},
-            {"name": "Mike", "email": "mike@sjsu.edu", "password": "mike12345"},
-            {"name": "George", "email": "george@sjsu.edu", "password": "george12345"},
             {"name": "Trudy", "email": "trudy@sjsu.edu", "password": "trudy12345"},
+        ]
+        
+        for employee in sample_employees:
+            existing_user = db.query(User).filter(User.email == employee["email"]).first()
+            if not existing_user:
+                new_employee = User(
+                    email=employee["email"],
+                    hashed_password=get_password_hash(employee["password"]),
+                    full_name=employee["name"],
+                    role="employee",
+                    reports_to=manager_user.id,  # Employees report to Mike
+                    stripe_customer_id=create_stripe_customer(employee["email"]).id,
+                    is_active=True
+                )
+                db.add(new_employee)
+                db.commit()
+                db.refresh(new_employee)
+                print(f"✓ Employee created: {employee['email']} / {employee['password']}")
+            else:
+                # Update existing users to be employees if not already
+                if existing_user.role != "employee":
+                    existing_user.role = "employee"
+                    existing_user.reports_to = manager_user.id
+                    db.commit()
+                    print(f"✓ Updated to employee role: {employee['email']}")
+                else:
+                    print(f"✓ Employee already exists: {employee['email']}")
+        
+        # Create sample customer users
+        sample_customers = [
+            {"name": "George", "email": "george@sjsu.edu", "password": "george12345"},
             {"name": "Alex", "email": "alex@sjsu.edu", "password": "alex12345"},
             {"name": "John", "email": "john@sjsu.edu", "password": "john12345"},
         ]
