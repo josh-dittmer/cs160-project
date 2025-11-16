@@ -18,16 +18,20 @@ An on-demand food delivery service built with FastAPI (backend) and Next.js (fro
 
 ### Backend (`backend/.env`)
 ```bash
-SECRET_KEY=your-secret-key-here
+GOOGLE_REDIRECT_URI=your-google-redirect-uri
 GOOGLE_CLIENT_ID=your-google-client-id
-GEMINI_API_KEY=your-gemini-api-key 
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GEMINI_API_KEY=your-gemini-api-key
+STRIPE_API_KEY=your-stripe-api-key
 ```
 
 ### Backend - Google Service Account (`backend/keys.json`)
 
 **Required for route optimization feature:**
 
-Create a `keys.json` file in the `backend/` directory with your Google service account credentials:
+> **📢 Contact a team member for the `keys.json` file with the actual Google service account credentials.**
+
+Create a `keys.json` file in the `backend/` directory with the following structure:
 
 ```json
 {
@@ -40,7 +44,8 @@ Create a `keys.json` file in the `backend/` directory with your Google service a
   "auth_uri": "https://accounts.google.com/o/oauth2/auth",
   "token_uri": "https://oauth2.googleapis.com/token",
   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "your-cert-url"
+  "client_x509_cert_url": "your-cert-url",
+  "universe_domain": "googleapis.com"
 }
 ```
 
@@ -57,6 +62,36 @@ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your-google-maps-api-key
 
 ### Backend Setup
 
+> **📢 Important for Team Members:** If you previously had `.venv` in the project root, the automated scripts will automatically detect and remove it. This project now uses `backend/.venv` instead.
+
+#### Quick Start with Script (Recommended)
+
+The easiest way to run the backend is using our automated setup script:
+
+**macOS/Linux:**
+```bash
+cd cs160-project/backend
+./run_backend.sh
+```
+
+**Windows PowerShell:**
+```powershell
+cd cs160-project\backend
+.\run_backend.ps1
+```
+
+The script will:
+- ✅ Check for and create virtual environment if needed
+- ✅ Activate the virtual environment automatically
+- ✅ Install/update dependencies from requirements.txt
+- ✅ Give you the option to seed the database
+- ✅ Give you the option to run robot simulation (if keys.json exists)
+- ✅ Check for required configuration files (.env, keys.json)
+- ✅ Start the backend server with proper configuration
+- ✅ Gracefully stop all processes (server + robot) on Ctrl+C
+
+**Or follow the manual steps below:**
+
 #### 1. Navigate to backend directory
 
 ```bash
@@ -65,14 +100,9 @@ cd cs160-project/backend
 
 #### 2. Create virtual environment *(First time only)*
 
-> **⚠️ Skip this step if `.venv` folder already exists**
-
-> **Note:** If you already have `.venv` in the project root, you can use it instead:
-> ```bash
-> cd cs160-project  # (from project root)
-> source .venv/bin/activate  # or .venv\Scripts\activate on Windows
-> cd backend
-> ```
+> **⚠️ Skip this step if `backend/.venv` folder already exists**
+>
+> **💡 Note:** The automated scripts (`run_backend.sh`/`run_backend.ps1`) handle this automatically.
 
 ```bash
 python3 -m venv .venv
@@ -96,15 +126,15 @@ source .venv/bin/activate
 .venv\Scripts\activate
 ```
 
-#### 4. Install backend dependencies *(First time only, or when requirements.txt changes)*
+#### 4. Install backend dependencies
 
-> **⚠️ Only run this:**
-> - The first time you set up the project
-> - When `requirements.txt` has been updated (after pulling new code)
+> **💡 Note:** The automated scripts handle this automatically. If running manually:
 
 ```bash
 pip install -r requirements.txt
 ```
+
+> This command is safe to run every time - it quickly verifies existing packages and only installs/updates if needed.
 
 #### 5. Optional: Seed the database *(Optional - only when you want fresh data)*
 
@@ -130,14 +160,26 @@ Test it: Open `http://localhost:8080/healthz` or run `curl http://localhost:8080
 
 **📝 Daily Workflow Summary:**
 
-**macOS/Linux:**
+**macOS/Linux (Quick - Using Script):**
+```bash
+cd cs160-project/backend
+./run_backend.sh
+```
+
+**Windows PowerShell (Quick - Using Script):**
+```powershell
+cd cs160-project\backend
+.\run_backend.ps1
+```
+
+**macOS/Linux (Manual):**
 ```bash
 cd cs160-project/backend
 source .venv/bin/activate  # Only if not already activated
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
 ```
 
-**Windows:**
+**Windows PowerShell (Manual):**
 ```powershell
 cd cs160-project\backend
 .venv\Scripts\activate  # Only if not already activated
@@ -153,6 +195,12 @@ The robot simulation processes queued orders, changes them to "shipped" status, 
 > **⚠️ Optional:** Only run this if you want to simulate order processing and test route optimization.
 >
 > **Prerequisites:** Make sure `backend/keys.json` is set up (see Environment Variables section above).
+
+**Option 1: Using the automated script (Recommended)**
+
+The script (`run_backend.sh` for macOS/Linux or `run_backend.ps1` for Windows) will automatically detect `keys.json` and prompt you to run the robot simulation alongside the backend server. Both processes will stop gracefully when you press Ctrl+C.
+
+**Option 2: Run manually**
 
 **macOS/Linux:**
 ```bash
@@ -185,15 +233,13 @@ python -m app.robot.main
 cd cs160-project/frontend
 ```
 
-#### 2. Install dependencies *(First time only, or when package.json changes)*
-
-> **⚠️ Only run this:**
-> - The first time you set up the project
-> - When `package.json` or `package-lock.json` has been updated (after pulling new code)
+#### 2. Install dependencies
 
 ```bash
 npm install
 ```
+
+> **💡 Note:** This command is safe to run anytime - it quickly verifies existing packages and only installs/updates if needed.
 
 #### 3. Start the development server *(Run every time)*
 
@@ -234,7 +280,13 @@ npm run dev
 
 **macOS/Linux:**
 
-Terminal 1 - Backend:
+Terminal 1 - Backend (Quick):
+```bash
+cd cs160-project/backend
+./run_backend.sh
+```
+
+Terminal 1 - Backend (Manual):
 ```bash
 cd cs160-project/backend
 source .venv/bin/activate  # Only if not already activated
@@ -247,9 +299,15 @@ cd cs160-project/frontend
 npm run dev
 ```
 
-**Windows:**
+**Windows PowerShell:**
 
-Terminal 1 - Backend:
+Terminal 1 - Backend (Quick):
+```powershell
+cd cs160-project\backend
+.\run_backend.ps1
+```
+
+Terminal 1 - Backend (Manual):
 ```powershell
 cd cs160-project\backend
 .venv\Scripts\activate  # Only if not already activated
@@ -394,7 +452,7 @@ pytest tests/test_auth.py -v
 pytest tests/test_admin.py -v
 ```
 
-> **Note:** If you have `.venv` in the project root, activate it there first, then `cd backend` before running tests.
+> **💡 Note:** Tests should be run from the `backend/` directory with the virtual environment activated.
 
 ---
 
@@ -438,6 +496,13 @@ CS160 Project Team 6
 
 ## 🐛 Troubleshooting
 
+### Old .venv in project root
+- The automated scripts (`run_backend.sh`/`run_backend.ps1`) will automatically detect and remove any old `.venv` in the project root
+- The project now uses `backend/.venv` for better organization
+- If running manually, you can delete it yourself:
+  - macOS/Linux: `rm -rf .venv` (from project root)
+  - Windows PowerShell: `Remove-Item -Recurse -Force .venv` (from project root)
+
 ### Backend won't start
 - Make sure you're in the backend directory: `cd backend`
 - Make sure virtual environment is activated:
@@ -445,6 +510,13 @@ CS160 Project Team 6
   - Windows PowerShell: `.venv\Scripts\activate`
 - Check if port 8080 is already in use
 - Verify all dependencies are installed: `pip install -r requirements.txt`
+
+### PowerShell script won't run (Windows)
+- If you get an execution policy error when running `.\run_backend.ps1`:
+  ```powershell
+  Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+  ```
+- Then try running the script again
 
 ### Frontend won't start
 - Make sure you're in the frontend directory: `cd frontend`
