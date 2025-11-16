@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import ItemCard from "@/components/item/item";
-import { ItemT } from "@/lib/api/models";
 import { useAuth } from "@/contexts/auth";
 import { getFavorites, FavoriteItem } from "@/lib/api/favorites";
 
