@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth";
 import { addFavorite, removeFavorite, isFavorited } from "@/lib/api/favorites";
 
-export default function ItemCard({ item }: { item: ItemT }) {
+export default function ItemCard({ item, onFavoriteToggle }: { item: ItemT; onFavoriteToggle?: () => void }) {
   const { mutate } = useUpsertCartItemMutation();
   const { token } = useAuth();
   const [isFavorite, setIsFavorite] = useState(false);
@@ -41,6 +41,11 @@ export default function ItemCard({ item }: { item: ItemT }) {
       } else {
         await addFavorite(token, item.id);
         setIsFavorite(true);
+      }
+      
+      // Notify parent component about the change
+      if (onFavoriteToggle) {
+        onFavoriteToggle();
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);

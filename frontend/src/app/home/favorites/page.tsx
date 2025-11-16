@@ -13,26 +13,32 @@ export default function FavoritesPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Load favorites from backend
+  const fetchFavorites = async () => {
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const data = await getFavorites(token);
+      setFavorites(data);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching favorites:', err);
+      setError('Failed to load favorites');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchFavorites = async () => {
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const data = await getFavorites(token);
-        setFavorites(data);
-      } catch (err) {
-        console.error('Error fetching favorites:', err);
-        setError('Failed to load favorites');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchFavorites();
   }, [token]);
+
+  // Callback to refresh favorites list when an item is unfavorited
+  const handleFavoriteToggle = () => {
+    fetchFavorites();
+  };
 
   return (
     <main className="space-y-6">
@@ -51,7 +57,7 @@ export default function FavoritesPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
           {favorites.map((item) => (
-            <ItemCard key={item.id} item={item} />
+            <ItemCard key={item.id} item={item} onFavoriteToggle={handleFavoriteToggle} />
           ))}
         </div>
       )}
