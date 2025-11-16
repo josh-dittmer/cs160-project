@@ -86,8 +86,7 @@ stop_server() {
 
 clean_restart() {
   stop_server || true
-  # Remove DB so next seed recreates
-  rm -f "$REPO_ROOT_DIR/backend/sqlite.db" "$DATADIR/sqlite.db"
+  # Seed script automatically deletes and recreates DB
   seed_db
   start_server
 }

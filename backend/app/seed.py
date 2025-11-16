@@ -5,11 +5,15 @@ from .models import Item, Review, Order, OrderItem, User, OrderStatus, DeliveryV
 from .auth import get_password_hash
 from datetime import datetime
 from .payment import create_stripe_customer
+from pathlib import Path
 import json
 import stripe
 import os
 
 stripe.api_key = os.getenv("STRIPE_API_KEY", "")
+
+# Define the database file path
+DB_FILE = Path(__file__).parent.parent / "sqlite.db"
 
 SAMPLE_ITEMS = [
     # Fruits (5+ items)
@@ -787,59 +791,55 @@ SAMPLE_DELIVERY_VEHICLES = [
 ]
 
 def seed():
+    """Seed database with initial development data.
+    Automatically deletes existing sqlite.db and creates fresh database.
+    """
+    # Delete existing database file and related SQLite files if they exist
+    if DB_FILE.exists():
+        print(f"🗑️  Deleting existing database: {DB_FILE}")
+        DB_FILE.unlink()
+        print("✓ Database deleted")
+        
+        # Also clean up SQLite journal/WAL files
+        for ext in ["-wal", "-shm", "-journal"]:
+            journal_file = Path(str(DB_FILE) + ext)
+            if journal_file.exists():
+                journal_file.unlink()
+                print(f"✓ Deleted {journal_file.name}")
+    
+    # Create fresh database with schema
     Base.metadata.create_all(bind=engine)
+    print("✓ Database schema created")
+    
     db: Session = SessionLocal()
     try:
-        # Create admin user if not exists
-        admin_email = "admin@sjsu.edu"
-        admin_password = "admin123"
+        # Create admin user
+        admin_user = User(
+            email="admin@sjsu.edu",
+            hashed_password=get_password_hash("admin123"),
+            full_name="System Administrator",
+            role="admin",
+            reports_to=None,
+            stripe_customer_id=create_stripe_customer("admin@sjsu.edu").id,
+            is_active=True
+        )
+        db.add(admin_user)
+        db.flush()
+        print(f"✓ Admin user created: admin@sjsu.edu / admin123")
         
-        admin_user = db.query(User).filter(User.email == admin_email).first()
-        if not admin_user:
-            admin_user = User(
-                email=admin_email,
-                hashed_password=get_password_hash(admin_password),
-                full_name="System Administrator",
-                role="admin",
-                reports_to=None,  # Admin reports to no one
-                stripe_customer_id=create_stripe_customer(admin_email).id,
-                is_active=True
-            )
-            db.add(admin_user)
-            db.commit()
-            db.refresh(admin_user)
-            print(f"✓ Admin user created: {admin_email} / {admin_password}")
-        else:
-            # Ensure admin has reports_to = None
-            if admin_user.reports_to is not None:
-                admin_user.reports_to = None
-                db.commit()
-            print(f"✓ Admin user already exists: {admin_email}")
-        
-        # Create Mike as manager first
-        mike_email = "mike@sjsu.edu"
-        mike_password = "mike12345"
-        mike_user = db.query(User).filter(User.email == mike_email).first()
-        if not mike_user:
-            mike_user = User(
-                email=mike_email,
-                hashed_password=get_password_hash(mike_password),
-                full_name="Mike",
-                role="manager",
-                reports_to=None,  # Managers report to no one 
-                stripe_customer_id=create_stripe_customer(mike_email).id,
-                is_active=True
-            )
-            db.add(mike_user)
-            db.commit()
-            db.refresh(mike_user)
-            print(f"✓ Manager created: {mike_email} / {mike_password}")
-        else:
-            # Update existing Mike to be a manager
-            mike_user.role = "manager"
-            mike_user.reports_to = None
-            db.commit()
-            print(f"✓ Manager updated: {mike_email}")
+        # Create Mike as manager
+        mike_user = User(
+            email="mike@sjsu.edu",
+            hashed_password=get_password_hash("mike12345"),
+            full_name="Mike",
+            role="manager",
+            reports_to=None,
+            stripe_customer_id=create_stripe_customer("mike@sjsu.edu").id,
+            is_active=True
+        )
+        db.add(mike_user)
+        db.flush()  # Get mike_user.id before creating employees
+        print(f"✓ Manager created: mike@sjsu.edu / mike12345")
         
         # Create employees reporting to Mike
         sample_employees = [
@@ -849,27 +849,19 @@ def seed():
         ]
         
         for employee in sample_employees:
-            existing_user = db.query(User).filter(User.email == employee["email"]).first()
-            if not existing_user:
-                new_employee = User(
-                    email=employee["email"],
-                    hashed_password=get_password_hash(employee["password"]),
-                    full_name=employee["name"],
-                    role="employee",
-                    reports_to=mike_user.id,  # Employees report to Mike
-                    stripe_customer_id=create_stripe_customer(employee["email"]).id,
-                    is_active=True
-                )
-                db.add(new_employee)
-                db.commit()
-                db.refresh(new_employee)
-                print(f"✓ Employee created: {employee['email']} / {employee['password']} (reports to Mike)")
-            else:
-                # Update existing user to be an employee reporting to Mike
-                existing_user.role = "employee"
-                existing_user.reports_to = mike_user.id
-                db.commit()
-                print(f"✓ Employee updated: {employee['email']} (reports to Mike)")
+            new_employee = User(
+                email=employee["email"],
+                hashed_password=get_password_hash(employee["password"]),
+                full_name=employee["name"],
+                role="employee",
+                reports_to=mike_user.id,
+                stripe_customer_id=create_stripe_customer(employee["email"]).id,
+                is_active=True
+            )
+            db.add(new_employee)
+            print(f"✓ Employee created: {employee['email']} / {employee['password']} (reports to Mike)")
+        
+        db.flush()
         
         # Create sample customer users
         sample_customers = [
@@ -879,45 +871,40 @@ def seed():
         ]
         
         for customer in sample_customers:
-            existing_user = db.query(User).filter(User.email == customer["email"]).first()
-            if not existing_user:
-                new_customer = User(
-                    email=customer["email"],
-                    hashed_password=get_password_hash(customer["password"]),
-                    full_name=customer["name"],
-                    role="customer",
-                    reports_to=None,  # Customers don't report to anyone
-                    stripe_customer_id=create_stripe_customer(customer["email"]).id,
-                    is_active=True
-                )
-                db.add(new_customer)
-                db.commit()
-                db.refresh(new_customer)
-                print(f"✓ Customer created: {customer['email']} / {customer['password']}")
-            else:
-                print(f"✓ Customer already exists: {customer['email']}")
+            new_customer = User(
+                email=customer["email"],
+                hashed_password=get_password_hash(customer["password"]),
+                full_name=customer["name"],
+                role="customer",
+                reports_to=None,
+                stripe_customer_id=create_stripe_customer(customer["email"]).id,
+                is_active=True
+            )
+            db.add(new_customer)
+            print(f"✓ Customer created: {customer['email']} / {customer['password']}")
         
         # Seed items
-        if db.query(Item).count() == 0:
-            for d in SAMPLE_ITEMS:
-                db.add(Item(**d))
-            db.commit()
-            print(f"✓ Seeded {len(SAMPLE_ITEMS)} items")
+        for d in SAMPLE_ITEMS:
+            db.add(Item(**d))
+        print(f"✓ Seeded {len(SAMPLE_ITEMS)} items")
 
-        if db.query(Order).count() == 0:
-            for d in SAMPLE_ORDERS:
-                db.add(Order(**d))
-            db.commit()
+        # Seed orders
+        for d in SAMPLE_ORDERS:
+            db.add(Order(**d))
+        print(f"✓ Seeded {len(SAMPLE_ORDERS)} orders")
 
-        if db.query(OrderItem).count() == 0:
-            for d in SAMPLE_ORDER_ITEMS:
-                db.add(OrderItem(**d))
-            db.commit()
+        # Seed order items
+        for d in SAMPLE_ORDER_ITEMS:
+            db.add(OrderItem(**d))
+        print(f"✓ Seeded {len(SAMPLE_ORDER_ITEMS)} order items")
 
-        if db.query(DeliveryVehicle).count() == 0:
-            for d in SAMPLE_DELIVERY_VEHICLES:
-                db.add(DeliveryVehicle(**d))
-            db.commit()
+        # Seed delivery vehicles
+        for d in SAMPLE_DELIVERY_VEHICLES:
+            db.add(DeliveryVehicle(**d))
+        print(f"✓ Seeded {len(SAMPLE_DELIVERY_VEHICLES)} delivery vehicles")
+
+        db.commit()
+        print("\n✅ Database seeded successfully!")
 
         # add a few reviews if none
         # if db.query(Review).count() == 0:
@@ -947,6 +934,11 @@ def seed():
         #             .values(avg_rating=float(avg or 0.0), ratings_count=int(cnt or 0))
         #         )
         #     db.commit()
+        
+    except Exception as e:
+        db.rollback()
+        print(f"\n❌ Error seeding database: {e}")
+        raise
     finally:
         db.close()
 

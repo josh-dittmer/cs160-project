@@ -34,65 +34,70 @@ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your-google-maps-api-key
 
 ### Backend Setup
 
-#### 1. Navigate to backend directory and create virtual environment
+#### 1. Navigate to backend directory
 
 ```bash
 cd cs160-project/backend
+```
+
+#### 2. Create virtual environment *(First time only)*
+
+> **⚠️ Skip this step if `.venv` folder already exists**
+
+> **Note:** If you already have `.venv` in the project root, you can use it instead:
+> ```bash
+> cd cs160-project  # (from project root)
+> source .venv/bin/activate  # or .venv\Scripts\activate on Windows
+> cd backend
+> ```
+
+```bash
 python3 -m venv .venv
+```
+
+**Windows:**
+```powershell
+python -m venv .venv
+```
+
+#### 3. Activate virtual environment *(Skip if already activated)*
+
+> **💡 Tip:** You'll see `(.venv)` in your terminal prompt when activated. If you see it, skip this step.
+
+```bash
 source .venv/bin/activate
 ```
 
 **Windows:**
 ```powershell
-cd cs160-project\backend
-python -m venv .venv
 .venv\Scripts\activate
 ```
 
-> **Note:** If you already have `.venv` in the project root, you can still use it:
-> ```bash
-> cd cs160-project
-> source .venv/bin/activate  # or .venv\Scripts\activate on Windows
-> cd backend
-> ```
-> Then continue with the remaining steps below.
+#### 4. Install backend dependencies *(First time only, or when requirements.txt changes)*
 
-#### 2. Install backend dependencies
+> **⚠️ Only run this:**
+> - The first time you set up the project
+> - When `requirements.txt` has been updated (after pulling new code)
 
 ```bash
 pip install -r requirements.txt
 ```
 
-#### 2.5 Reset Database (Optional)
+#### 5. Optional: Seed the database *(Optional - only when you want fresh data)*
 
-If you need to reseed with fresh data, delete the existing database first:
-
-**macOS/Linux:**
-```bash
-rm sqlite.db
-```
-
-**Windows PowerShell:**
-```powershell
-Remove-Item sqlite.db
-```
-
-#### 3. Seed the database
-
-This will create the database tables and an admin user.
+> **⚠️ Optional:** Only run this if you want to reset the database to initial state. The seed script automatically deletes `sqlite.db` if it exists.
+>
+> **Admin Credentials:** `admin@sjsu.edu` / `admin123`
 
 ```bash
 python -m app.seed
 ```
 
-**Admin Credentials:** `admin@sjsu.edu` / `admin123`
-
-#### 4. Start the backend server
+#### 6. Start the backend server *(Run every time)*
 
 ```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
 ```
-
 
 **Backend is now running on `http://localhost:8080`** ✅
 
@@ -100,9 +105,27 @@ Test it: Open `http://localhost:8080/healthz` or run `curl http://localhost:8080
 
 ---
 
+**📝 Daily Workflow Summary:**
+
+**macOS/Linux:**
+```bash
+cd cs160-project/backend
+source .venv/bin/activate  # Only if not already activated
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
+```
+
+**Windows:**
+```powershell
+cd cs160-project\backend
+.venv\Scripts\activate  # Only if not already activated
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
+```
+
+---
+
 ### Frontend Setup
 
-**Open a new terminal window** and run:
+**Open a new terminal window** (keep backend running)
 
 #### 1. Navigate to frontend directory
 
@@ -110,13 +133,17 @@ Test it: Open `http://localhost:8080/healthz` or run `curl http://localhost:8080
 cd cs160-project/frontend
 ```
 
-#### 2. Install dependencies (only needed first time)
+#### 2. Install dependencies *(First time only, or when package.json changes)*
+
+> **⚠️ Only run this:**
+> - The first time you set up the project
+> - When `package.json` or `package-lock.json` has been updated (after pulling new code)
 
 ```bash
 npm install
 ```
 
-#### 3. Start the development server
+#### 3. Start the development server *(Run every time)*
 
 ```bash
 npm run dev
@@ -128,10 +155,60 @@ Open `http://localhost:3000` in your browser to see the app!
 
 ---
 
+**📝 Daily Workflow Summary:**
+
+**macOS/Linux:**
+```bash
+cd cs160-project/frontend
+npm run dev
+```
+
+**Windows:**
+```powershell
+cd cs160-project\frontend
+npm run dev
+```
+
+---
+
 ### 📝 Summary
 
-**Backend:** `http://localhost:8080` (API server)  
-**Frontend:** `http://localhost:3000` (Web application)
+**URLs:**
+- **Backend API:** `http://localhost:8080`
+- **Frontend App:** `http://localhost:3000`
+- **Admin Login:** `admin@sjsu.edu` / `admin123`
+
+**Daily Workflow (both terminals):**
+
+**macOS/Linux:**
+
+Terminal 1 - Backend:
+```bash
+cd cs160-project/backend
+source .venv/bin/activate  # Only if not already activated
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
+```
+
+Terminal 2 - Frontend:
+```bash
+cd cs160-project/frontend
+npm run dev
+```
+
+**Windows:**
+
+Terminal 1 - Backend:
+```powershell
+cd cs160-project\backend
+.venv\Scripts\activate  # Only if not already activated
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
+```
+
+Terminal 2 - Frontend:
+```powershell
+cd cs160-project\frontend
+npm run dev
+```
 
 Both servers need to be running simultaneously for the full application to work.
 
@@ -317,21 +394,14 @@ CS160 Project Team 6
 - Check if port 3000 is already in use
 
 ### Database issues
-- Delete and re-seed the database (from backend directory):
+- Re-seed the database to get a fresh development state (from backend directory):
   
-  **macOS/Linux:**
   ```bash
   cd backend
-  rm sqlite.db
   python -m app.seed
   ```
   
-  **Windows PowerShell:**
-  ```powershell
-  cd backend
-  Remove-Item sqlite.db
-  python -m app.seed
-  ```
+  **Note:** The seed script automatically deletes the existing database, so no manual deletion is needed.
 
 ### Google Sign-In not working
 - Verify `GOOGLE_CLIENT_ID` is set in both backend and frontend `.env` files

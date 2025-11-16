@@ -169,10 +169,9 @@ Updated to create proper hierarchy:
 
 To test the implementation:
 
-1. **Delete and recreate database**:
+1. **Recreate database** (automatically deletes existing database):
    ```bash
    cd backend
-   rm sqlite.db
    python -m app.seed
    ```
 

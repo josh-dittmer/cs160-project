@@ -166,8 +166,7 @@ Videos use standard HTML5 `<video>` tags and work in:
 **Important:** You'll need to migrate your database to add the `video_url` field:
 
 ```bash
-# Option 1: Drop and recreate (loses data)
-rm backend/sqlite.db
+# Option 1: Fresh start (automatically deletes existing database)
 PYTHONPATH=. python -m backend.app.seed
 
 # Option 2: Manual migration (preserves data)
