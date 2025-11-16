@@ -23,6 +23,29 @@ GOOGLE_CLIENT_ID=your-google-client-id
 GEMINI_API_KEY=your-gemini-api-key 
 ```
 
+### Backend - Google Service Account (`backend/keys.json`)
+
+**Required for route optimization feature:**
+
+Create a `keys.json` file in the `backend/` directory with your Google service account credentials:
+
+```json
+{
+  "type": "service_account",
+  "project_id": "your-project-id",
+  "private_key_id": "your-private-key-id",
+  "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
+  "client_email": "your-service-account@your-project.iam.gserviceaccount.com",
+  "client_id": "your-client-id",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "your-cert-url"
+}
+```
+
+> **Note:** This file is already in `.gitignore` and will not be committed to version control.
+
 ### Frontend (`frontend/.env.local`)
 ```bash
 NEXT_PUBLIC_API_URL=http://localhost:8080
@@ -120,6 +143,35 @@ cd cs160-project\backend
 .venv\Scripts\activate  # Only if not already activated
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
 ```
+
+---
+
+#### 7. Optional: Run Robot Simulation *(For testing route optimization)*
+
+The robot simulation processes queued orders, changes them to "shipped" status, and triggers route optimization.
+
+> **⚠️ Optional:** Only run this if you want to simulate order processing and test route optimization.
+>
+> **Prerequisites:** Make sure `backend/keys.json` is set up (see Environment Variables section above).
+
+**macOS/Linux:**
+```bash
+cd cs160-project/backend
+source .venv/bin/activate  # Only if not already activated
+python3 -m app.robot.main
+```
+
+**Windows:**
+```powershell
+cd cs160-project\backend
+.venv\Scripts\activate  # Only if not already activated
+python -m app.robot.main
+```
+
+> **Note:** This simulates a delivery robot. It will:
+> - Find all queued orders in the database
+> - Change their status to "shipped"
+> - Trigger route optimization for efficient delivery
 
 ---
 
@@ -283,6 +335,14 @@ cs160-project/
   - Perfect for product demos, ads, and social media content
   - See [backend/docs/api/VIDEO_API.md](backend/docs/api/VIDEO_API.md) for API documentation
 
+- **Route Optimization**
+  - Intelligent delivery route planning using Google's route optimization API
+  - Automatically processes queued orders and optimizes delivery routes
+  - Robot simulation for testing order processing and route optimization
+  - Changes order status from queued to shipped when processed
+  - Requires Google service account credentials (`backend/keys.json`)
+  - Run simulation: `python3 -m app.robot.main`
+
 - **Smart Search**
   - Real-time autocomplete suggestions
   - Fuzzy matching with typo tolerance (handles "oganic aples" → "Organic Apples")
@@ -429,6 +489,15 @@ CS160 Project Team 6
 - Test the API health: `GET /api/admin/video/health`
 - Run test script (from backend directory): `python test_video_generation.py`
 - See [backend/docs/api/VIDEO_API.md](backend/docs/api/VIDEO_API.md) for complete API documentation
+
+### Route optimization or robot simulation not working
+- Verify `backend/keys.json` exists with valid Google service account credentials
+- Make sure the service account has the necessary permissions for Google Routes API
+- Check that the Routes API is enabled in your Google Cloud Console
+- Ensure you're in the backend directory: `cd backend`
+- Verify virtual environment is activated before running the robot: `source .venv/bin/activate`
+- Check for error messages when running: `python3 -m app.robot.main`
+- The robot only processes orders with "queued" status - create some test orders first
 
 ---
 

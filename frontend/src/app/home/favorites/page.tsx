@@ -33,6 +33,11 @@ export default function FavoritesPage() {
     fetchFavorites();
   }, [token]);
 
+  // Callback to remove item from local state when unfavorited
+  const handleItemUnfavorited = (itemId: number) => {
+    setFavorites(prevFavorites => prevFavorites.filter(item => item.id !== itemId));
+  };
+
   return (
     <main className="space-y-6">
       <div className="border-b border-bg-dark">
@@ -50,7 +55,7 @@ export default function FavoritesPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
           {favorites.map((item) => (
-            <ItemCard key={item.id} item={item} />
+            <ItemCard key={item.id} item={item} onUnfavorite={handleItemUnfavorited} />
           ))}
         </div>
       )}

@@ -8,7 +8,13 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth";
 import { addFavorite, removeFavorite, isFavorited } from "@/lib/api/favorites";
 
-export default function ItemCard({ item }: { item: ItemT }) {
+export default function ItemCard({ 
+  item, 
+  onUnfavorite 
+}: { 
+  item: ItemT;
+  onUnfavorite?: (itemId: number) => void;
+}) {
   const { mutate } = useUpsertCartItemMutation();
   const { token } = useAuth();
   const [isFavorite, setIsFavorite] = useState(false);
@@ -38,6 +44,10 @@ export default function ItemCard({ item }: { item: ItemT }) {
       if (isFavorite) {
         await removeFavorite(token, item.id);
         setIsFavorite(false);
+        // Notify parent component (if callback provided) that item was unfavorited
+        if (onUnfavorite) {
+          onUnfavorite(item.id);
+        }
       } else {
         await addFavorite(token, item.id);
         setIsFavorite(true);
