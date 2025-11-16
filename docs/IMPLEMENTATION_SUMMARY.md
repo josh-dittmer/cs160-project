@@ -100,8 +100,7 @@ All features from the plan have been successfully implemented.
 - [ ] Test admin endpoints require authentication
 
 ### Database Tests
-- [ ] Delete old database: `rm backend/sqlite.db`
-- [ ] Run seed script: `PYTHONPATH=. python -m backend.app.seed`
+- [ ] Run seed script (automatically deletes existing database): `PYTHONPATH=. python -m backend.app.seed`
 - [ ] Verify admin user created message appears
 - [ ] Check database has users table with role column
 

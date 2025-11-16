@@ -10,6 +10,7 @@ from .routers import admin as admin_router
 from .routers import manager as manager_router
 from .routers import employee as employee_router
 from .routers import payment as payment_router
+from .routers import favorites as favorites_router
 import stripe
 import os
 from .routers import image_generation as image_generation_router
@@ -45,6 +46,7 @@ app.include_router(admin_router.router)
 app.include_router(manager_router.router)
 app.include_router(employee_router.router)
 app.include_router(payment_router.router)
+app.include_router(favorites_router.router)
 app.include_router(image_generation_router.router)
 app.include_router(video_generation_router.router)
 app.include_router(vehicle_router.router)

@@ -63,13 +63,11 @@ Password: admin123
 
 ### 1. Database Migration
 
-The system adds a `role` field to the users table. To update your database:
+The system adds a `role` field to the users table. To set up your database:
 
 ```bash
-# Delete the old database (DEVELOPMENT ONLY)
-rm backend/sqlite.db
-
 # Run the seed script to create tables and admin user
+# (automatically deletes existing database for clean state)
 python -m backend.app.seed
 ```
 

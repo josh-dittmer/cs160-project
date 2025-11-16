@@ -5,34 +5,58 @@ import { motion } from "motion/react";
 import { Image, Plus, Star } from "lucide-react";
 import { useUpsertCartItemMutation } from "@/lib/mutations/cart_item/upsert";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/auth";
+import { addFavorite, removeFavorite, isFavorited } from "@/lib/api/favorites";
 
-export default function ItemCard({ item }: { item: ItemT }) {
+export default function ItemCard({ 
+  item, 
+  onUnfavorite 
+}: { 
+  item: ItemT;
+  onUnfavorite?: (itemId: number) => void;
+}) {
   const { mutate } = useUpsertCartItemMutation();
+  const { token } = useAuth();
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Load initial favorite status from localStorage
+  // Load initial favorite status from backend
   useEffect(() => {
-    const savedFavorites = JSON.parse(localStorage.getItem("favorites") || "[]");
-    setIsFavorite(savedFavorites.some((f: ItemT) => f.id === item.id));
-  }, [item.id]);
+    const checkFavoriteStatus = async () => {
+      if (!token) return;
+      try {
+        const favorited = await isFavorited(token, item.id);
+        setIsFavorite(favorited);
+      } catch (error) {
+        console.error('Error checking favorite status:', error);
+      }
+    };
+    
+    checkFavoriteStatus();
+  }, [item.id, token]);
 
-  // TODO: This is not a fully implement for favorites, because the data is
-  //        not stored in sqlite. Please modify and fetch to backend
-  // Toggle favorite status
-  const toggleFavorite = () => {
-    const savedFavorites = JSON.parse(localStorage.getItem("favorites") || "[]");
-    let updatedFavorites;
-
-    if (isFavorite) {
-      // remove item
-      updatedFavorites = savedFavorites.filter((f: ItemT) => f.id !== item.id);
-    } else {
-      // add item
-      updatedFavorites = [...savedFavorites, item];
+  // Toggle favorite status using backend API
+  const toggleFavorite = async () => {
+    if (!token || isLoading) return;
+    
+    setIsLoading(true);
+    try {
+      if (isFavorite) {
+        await removeFavorite(token, item.id);
+        setIsFavorite(false);
+        // Notify parent component (if callback provided) that item was unfavorited
+        if (onUnfavorite) {
+          onUnfavorite(item.id);
+        }
+      } else {
+        await addFavorite(token, item.id);
+        setIsFavorite(true);
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    } finally {
+      setIsLoading(false);
     }
-
-    localStorage.setItem("favorites", JSON.stringify(updatedFavorites));
-    setIsFavorite(!isFavorite);
   };
 
   const visitItemPage = () => {
@@ -66,9 +90,10 @@ export default function ItemCard({ item }: { item: ItemT }) {
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.99 }}
               onClick={toggleFavorite}
+              disabled={isLoading || !token}
               className={`p-1 rounded-full transition ${
                 isFavorite ? "bg-yellow-400" : "bg-bg-light hover:bg-bg-medium"
-              }`}
+              } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               <Star
                 className={`${isFavorite ? "text-white" : "text-fg-dark"}`}

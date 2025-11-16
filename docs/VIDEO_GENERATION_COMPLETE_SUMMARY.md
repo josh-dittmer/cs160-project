@@ -269,8 +269,7 @@ npm run dev
 **Important:** You need to add the `video_url` column to existing databases:
 
 ```bash
-# Option 1: Fresh start (loses data)
-rm backend/sqlite.db
+# Option 1: Fresh start (automatically deletes existing database)
 PYTHONPATH=. python -m backend.app.seed
 
 # Option 2: Manual migration (preserves data)
