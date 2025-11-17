@@ -2,6 +2,22 @@ from datetime import datetime
 from pydantic import BaseModel, conint, constr, EmailStr
 from .models import OrderStatus
 
+class ItemOut(BaseModel):
+    """Basic item schema (for favorites and simple listings)."""
+    id: int
+    name: str
+    price_cents: int
+    weight_oz: int
+    category: str | None = None
+    image_url: str | None = None
+    video_url: str | None = None
+    avg_rating: float
+    ratings_count: int
+
+    class Config:
+        from_attributes = True
+
+
 class ItemListOut(BaseModel):
     """Shape for list view."""
     id: int

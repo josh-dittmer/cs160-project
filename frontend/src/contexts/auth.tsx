@@ -1,7 +1,7 @@
 "use client";
 
 import { getCurrentUser, UserInfo } from '@/lib/api/profile';
-import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 
 interface AuthContextType {
     user: UserInfo | null;
@@ -19,49 +19,86 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [token, setToken] = useState<string | null>(null);
     const [expires, setExpires] = useState<number | null>(null);
 
+    const login = useCallback((newToken: string, newUser: UserInfo, expires: number) => {
+        const expiresMs = expires * 1000;
+        setToken(newToken);
+        setUser(newUser);
+        setExpires(expiresMs);
+        localStorage.setItem('auth_token', newToken);
+        localStorage.setItem('user_info', JSON.stringify(newUser));
+        localStorage.setItem('auth_expires', expires.toString());
+    }, []);
+
+    const logout = useCallback(() => {
+        setToken(null);
+        setUser(null);
+        setExpires(null);
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_info');
+        localStorage.removeItem('auth_expires');
+    }, []);
+
+    const updateUser = useCallback((newUser: UserInfo) => {
+        setUser(newUser);
+        localStorage.setItem('user_info', JSON.stringify(newUser));
+    }, []);
+
     // Load auth state from localStorage on mount
     useEffect(() => {
         const storedToken = localStorage.getItem('auth_token');
         const storedUser = localStorage.getItem('user_info');
         const storedExpires = localStorage.getItem('auth_expires');
 
-        const fetchUser = async (token: string) => {
-            const user = await getCurrentUser(token);
-
-            setToken(storedToken);
-            setUser(user);
-        };
-
-        if (!storedExpires || parseInt(storedExpires, 10) > Date.now()) {
+        if (!storedToken || !storedUser || !storedExpires) {
+            logout();
             return;
         }
 
-        if (storedToken && storedUser) {
-            fetchUser(storedToken);
+        let parsedUser: UserInfo | null = null;
+        try {
+            parsedUser = JSON.parse(storedUser);
+        } catch (error) {
+            console.error('Failed to parse stored user info', error);
+            logout();
+            return;
         }
-    }, []);
 
-    const login = (newToken: string, newUser: UserInfo, expires: number) => {
-        setToken(newToken);
-        setUser(newUser);
-        setExpires(expires);
-        localStorage.setItem('auth_token', newToken);
-        localStorage.setItem('user_info', JSON.stringify(newUser));
-        localStorage.setItem('auth_expires', expires.toString());
-    };
+        const expiresEpochSeconds = Number(storedExpires);
+        const expiresAtMs = Number.isFinite(expiresEpochSeconds)
+            ? expiresEpochSeconds * 1000
+            : NaN;
 
-    const logout = () => {
-        setToken(null);
-        setUser(null);
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('user_info');
-        localStorage.removeItem('auth_expires');
-    };
+        if (!Number.isFinite(expiresAtMs) || expiresAtMs <= Date.now()) {
+            logout();
+            return;
+        }
 
-    const updateUser = (newUser: UserInfo) => {
-        setUser(newUser);
-        localStorage.setItem('user_info', JSON.stringify(newUser));
-    };
+        setToken(storedToken);
+        setUser(parsedUser);
+        setExpires(expiresAtMs);
+
+        const controller = new AbortController();
+
+        const refreshUser = async () => {
+            try {
+                const latestUser = await getCurrentUser(storedToken);
+                if (controller.signal.aborted) {
+                    return;
+                }
+                setUser(latestUser);
+                localStorage.setItem('user_info', JSON.stringify(latestUser));
+            } catch (error) {
+                console.error('Failed to refresh session', error);
+                if (!controller.signal.aborted) {
+                    logout();
+                }
+            }
+        };
+
+        refreshUser();
+
+        return () => controller.abort();
+    }, [logout]);
 
     const value = {
         user,
