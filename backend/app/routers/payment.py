@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from typing import List
 from ..models import Item, CartItem, Order, OrderItem
 from ..schemas import CartItemOut, ConfirmPaymentRequest, ConfirmPaymentResponse, CreatePaymentIntentResponse, CreateSetupIntenetResponse
@@ -58,6 +58,18 @@ def confirm_payment(
         CartItem.user_id == user.id
     ).all()
     
+    # Final inventory check before order confirmation
+    for row in cart_items:
+        ci: CartItem = row[0]
+        it: Item = row[1]
+        if ci.quantity > it.stock_qty:
+            db.delete(order)  # Rollback order creation
+            db.commit()
+            raise HTTPException(
+                status_code=400,
+                detail=f"Insufficient stock for '{it.name}'. Available: {it.stock_qty}, Requested: {ci.quantity}"
+            )
+    
     order_items_details = []
     total_amount = 0
 
@@ -72,6 +84,10 @@ def confirm_payment(
         print("Adding order item: ", it.name)
         db.add(order_item)
         db.delete(ci)
+        
+        # Deduct ordered quantity from stock
+        it.stock_qty -= ci.quantity
+        db.add(it)
         
         # Collect details for audit log
         order_items_details.append({
