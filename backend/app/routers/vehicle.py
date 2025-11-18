@@ -110,7 +110,8 @@ async def vehicle_websocket(
                             'type': 'orderUpdate'
                         }, user)
                         
-    except:
+    except Exception as e:
+        print(f"Error sending to {vehicle.id}: {e}")
         if (vehicle):
             print(f"Vehicle {vehicle.id} disconnected")
     return
