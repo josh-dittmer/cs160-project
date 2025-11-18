@@ -31,7 +31,7 @@ docker compose build
 docker compose up
 ```
 
-5. The application is now available at https://localhost:3000/
+5. The application is now available at http://localhost:3000/
 
 ## 🚀 Quick Start - Run the Full Application for Development
 
