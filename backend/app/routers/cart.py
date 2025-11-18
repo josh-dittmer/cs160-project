@@ -46,6 +46,17 @@ def update_cart(
     user: UserCtx = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    # Check if item exists and has sufficient stock
+    item = db.query(Item).filter_by(id=payload.item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found.")
+    
+    if payload.quantity > 0 and payload.quantity > item.stock_qty:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Insufficient stock. Available: {item.stock_qty}, Requested: {payload.quantity}"
+        )
+    
     cart_item = db.query(CartItem).filter_by(
         user_id=user.id, item_id=payload.item_id
     ).first()
