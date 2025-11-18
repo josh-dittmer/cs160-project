@@ -1,32 +1,31 @@
+'use client';
+
 //import ItemSlider from "@/components/item_slider/item_slider";
 import ItemSlider from '@/components/item_slider/item_slider.client';
-import { ItemsByCategoryResponse } from "@/lib/api/models";
-import { get, request } from "@/lib/api/request";
+import { useItemsQuery } from '@/lib/queries/items';
 
-export const dynamic = 'force-dynamic';
-
-export default async function DashboardPage() {
+export default function DashboardPage() {
     // Request items grouped by category from flexible backend endpoint
-    const itemsByCategory = await request('/api/items?group_by=category', get({
-        decoder: ItemsByCategoryResponse
-    }));
+    const { data, isLoading } = useItemsQuery();
+
+    if (!data || isLoading) return;
 
     return (
         <div className="">
-            {itemsByCategory.fruits && itemsByCategory.fruits.length > 0 && (
-                <ItemSlider title="Fruits" items={itemsByCategory.fruits} />
+            {data.fruits && data.fruits.length > 0 && (
+                <ItemSlider title="Fruits" items={data.fruits} />
             )}
-            {itemsByCategory.vegetables && itemsByCategory.vegetables.length > 0 && (
-                <ItemSlider title="Vegetables" items={itemsByCategory.vegetables} />
+            {data.vegetables && data.vegetables.length > 0 && (
+                <ItemSlider title="Vegetables" items={data.vegetables} />
             )}
-            {itemsByCategory.meat && itemsByCategory.meat.length > 0 && (
-                <ItemSlider title="Meat" items={itemsByCategory.meat} />
+            {data.meat && data.meat.length > 0 && (
+                <ItemSlider title="Meat" items={data.meat} />
             )}
-            {itemsByCategory.dairy && itemsByCategory.dairy.length > 0 && (
-                <ItemSlider title="Dairy" items={itemsByCategory.dairy} />
+            {data.dairy && data.dairy.length > 0 && (
+                <ItemSlider title="Dairy" items={data.dairy} />
             )}
-            {itemsByCategory.grains && itemsByCategory.grains.length > 0 && (
-                <ItemSlider title="Grains" items={itemsByCategory.grains} />
+            {data.grains && data.grains.length > 0 && (
+                <ItemSlider title="Grains" items={data.grains} />
             )}
         </div>
     )
