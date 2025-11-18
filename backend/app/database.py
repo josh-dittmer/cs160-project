@@ -3,9 +3,14 @@ from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
+import os
+
 BASE_DIR = Path(__file__).resolve().parent.parent
-DB_PATH = BASE_DIR / "sqlite.db"
+DB_DIR = BASE_DIR / "db" 
+DB_PATH = DB_DIR / "sqlite.db"
 DB_URL = f"sqlite:///{DB_PATH}"
+
+os.makedirs(DB_DIR, exist_ok=True)
 
 # check_same_thread=False allows SQLite use across FastAPI worker threads
 engine = create_engine(DB_URL, connect_args={"check_same_thread": False})

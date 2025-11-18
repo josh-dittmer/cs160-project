@@ -2,7 +2,38 @@
 
 An on-demand food delivery service built with FastAPI (backend) and Next.js (frontend).
 
-## 🚀 Quick Start - Run the Full Application
+## Running with Docker
+
+### Prerequisites
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+
+### Instructions
+
+1. Clone the repository:
+```
+git clone https://github.com/josh-dittmer/cs160-project.git
+```
+
+2. Obtain the following files and place them at the listed paths. They contain required API keys.
+    - ```cs160-project/backend/.env```
+    - ```cs160-project/backend/keys.json```
+    - ```cs160-project/frontend/.env.local```
+
+3. Build the Docker images with Docker compose:
+```
+cd cs160-project/docker
+docker compose build
+```
+
+4. Run the containers:
+```
+docker compose up
+```
+
+5. The application is now available at https://localhost:3000/
+
+## 🚀 Quick Start - Run the Full Application for Development
 
 ### Prerequisites
 
