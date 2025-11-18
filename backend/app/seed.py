@@ -765,22 +765,6 @@ SAMPLE_ORDERS = [
     ),
 ]
 
-SAMPLE_ORDER_ITEMS = [
-    dict(order_id=1, item_id=1, quantity=5),
-    dict(order_id=1, item_id=2, quantity=10),
-    dict(order_id=1, item_id=3, quantity=15),
-
-    dict(order_id=2, item_id=4, quantity=2),
-    dict(order_id=2, item_id=5, quantity=1),
-
-    dict(order_id=3, item_id=6, quantity=3),
-    dict(order_id=3, item_id=10, quantity=2),
-    dict(order_id=3, item_id=12, quantity=1),
-
-    dict(order_id=4, item_id=2, quantity=6),
-    dict(order_id=4, item_id=7, quantity=2),
-]
-
 SAMPLE_DELIVERY_VEHICLES = [
     dict(id=1, secret_hash=get_password_hash("abc123")),
     dict(id=2, secret_hash=get_password_hash("abc123")),
@@ -915,11 +899,6 @@ def seed():
         if db.query(Order).count() == 0:
             for d in SAMPLE_ORDERS:
                 db.add(Order(**d))
-            db.commit()
-
-        if db.query(OrderItem).count() == 0:
-            for d in SAMPLE_ORDER_ITEMS:
-                db.add(OrderItem(**d))
             db.commit()
 
         if db.query(DeliveryVehicle).count() == 0:
