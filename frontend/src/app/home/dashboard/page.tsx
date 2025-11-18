@@ -3,7 +3,7 @@ import ItemSlider from '@/components/item_slider/item_slider.client';
 import { ItemsByCategoryResponse } from "@/lib/api/models";
 import { get, request } from "@/lib/api/request";
 
-
+export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
     // Request items grouped by category from flexible backend endpoint

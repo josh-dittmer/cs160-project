@@ -13,3 +13,4 @@ temp/
 .github/
 .pytest_cache/
 backend/keys.json
+test-deploy/
