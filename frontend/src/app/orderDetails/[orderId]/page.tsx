@@ -1,6 +1,6 @@
 "use client";
 
-import DeliveryProgress from "@/components/progress_bar/progress_bar";
+import DeliveryProgress from "@/components/delivery_progress/delivery_progress"
 import { useOrdersQuery } from "@/lib/queries/orders";
 import { useParams } from "next/navigation"; 
 import OrderMap from "@/components/order_map/order_map"; 
@@ -95,7 +95,15 @@ export default function OrderDtailsPage() {
                 </section>
 
                 {/* DELIVERY PROGRESS */}
-                <DeliveryProgress order={activeOrder} />
+                <section className="bg-white rounded-2xl shadow p-5 flex items-center gap-5">
+                    <div className="bg-purple-100 text-purple-600 w-12 h-12 rounded-full flex items-center justify-center">
+                        🚚
+                    </div>
+
+                    <div className="flex-1">
+                        <DeliveryProgress order={activeOrder} />
+                    </div>
+                </section>
 
                 {/* TRACKING */}
                 <section className="bg-white rounded-2xl shadow p-5 flex items-start gap-5">
