@@ -36,8 +36,32 @@ function EmployeeLayoutContent({ children }: { children: React.ReactNode }) {
             <li><Link href="/employee/alerts">Alerts</Link></li>
           </ul>
 
+          {/* View as Customer Button */}
+          <div style={{ padding: '1rem', marginTop: '1.5rem' }}>
+            <Link 
+              href="/home/dashboard"
+              style={{
+                display: 'block',
+                width: '100%',
+                padding: '0.75rem 1rem',
+                backgroundColor: '#16a34a',
+                color: 'white',
+                textAlign: 'center',
+                borderRadius: '0.375rem',
+                fontWeight: '500',
+                fontSize: '0.875rem',
+                textDecoration: 'none',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#15803d'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#16a34a'}
+            >
+              View as Customer
+            </Link>
+          </div>
+
           {user && (
-            <div className="user-info" style={{ padding: '1rem', marginTop: '2rem', borderTop: '1px solid #e5e7eb' }}>
+            <div className="user-info" style={{ padding: '1rem', marginTop: '1rem', borderTop: '1px solid #e5e7eb' }}>
               <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.25rem' }}>Logged in as</p>
               <p style={{ fontSize: '0.875rem', fontWeight: '600' }}>{user.full_name || user.email}</p>
               <p style={{ fontSize: '0.75rem', color: '#6b7280', textTransform: 'capitalize' }}>{user.role}</p>
