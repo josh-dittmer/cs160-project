@@ -12,21 +12,38 @@ export default function HomeLayout({ children }: { children: ReactNode }) {
     const { user } = useAuth();
     const isAdmin = user?.role === 'admin';
     const isManager = user?.role === 'manager';
-    const showBanner = isAdmin || isManager;
+    const isEmployee = user?.role === 'employee';
+    const showBanner = isAdmin || isManager || isEmployee;
+
+    // Determine which dashboard to link to
+    const getDashboardLink = () => {
+        if (isAdmin) return "/admin/dashboard";
+        if (isManager) return "/manager/dashboard";
+        if (isEmployee) return "/employee/dashboard";
+        return "/home/dashboard";
+    };
+
+    // Determine view name for button text
+    const getViewName = () => {
+        if (isAdmin) return 'Admin';
+        if (isManager) return 'Manager';
+        if (isEmployee) return 'Employee';
+        return 'Customer';
+    };
 
     return (
         <div className={`w-svw h-svh grid ${showBanner ? 'grid-rows-[40px_60px_auto_30px]' : 'grid-rows-[60px_auto_30px]'}`}>
-            {/* Admin/Manager Customer View Banner */}
+            {/* Admin/Manager/Employee Customer View Banner */}
             {showBanner && (
                 <div className="bg-green-600 text-white px-4 py-2 flex items-center justify-between shadow-md">
                     <span className="text-sm font-medium">
                         You are viewing the site as a customer
                     </span>
                     <Link
-                        href={isAdmin ? "/admin/dashboard" : "/manager/dashboard"}
+                        href={getDashboardLink()}
                         className="px-3 py-1 bg-white text-green-600 hover:bg-gray-100 rounded font-medium text-sm transition-colors"
                     >
-                        Switch to {isAdmin ? 'Admin' : 'Manager'} view
+                        Switch to {getViewName()} view
                     </Link>
                 </div>
             )}
