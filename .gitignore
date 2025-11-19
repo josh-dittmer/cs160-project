@@ -8,6 +8,7 @@ __pycache__/
 *.pyc
 backend/sqlite.db
 backend/sqlite.db-journal
+backend/db/
 .env
 temp/
 .github/
