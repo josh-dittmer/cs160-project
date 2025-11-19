@@ -189,7 +189,7 @@ export default function ProfilePage() {
                   className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                   onClick={() => setShowUrlInput(!showUrlInput)}
                 >
-                  {showUrlInput ? '✕ Cancel' : '🔗 Use image URL'}
+                  {showUrlInput ? '✕ Cancel' : 'Use image URL'}
                 </button>
                 
                 {showUrlInput && (

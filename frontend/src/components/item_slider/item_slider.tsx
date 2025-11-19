@@ -112,7 +112,7 @@ export default function ItemSlider({ title, items }: { title: string, items: Ite
                     mousewheel={true}
                     modules={[Navigation, Mousewheel]}
                     cssMode={true}
-                    loop={true}
+                    loop={currItems.length > 3}
                     className="w-full"
                     onSwiper={(swiper) => (swiperRef.current = swiper)}
                 >

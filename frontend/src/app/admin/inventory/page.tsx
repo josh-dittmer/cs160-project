@@ -17,6 +17,7 @@ import {
   type ItemCreateData,
   type ItemUpdateData
 } from '@/lib/api/admin';
+import { toTitleCase, normalizeCategoryForStorage, validateCategoryName } from '@/lib/util/categoryHelpers';
 
 export default function InventoryManagement() {
   const { token } = useAuth();
@@ -106,7 +107,7 @@ export default function InventoryManagement() {
     if (!token) return;
     
     const confirmed = confirm(
-      `⚠️ WARNING: Are you sure you want to PERMANENTLY delete "${itemName}"?\n\n` +
+      `WARNING: Are you sure you want to PERMANENTLY delete "${itemName}"?\n\n` +
       `This action CANNOT be undone! The item will be completely removed from the database.`
     );
     
@@ -258,7 +259,7 @@ export default function InventoryManagement() {
                 {item.name}
               </h3>
               <p className="text-sm text-gray-600 mb-2">
-                {item.category || 'Uncategorized'}
+                {toTitleCase(item.category) || 'Uncategorized'}
               </p>
               <div className="grid grid-cols-2 gap-2 text-sm mb-3">
                 <div>
@@ -308,7 +309,7 @@ export default function InventoryManagement() {
                   onClick={() => handlePermanentDelete(item.id, item.name)}
                   className="w-full px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium border border-red-800"
                 >
-                  🗑️ Delete Permanently
+                  Delete Permanently
                 </button>
               </div>
             </div>
@@ -372,6 +373,9 @@ function ItemFormModal({
   const [categories, setCategories] = useState<string[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [nutritionJsonError, setNutritionJsonError] = useState<string>('');
+  const [categoryMode, setCategoryMode] = useState<'existing' | 'custom'>('existing');
+  const [customCategory, setCustomCategory] = useState('');
+  const [categoryError, setCategoryError] = useState('');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const aiImageInputRef = React.useRef<HTMLInputElement>(null);
   const [aiPrompt, setAiPrompt] = useState('');
@@ -784,6 +788,20 @@ function ItemFormModal({
     setSaving(true);
 
     try {
+      // Validate custom category if in custom mode
+      if (categoryMode === 'custom') {
+        if (customCategory.trim() === '') {
+          // Allow empty category
+        } else {
+          const validation = validateCategoryName(customCategory);
+          if (!validation.valid) {
+            alert(`Invalid category: ${validation.error}`);
+            setSaving(false);
+            return;
+          }
+        }
+      }
+      
       // Validate price is entered
       if (!formData.price_usd || formData.price_usd === '') {
         alert('Please enter a price');
@@ -876,7 +894,7 @@ function ItemFormModal({
               disabled={saving}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium disabled:opacity-50 transition-colors"
             >
-              {saving ? 'Saving...' : '💾 Save'}
+              {saving ? 'Saving...' : 'Save'}
             </button>
           </div>
         </div>
@@ -942,23 +960,103 @@ function ItemFormModal({
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Category
                 </label>
-                {loadingCategories ? (
-                  <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-500">
-                    Loading categories...
-                  </div>
-                ) : (
-                  <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
+                
+                {/* Toggle between existing and custom */}
+                <div className="flex gap-2 mb-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCategoryMode('existing');
+                      setCategoryError('');
+                      setCustomCategory('');
+                    }}
+                    className={`flex-1 px-3 py-2 text-sm rounded-md transition-colors ${
+                      categoryMode === 'existing'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
                   >
-                    <option value="">Select a category</option>
-                    {categories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
+                    Select Existing
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCategoryMode('custom');
+                      setFormData({ ...formData, category: '' });
+                      setCategoryError('');
+                    }}
+                    className={`flex-1 px-3 py-2 text-sm rounded-md transition-colors ${
+                      categoryMode === 'custom'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    + Create New
+                  </button>
+                </div>
+
+                {categoryMode === 'existing' ? (
+                  loadingCategories ? (
+                    <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-500">
+                      Loading categories...
+                    </div>
+                  ) : (
+                    <select
+                      value={formData.category}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
+                    >
+                      <option value="">Select a category</option>
+                      {categories.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {toTitleCase(cat)}
+                        </option>
+                      ))}
+                    </select>
+                  )
+                ) : (
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={customCategory}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setCustomCategory(value);
+                        
+                        // Validate on change
+                        if (value.trim() === '') {
+                          setCategoryError('');
+                          setFormData({ ...formData, category: '' });
+                          return;
+                        }
+                        
+                        const validation = validateCategoryName(value);
+                        if (!validation.valid) {
+                          setCategoryError(validation.error || '');
+                          setFormData({ ...formData, category: '' });
+                        } else {
+                          setCategoryError('');
+                          // Update formData with normalized version
+                          setFormData({ 
+                            ...formData, 
+                            category: normalizeCategoryForStorage(value) 
+                          });
+                        }
+                      }}
+                      placeholder="Enter new category name"
+                      className={`w-full px-3 py-2 border rounded-md bg-white text-gray-900 ${
+                        categoryError ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    />
+                    {categoryError && (
+                      <p className="text-xs text-red-600">{categoryError}</p>
+                    )}
+                    {customCategory && !categoryError && (
+                      <p className="text-xs text-gray-500">
+                        Will be displayed as: <span className="font-semibold">{toTitleCase(customCategory)}</span>
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
               <div>
@@ -1016,7 +1114,7 @@ function ItemFormModal({
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
-                  ✨ Generate with AI
+                  Generate with AI
                 </button>
               </div>
 
@@ -1149,7 +1247,7 @@ function ItemFormModal({
                       )}
                     </button>
                     <p className="text-xs text-gray-500">
-                      💡 Tip: {aiBaseImage ? 'Be specific about what edits you want.' : 'Be specific about the product, lighting, background, and style. Or upload an image to edit it.'} Generation may take 10-30 seconds.
+                      Tip: {aiBaseImage ? 'Be specific about what edits you want.' : 'Be specific about the product, lighting, background, and style. Or upload an image to edit it.'} Generation may take 10-30 seconds.
                     </p>
                   </div>
                 </div>
@@ -1217,7 +1315,7 @@ function ItemFormModal({
               />
               {nutritionJsonError ? (
                 <p className="text-xs text-red-600 mt-1 flex items-start gap-1">
-                  <span className="mt-0.5">⚠️</span>
+                  <span className="mt-0.5">⚠</span>
                   <span>{nutritionJsonError}</span>
                 </p>
               ) : (
@@ -1244,7 +1342,7 @@ function ItemFormModal({
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
-                  🎬 AI Generate
+                  AI Generate
                 </button>
                 <button
                   type="button"
@@ -1255,7 +1353,7 @@ function ItemFormModal({
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
-                  📤 Upload File
+                  Upload File
                 </button>
                 <button
                   type="button"
@@ -1266,7 +1364,7 @@ function ItemFormModal({
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
-                  🔗 Add URL
+                  Add URL
                 </button>
               </div>
 
@@ -1301,7 +1399,7 @@ function ItemFormModal({
                       className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      💡 Tip: Be specific about the product, action, lighting, and style. Veo 3.1 generates 8-second videos with audio.
+                      Tip: Be specific about the product, action, lighting, and style. Veo 3.1 generates 8-second videos with audio.
                     </p>
                   </div>
 
@@ -1320,7 +1418,7 @@ function ItemFormModal({
                         Generating Video... (30-60s)
                       </span>
                     ) : (
-                      '🎬 Generate Video with AI'
+                      'Generate Video with AI'
                     )}
                   </button>
                 </div>
@@ -1347,7 +1445,7 @@ function ItemFormModal({
                         cursor-pointer"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      💡 Accepts MP4, WebM, OGG, or MOV files (max 50MB)
+                      Accepts MP4, WebM, OGG, or MOV files (max 50MB)
                     </p>
                   </div>
                 </div>
@@ -1359,7 +1457,7 @@ function ItemFormModal({
                   {/* Copyright Warning */}
                   <div className="bg-yellow-50 border border-yellow-300 rounded-md p-3">
                     <p className="text-xs text-yellow-800 font-medium flex items-start gap-2">
-                      <span className="text-base">⚠️</span>
+                      <span className="text-base">⚠</span>
                       <span>
                         <strong>Copyright Warning:</strong> Only use videos you own, created yourself, or have explicit permission to use. 
                         Using copyrighted content from other brands/creators without permission is illegal and may result in legal action.
@@ -1379,7 +1477,7 @@ function ItemFormModal({
                       className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      💡 Use only: Your own videos, licensed stock videos, or AI-generated content
+                      Use only: Your own videos, licensed stock videos, or AI-generated content
                     </p>
                   </div>
 
@@ -1389,7 +1487,7 @@ function ItemFormModal({
                     disabled={!videoUrlInput.trim()}
                     className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    🔗 Add Video URL
+                    Add Video URL
                   </button>
                 </div>
               )}

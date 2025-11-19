@@ -8,6 +8,7 @@ import { Package, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { useState, useEffect, use } from 'react';
+import { toTitleCase } from '@/lib/util/categoryHelpers';
 
 // Define the nutrition type
 const NutritionFact = t.partial({
@@ -403,8 +404,8 @@ export default function ItemDetailPage({ params }: { params: Promise<{ id: strin
                     <div>
                         <h1 className="text-3xl font-bold text-fg-dark mb-2">{item.name}</h1>
                         {item.category && (
-                            <p className="text-fg-medium capitalize text-sm">
-                                Category: <span className="font-semibold">{item.category}</span>
+                            <p className="text-fg-medium text-sm">
+                                Category: <span className="font-semibold">{toTitleCase(item.category)}</span>
                             </p>
                         )}
                     </div>

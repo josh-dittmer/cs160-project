@@ -98,7 +98,7 @@ export default function UsersManagement() {
         if (subordinates.length > 0) {
           // Has subordinates - cannot demote at all (neither to employee nor customer)
           alert(
-            '⚠️ Cannot Demote Last Manager\n\n' +
+            'WARNING: Cannot Demote Last Manager\n\n' +
             'This is the only manager in the system and they have ' + subordinates.length + ' subordinate(s). ' +
             'You cannot demote them until:\n\n' +
             '• Promote another user to manager first (so subordinates can be reassigned)'
@@ -107,7 +107,7 @@ export default function UsersManagement() {
         } else if (newRole === 'employee') {
           // No subordinates - can become customer but not employee
           alert(
-            '⚠️ Cannot Demote Last Manager to Employee\n\n' +
+            'WARNING: Cannot Demote Last Manager to Employee\n\n' +
             'This is the only manager in the system. You cannot demote them to employee ' +
             '(employees need a manager to report to).\n\n' +
             'To proceed, either:\n' +
@@ -533,7 +533,7 @@ export default function UsersManagement() {
               {managerSelectData.subordinates && managerSelectData.subordinates.length > 0 && (
                 <div className="border border-yellow-300 bg-yellow-50 rounded-lg p-4">
                   <h4 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
-                    ⚠️ Reassign Subordinates
+                    Reassign Subordinates
                   </h4>
                   <p className="text-sm text-gray-700 mb-4">
                     This manager currently has {managerSelectData.subordinates.length} subordinate(s). 

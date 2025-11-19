@@ -6,7 +6,8 @@ import { listItems, updateItemStock, ItemEmployee } from "@/lib/api/employee";
 import { CardTable } from "@/components/employee_table/card_table";
 import { StatusBadge } from "@/components/employee_table/status_badge";
 import { Icons } from "@/components/employee_table/icons";
-import  Modal  from "@/components/modal/modal"
+import  Modal  from "@/components/modal/modal";
+import { toTitleCase } from "@/lib/util/categoryHelpers";
 
 
 type Status = 'In Stock' | 'Out of Stock' | 'Low Stock';
@@ -66,13 +67,15 @@ export default function StockManagementPage(){
         }
     };
 
-    const categories = useMemo(() => ['All',...Array.from(new Set(products.map((p)=> p.category || 'Uncategorized')))],
+    const categories = useMemo(() => ['All',...Array.from(new Set(products.map((p)=> toTitleCase(p.category) || 'Uncategorized')))],
     [products]);
 
     const filtered = useMemo(()=>{
         return products.filter((p) =>{
             const matchesQuery = p.name.toLowerCase().includes(query.toLowerCase()) || p.id.toString().includes(query);
-            const matchesCategory = category === 'All' || p.category === category;
+            const matchesCategory = category === 'All' || 
+                toTitleCase(p.category) === category || 
+                (!p.category && category === 'Uncategorized');
             const itemStatus = getStatus(p.stock_qty);
             const matchesStatus = status === 'All' || itemStatus === status;
             return matchesQuery && matchesCategory && matchesStatus;

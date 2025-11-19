@@ -144,7 +144,7 @@ export default function AddressSelector() {
 
                     // Validate coordinates are in reasonable range for San Jose
                     if (coords.lat < 36 || coords.lat > 38 || coords.lng > -120 || coords.lng < -123) {
-                        console.error('⚠️ Coordinates seem incorrect for San Jose!', coords);
+                        console.error('WARNING: Coordinates seem incorrect for San Jose!', coords);
                         console.error('Using default San Jose center instead');
                         setCoordinates(defaultCenter);
                     } else {

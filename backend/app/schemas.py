@@ -1,6 +1,49 @@
 from datetime import datetime
-from pydantic import BaseModel, conint, constr, EmailStr
+from pydantic import BaseModel, conint, constr, EmailStr, field_validator
 from .models import OrderStatus
+import re
+
+
+def validate_and_normalize_category(v: str | None) -> str | None:
+    """
+    Shared validation and normalization logic for category fields.
+    Returns normalized lowercase category or None.
+    Raises ValueError if validation fails.
+    """
+    if v is None or v == "":
+        return None
+    
+    trimmed = v.strip()
+    
+    # Check if empty after trimming
+    if trimmed == "":
+        return None
+    
+    # Length constraints
+    if len(trimmed) < 2:
+        raise ValueError("Category name must be at least 2 characters")
+    
+    if len(trimmed) > 50:
+        raise ValueError("Category name must be 50 characters or less")
+    
+    # Only allow letters, spaces, hyphens, ampersands, apostrophes
+    if not re.match(r'^[a-zA-Z\s\-&\']+$', trimmed):
+        raise ValueError("Category can only contain letters, spaces, hyphens (-), ampersands (&), and apostrophes (')")
+    
+    # Check for multiple consecutive spaces
+    if re.search(r'\s{2,}', trimmed):
+        raise ValueError("Category name cannot contain multiple consecutive spaces")
+    
+    # Must start and end with a letter
+    if not re.match(r'^[a-zA-Z]', trimmed):
+        raise ValueError("Category name must start with a letter")
+    
+    if not re.search(r'[a-zA-Z]$', trimmed):
+        raise ValueError("Category name must end with a letter")
+    
+    # Normalize: trim, collapse spaces, lowercase
+    normalized = re.sub(r'\s+', ' ', trimmed).lower()
+    return normalized
 
 class ItemOut(BaseModel):
     """Basic item schema (for favorites and simple listings)."""
@@ -258,6 +301,12 @@ class ItemCreate(BaseModel):
     description: str | None = None
     stock_qty: conint(ge=0) = 0
     is_active: bool = True
+    
+    @field_validator('category')
+    @classmethod
+    def validate_category(cls, v: str | None) -> str | None:
+        """Validate and normalize category name"""
+        return validate_and_normalize_category(v)
 
 
 class ItemUpdate(BaseModel):
@@ -272,6 +321,12 @@ class ItemUpdate(BaseModel):
     description: str | None = None
     stock_qty: conint(ge=0) | None = None
     is_active: bool | None = None
+    
+    @field_validator('category')
+    @classmethod
+    def validate_category(cls, v: str | None) -> str | None:
+        """Validate and normalize category name"""
+        return validate_and_normalize_category(v)
 
 
 class ItemActivateUpdate(BaseModel):

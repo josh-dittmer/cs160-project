@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { ItemsByCategoryResponse } from "@/lib/api/models";
 import { get, request } from "@/lib/api/request";
 import ItemCard from "@/components/item/item";
+import { toTitleCase } from "@/lib/util/categoryHelpers";
 
 export default function SeeAllItemsPage() {
   const searchParams = useSearchParams();
@@ -36,7 +37,7 @@ export default function SeeAllItemsPage() {
     <div>
       <h1 className="text-2xl font-semibold mb-4">
         {category
-          ? `All ${category.charAt(0).toUpperCase() + category.slice(1)}`
+          ? `All ${toTitleCase(category)}`
           : "All Items"}
       </h1>
 
