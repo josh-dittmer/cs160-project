@@ -16,6 +16,14 @@ export default function ActiveOrderCard({ order }: { order: OrderT }) {
                 <div className="flex flex-col gap-2 w-full">
                     <OrderSummary order={order} />
                 </div>
+                <div className="flex justify-end mt-2">
+                    <button
+                        onClick={() => window.location.href = `/delivery/${order.id}`}
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full text-sm font-medium transition"
+                    >
+                        View Order Detail
+                    </button>
+                </div>
             </div>
         </div>
     )
