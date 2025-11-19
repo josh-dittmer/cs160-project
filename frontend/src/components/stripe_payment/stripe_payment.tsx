@@ -5,7 +5,7 @@ import { stripePromise } from "@/lib/stripe";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { Appearance, StripePaymentElementOptions } from "@stripe/stripe-js";
 import { motion } from "motion/react";
-import { useContext, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 
 function CheckoutForm({ totalCents, totalWeightOz }: { totalCents: number, totalWeightOz: number }) {
     const { user } = useAuth();
@@ -82,17 +82,25 @@ function CheckoutForm({ totalCents, totalWeightOz }: { totalCents: number, total
 export default function StripePayment() {
     const { data } = usePaymentIntentQuery();
 
-    const appearance: Appearance = {
+    const appearance = useMemo<Appearance>(() => ({
         theme: 'stripe'
-    };
+    }), []);
 
-    const loader = 'auto';
+    const options = useMemo(() => {
+        if (!data) return null;
+        return {
+            clientSecret: data.clientSecret,
+            customerSessionClientSecret: data.customerSessionClientSecret,
+            appearance,
+            loader: 'auto' as const,
+        };
+    }, [data?.clientSecret, data?.customerSessionClientSecret, appearance]);
 
-    if (!data) return <p>Loading...</p>
+    if (!options || !data) return <p>Loading...</p>
 
     return (
         <>
-            <Elements options={{ clientSecret: data.clientSecret, customerSessionClientSecret: data.customerSessionClientSecret, appearance: appearance, loader: loader }} stripe={stripePromise}>
+            <Elements key={data.clientSecret} options={options} stripe={stripePromise}>
                 <CheckoutForm totalCents={data.totalCents} totalWeightOz={data.totalWeightOz} />
             </Elements>
         </>
