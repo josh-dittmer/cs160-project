@@ -124,7 +124,8 @@ export type ConfirmPaymentResponseT = t.TypeOf<typeof ConfirmPaymentResponse>;
 export const CreatePaymentIntentResponse = t.type({
     clientSecret: t.string,
     customerSessionClientSecret: t.string,
-    totalCents: t.number
+    totalCents: t.number,
+    totalWeightOz: t.number,
 });
 
 export type CreatePaymentIntentResponseT = t.TypeOf<typeof CreatePaymentIntentResponse>;

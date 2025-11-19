@@ -14,3 +14,4 @@ temp/
 .pytest_cache/
 backend/keys.json
 test-deploy/
+db/

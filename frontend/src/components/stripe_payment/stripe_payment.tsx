@@ -7,7 +7,7 @@ import { Appearance, StripePaymentElementOptions } from "@stripe/stripe-js";
 import { motion } from "motion/react";
 import { useContext, useState } from "react";
 
-function CheckoutForm({ totalCents }: { totalCents: number }) {
+function CheckoutForm({ totalCents, totalWeightOz }: { totalCents: number, totalWeightOz: number }) {
     const { user } = useAuth();
 
     const stripe = useStripe();
@@ -59,15 +59,21 @@ function CheckoutForm({ totalCents }: { totalCents: number }) {
                 </button>
             )}
             {user?.address && (
-                <motion.button
-                    whileTap={{ scale: 0.99 }}
-                    disabled={loading || !stripe || !elements}
-                    onClick={handleSubmit}
-                    className="w-full p-4 rounded-xl bg-bg-dark hover:bg-bg-accent font-bold"
-                >
-                    <span>{loading ? "Loading..." : `Pay $${(totalCents / 100).toFixed(2)} now`}</span>
-                </motion.button>
-            )}
+                (totalWeightOz > 200 * 16 ? (
+                    <div className="w-full p-4 rounded-xl bg-bg-dark font-bold text-center">
+                        <span>Order is too heavy (max 200 lbs)</span>
+                    </div>
+                ) : (
+                    <motion.button
+                        whileTap={{ scale: 0.99 }}
+                        disabled={loading || !stripe || !elements}
+                        onClick={handleSubmit}
+                        className="w-full p-4 rounded-xl bg-bg-dark hover:bg-bg-accent font-bold"
+                    >
+                        <span>{loading ? "Loading..." : `Pay $${(totalCents / 100).toFixed(2)} now`}</span>
+                    </motion.button>
+                )
+                ))}
             {message && <div className="mt-4 text-red-500">{message}</div>}
         </div>
     )
@@ -87,7 +93,7 @@ export default function StripePayment() {
     return (
         <>
             <Elements options={{ clientSecret: data.clientSecret, customerSessionClientSecret: data.customerSessionClientSecret, appearance: appearance, loader: loader }} stripe={stripePromise}>
-                <CheckoutForm totalCents={data.totalCents} />
+                <CheckoutForm totalCents={data.totalCents} totalWeightOz={data.totalWeightOz} />
             </Elements>
         </>
     )

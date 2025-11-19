@@ -202,6 +202,7 @@ class CreatePaymentIntentResponse(BaseModel):
     clientSecret: str
     customerSessionClientSecret: str
     totalCents: int
+    totalWeightOz: int
 
 class CreateSetupIntenetResponse(BaseModel):
     clientSecret: str

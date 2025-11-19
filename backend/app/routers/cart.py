@@ -60,7 +60,7 @@ def update_cart(
     cart_item = db.query(CartItem).filter_by(
         user_id=user.id, item_id=payload.item_id
     ).first()
-    
+
     if cart_item:
         if payload.quantity <= 0:
             # Remove from cart

@@ -7,7 +7,7 @@ export const useOrderRouteQuery = (orderId: number) => {
     const { isAuthenticated, token } = useAuth();
 
     return useQuery({
-        queryKey: ['orderRoute'],
+        queryKey: ['orderRoute', orderId],
         queryFn: () => request(`/api/vehicle/order-route/${orderId}`, get({
             token: token ?? undefined,
             decoder: OrderRouteResponse

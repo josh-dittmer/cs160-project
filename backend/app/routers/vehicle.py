@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, WebSocket, WebSoc
 from ..schemas import OrderRouteResponse
 from ..auth import get_current_user, get_user_from_token, UserCtx
 from ..database import get_db
-from ..models import Order, OrderStatus, DeliveryVehicle, DeliveryVehicleStatus
+from ..models import OrderItem, Order, Item, OrderStatus, DeliveryVehicle, DeliveryVehicleStatus
 from sqlalchemy.orm import Session
 from ..auth import verify_password
 from ..route_optimization import optimize_order_route
@@ -86,8 +86,32 @@ async def vehicle_websocket(
                 vehicle = v
 
             # assign pending orders (put constraints here)
+            
+            MAX_ORDERS = 10
+            MAX_WEIGHT_OZ = 200 * 16 # 200lbs max
+
             if vehicle.status is DeliveryVehicleStatus.READY:
-                orders = db.query(Order).filter_by(status=OrderStatus.PACKING).all()
+                all_orders =  db.query(Order).filter_by(status=OrderStatus.PACKING).order_by(Order.created_at.asc()).limit(10).all()
+
+                accum_weight_oz = 0
+                orders: list[Order] = []
+
+                for order in all_orders:
+                    items = db.query(OrderItem, Item).join(Item).filter(
+                        OrderItem.order_id == order.id
+                    ).all()
+
+                    for row in items:
+                        order_item: OrderItem = row[0]
+                        item: Item = row[1]
+                        accum_weight_oz += item.weight_oz * order_item.quantity
+
+                    if accum_weight_oz > MAX_WEIGHT_OZ:
+                        break
+
+                    print(f'Added order, current weight is {accum_weight_oz}oz')
+
+                    orders.append(order)
 
                 routes = await optimize_order_route(orders)
 
@@ -109,6 +133,13 @@ async def vehicle_websocket(
                         await manager.send_message({
                             'type': 'orderUpdate'
                         }, user)
+
+                vehicle.status = DeliveryVehicleStatus.DELIVERING
+                db.commit()
+                db.refresh(vehicle)
+
+            elif vehicle.status is DeliveryVehicleStatus.DELIVERING:
+                print('Delivering')
                         
     except Exception as e:
         print(f"Error sending to {vehicle.id}: {e}")

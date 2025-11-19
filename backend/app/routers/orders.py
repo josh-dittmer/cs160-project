@@ -3,6 +3,7 @@ from ..schemas import OrderItemsResponse, OrderOut, CartItemOut
 from ..auth import get_current_user, UserCtx
 from ..database import get_db
 from ..models import OrderItem, Order, Item
+from ..cart import calculate_cart_total
 from sqlalchemy.orm import Session
 from typing import Dict
 
@@ -45,8 +46,10 @@ def list_order_items(
             item=i
         ))
 
-        orders[o.id].total_cents += i.price_cents
-        orders[o.id].total_weight_oz += i.weight_oz
+    for order in orders.values():
+        price_data = calculate_cart_total(order.items)
+        order.total_cents = price_data.total_item_cents if price_data.shipping_waived else price_data.total_cents
+        order.total_weight_oz = price_data.total_weight_oz
 
     return OrderItemsResponse(
         orders=orders.values()

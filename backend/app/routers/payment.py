@@ -58,10 +58,13 @@ def confirm_payment(
         CartItem.user_id == user.id
     ).all()
     
+    accum_weight_oz = 0
+
     # Final inventory check before order confirmation
     for row in cart_items:
         ci: CartItem = row[0]
         it: Item = row[1]
+        accum_weight_oz += it.weight_oz * ci.quantity
         if ci.quantity > it.stock_qty:
             db.delete(order)  # Rollback order creation
             db.commit()
@@ -70,6 +73,13 @@ def confirm_payment(
                 detail=f"Insufficient stock for '{it.name}'. Available: {it.stock_qty}, Requested: {ci.quantity}"
             )
     
+    # max weight 200lbs
+    if accum_weight_oz > 200 * 16:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Order weight exceeds 200lbs"
+        )
+
     order_items_details = []
     total_amount = 0
 
@@ -135,6 +145,8 @@ def create_payment_intent(
 
     cart_items: List[CartItemOut] = []
 
+    total_weight_oz = 0
+
     for row in items:
         ci: CartItem = row[0]
         it: Item = row[1]
@@ -143,6 +155,7 @@ def create_payment_intent(
             item=it
         )
         cart_items.append(cart_item)
+        total_weight_oz += ci.quantity * it.weight_oz
 
     price_data: CartPriceData = calculate_cart_total(cart_items)
 
@@ -170,7 +183,8 @@ def create_payment_intent(
     return CreatePaymentIntentResponse(
         clientSecret=intent.client_secret,
         customerSessionClientSecret=customer_session.client_secret,
-        totalCents=price_data.total_item_cents if price_data.shipping_waived else price_data.total_cents
+        totalCents=price_data.total_item_cents if price_data.shipping_waived else price_data.total_cents,
+        totalWeightOz=total_weight_oz
     )
 
 @router.get("/create-setup-intent", response_model=CreateSetupIntenetResponse)

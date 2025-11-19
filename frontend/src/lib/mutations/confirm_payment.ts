@@ -17,8 +17,8 @@ export const useConfirmPaymentMutation = () => {
             payload: vars.request
         })),
         mutationKey: ['confirmPayment'],
-        onSuccess: () => {
-            client.invalidateQueries({ queryKey: ['orders'] });
+        onSuccess: (data) => {
+            client.invalidateQueries({ queryKey: ['orders', data.orderId] });
             client.invalidateQueries({ queryKey: ['cartItems'] });
         },
         retry: 0
