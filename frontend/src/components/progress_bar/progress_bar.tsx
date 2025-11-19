@@ -47,16 +47,6 @@ export default function DeliveryProgress({ currentStep, onNextStep }: DeliveryPr
                     </div>
                 ))}
             </div>
-
-            {/* Button for demo */}
-            <div className="flex justify-center mt-6">
-                <button
-                    onClick={onNextStep}
-                    className="text-sm bg-green-500 text-white px-4 py-2 rounded-full hover:bg-green-600 transition"
-                >
-                    Next Step
-                </button>
-            </div>
         </div>
     );
 }
