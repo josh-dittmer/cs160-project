@@ -25,7 +25,47 @@ export default function Provider({ children }: { children: ReactNode }) {
                                 <AddressProvider>
                                     <MapsProvider>
                                         <WebsocketProvider>
-                                            <Toaster position="top-right" />
+                                            <Toaster 
+                                                position="top-center"
+                                                toastOptions={{
+                                                    duration: 4000,
+                                                    style: {
+                                                        background: '#fff',
+                                                        color: '#1f2937',
+                                                        fontSize: '16px',
+                                                        padding: '16px 20px',
+                                                        borderRadius: '8px',
+                                                        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)',
+                                                        border: '1px solid #e5e7eb',
+                                                        minWidth: '350px',
+                                                        maxWidth: '500px',
+                                                    },
+                                                    success: {
+                                                        duration: 3000,
+                                                        iconTheme: {
+                                                            primary: '#10b981',
+                                                            secondary: '#fff',
+                                                        },
+                                                        style: {
+                                                            background: '#f0fdf4',
+                                                            color: '#065f46',
+                                                            border: '2px solid #10b981',
+                                                        },
+                                                    },
+                                                    error: {
+                                                        duration: 6000,
+                                                        iconTheme: {
+                                                            primary: '#ef4444',
+                                                            secondary: '#fff',
+                                                        },
+                                                        style: {
+                                                            background: '#fef2f2',
+                                                            color: '#991b1b',
+                                                            border: '2px solid #ef4444',
+                                                        },
+                                                    },
+                                                }}
+                                            />
                                             {children}
                                         </WebsocketProvider>
                                     </MapsProvider>

@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Toaster } from 'react-hot-toast';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, logout } = useAuth();
@@ -40,7 +39,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-white dark:bg-white">
-      <Toaster position="top-right" />
       {/* Admin Header */}
       <header className="bg-white dark:bg-white shadow border-b">
         <div className="max-w-full mx-auto px-6">
