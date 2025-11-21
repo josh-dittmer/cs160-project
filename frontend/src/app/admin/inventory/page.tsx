@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth';
 import { useSearchParams, useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 import {
   listItems,
   createItem,
@@ -75,7 +76,7 @@ export default function InventoryManagement() {
       setItems(data);
     } catch (error) {
       console.error('Failed to fetch items:', error);
-      alert('Failed to fetch items');
+      toast.error('Failed to fetch items');
     } finally {
       setLoading(false);
     }
@@ -94,11 +95,11 @@ export default function InventoryManagement() {
 
     try {
       await deleteItem(token, itemId);
-      alert('Item deactivated successfully');
+      toast.success('Item deactivated successfully');
       fetchItems();
     } catch (error: any) {
       console.error('Failed to deactivate item:', error);
-      alert(error.message || 'Failed to deactivate item');
+      toast.error(error.message || 'Failed to deactivate item');
     }
   };
 
@@ -114,11 +115,11 @@ export default function InventoryManagement() {
 
     try {
       await permanentlyDeleteItem(token, itemId);
-      alert('Item permanently deleted from database');
+      toast.success('Item permanently deleted from database');
       fetchItems();
     } catch (error: any) {
       console.error('Failed to permanently delete item:', error);
-      alert(error.message || 'Failed to permanently delete item');
+      toast.error(error.message || 'Failed to permanently delete item');
     }
   };
 
@@ -127,11 +128,11 @@ export default function InventoryManagement() {
     
     try {
       await activateItem(token, itemId, isActive);
-      alert(`Item ${isActive ? 'activated' : 'deactivated'} successfully`);
+      toast.success(`Item ${isActive ? 'activated' : 'deactivated'} successfully`);
       fetchItems();
     } catch (error: any) {
       console.error('Failed to update item status:', error);
-      alert(error.message || 'Failed to update item status');
+      toast.error(error.message || 'Failed to update item status');
     }
   };
 
@@ -408,13 +409,13 @@ function ItemFormModal({
 
     // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image size should be less than 5MB');
+      toast.error('Image size should be less than 5MB');
       return;
     }
 
     // Check file type
     if (!file.type.startsWith('image/')) {
-      alert('Please upload an image file');
+      toast.error('Please upload an image file');
       return;
     }
 
@@ -428,13 +429,13 @@ function ItemFormModal({
         setUploadingImage(false);
       };
       reader.onerror = () => {
-        alert('Failed to read image file');
+        toast.error('Failed to read image file');
         setUploadingImage(false);
       };
       reader.readAsDataURL(file);
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Failed to upload image');
+      toast.error('Failed to upload image');
       setUploadingImage(false);
     }
   };
@@ -473,7 +474,7 @@ function ItemFormModal({
       setAiPrompt('');
     } catch (error) {
       console.error('Error loading image for editing:', error);
-      alert('Failed to load image for editing. Please try uploading the image directly.');
+      toast.error('Failed to load image for editing. Please try uploading the image directly.');
     }
   };
 
@@ -483,13 +484,13 @@ function ItemFormModal({
 
     // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image size should be less than 5MB');
+      toast.error('Image size should be less than 5MB');
       return;
     }
 
     // Check file type
     if (!file.type.startsWith('image/')) {
-      alert('Please upload an image file');
+      toast.error('Please upload an image file');
       return;
     }
 
@@ -501,12 +502,12 @@ function ItemFormModal({
         setAiBaseImage(base64String);
       };
       reader.onerror = () => {
-        alert('Failed to read image file');
+        toast.error('Failed to read image file');
       };
       reader.readAsDataURL(file);
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Failed to upload image');
+      toast.error('Failed to upload image');
     }
   };
 
@@ -520,7 +521,7 @@ function ItemFormModal({
 
   const handleGenerateImage = async () => {
     if (!aiPrompt.trim()) {
-      alert('Please enter a description for the image you want to generate or edit');
+      toast.error('Please enter a description for the image you want to generate or edit');
       return;
     }
 
@@ -528,10 +529,10 @@ function ItemFormModal({
     try {
       const result = await generateImage(token, aiPrompt, aiBaseImage || undefined);
       setFormData({ ...formData, image_url: result.image_data });
-      alert(aiBaseImage ? 'Image edited successfully! You can now preview it below.' : 'Image generated successfully! You can now preview it below.');
+      toast.success(aiBaseImage ? 'Image edited successfully! You can now preview it below.' : 'Image generated successfully! You can now preview it below.');
     } catch (error: any) {
       console.error('Failed to generate image:', error);
-      alert(error.message || 'Failed to generate image. Please try again.');
+      toast.error(error.message || 'Failed to generate image. Please try again.');
     } finally {
       setGeneratingImage(false);
     }
@@ -539,7 +540,7 @@ function ItemFormModal({
 
   const handleGenerateVideo = async () => {
     if (!videoPrompt.trim()) {
-      alert('Please enter a description for the video you want to generate');
+      toast.error('Please enter a description for the video you want to generate');
       return;
     }
 
@@ -551,10 +552,10 @@ function ItemFormModal({
     try {
       const result = await generateVideoSync(token, videoPrompt, videoModel);
       setFormData({ ...formData, video_url: result.video_data || '' });
-      alert('Video generated successfully! You can now preview it below.');
+      toast.success('Video generated successfully! You can now preview it below.');
     } catch (error: any) {
       console.error('Failed to generate video:', error);
-      alert(error.message || 'Failed to generate video. Please try again.');
+      toast.error(error.message || 'Failed to generate video. Please try again.');
     } finally {
       setGeneratingVideo(false);
     }
@@ -571,7 +572,7 @@ function ItemFormModal({
 
   const handleAddVideoUrl = () => {
     if (!videoUrlInput.trim()) {
-      alert('Please enter a video URL');
+      toast.error('Please enter a video URL');
       return;
     }
     
@@ -609,14 +610,14 @@ function ItemFormModal({
     // Validate file type
     const validVideoTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'];
     if (!validVideoTypes.includes(file.type)) {
-      alert('Please select a valid video file (MP4, WebM, OGG, or MOV)');
+      toast.error('Please select a valid video file (MP4, WebM, OGG, or MOV)');
       return;
     }
 
     // Validate file size (max 50MB)
     const maxSize = 50 * 1024 * 1024; // 50MB
     if (file.size > maxSize) {
-      alert('Video file is too large. Maximum size is 50MB. Consider compressing the video or using a URL instead.');
+      toast.error('Video file is too large. Maximum size is 50MB. Consider compressing the video or using a URL instead.');
       return;
     }
 
@@ -627,7 +628,7 @@ function ItemFormModal({
       setFormData({ ...formData, video_url: base64String });
     };
     reader.onerror = () => {
-      alert('Error reading video file. Please try again.');
+      toast.error('Error reading video file. Please try again.');
     };
     reader.readAsDataURL(file);
   };
@@ -787,7 +788,7 @@ function ItemFormModal({
     try {
       // Validate price is entered
       if (!formData.price_usd || formData.price_usd === '') {
-        alert('Please enter a price');
+        toast.error('Please enter a price');
         setSaving(false);
         return;
       }
@@ -798,14 +799,14 @@ function ItemFormModal({
       
       // Validate price is greater than 0
       if (priceCents <= 0) {
-        alert('Price must be greater than $0.00');
+        toast.error('Price must be greater than $0.00');
         setSaving(false);
         return;
       }
 
       // Validate image is provided
       if (!formData.image_url || formData.image_url.trim() === '') {
-        alert('Please provide a product image (either URL or upload an image)');
+        toast.error('Please provide a product image (either URL or upload an image)');
         setSaving(false);
         return;
       }
@@ -813,7 +814,7 @@ function ItemFormModal({
       // Validate nutrition JSON if provided
       if (formData.nutrition_json && formData.nutrition_json.trim() !== '') {
         if (!validateNutritionJson(formData.nutrition_json)) {
-          alert(`Invalid nutrition JSON: ${nutritionJsonError}`);
+          toast.error(`Invalid nutrition JSON: ${nutritionJsonError}`);
           setSaving(false);
           return;
         }
@@ -835,16 +836,15 @@ function ItemFormModal({
       if (item) {
         // Update existing item
         await updateItem(token, item.id, submitData, autoCase);
-        alert('Item updated successfully');
+        toast.success('Item updated successfully');
       } else {
         // Create new item
         await createItem(token, submitData, autoCase);
-        alert('Item created successfully');
+        toast.success('Item created successfully');
       }
       onSuccess();
     } catch (error: any) {
-      console.error('Failed to save item:', error);
-      alert(error.message || 'Failed to save item');
+      toast.error(error.message || 'Failed to save item');
     } finally {
       setSaving(false);
     }
