@@ -7,6 +7,7 @@ import { ShoppingCart } from "lucide-react";
 import { motion } from "motion/react";
 import { usePathname, useRouter } from "next/navigation";
 import { useContext } from "react";
+import toast from "react-hot-toast";
 
 export default function CartIcon() {
     const cartContext = useContext(CartContext);
@@ -25,7 +26,7 @@ export default function CartIcon() {
         // If the user is already on the payment page, refresh it
         if (pathname === "/payment") {
             // TODO: change the UI of alert later
-            alert("Please continue to checkout. Shopping cart is not available right now.");
+            toast.info("Please continue to checkout. Shopping cart is not available right now.");
             router.refresh();
             return;
         }

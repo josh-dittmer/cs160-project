@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth';
+import toast from 'react-hot-toast';
 import { 
   listUsers, 
   updateUserRole, 
@@ -66,7 +67,7 @@ export default function UsersManagement() {
       setUsers(data);
     } catch (error) {
       console.error('Failed to fetch users:', error);
-      alert('Failed to fetch users');
+      toast.error('Failed to fetch users');
     } finally {
       setLoading(false);
     }
@@ -77,7 +78,7 @@ export default function UsersManagement() {
     
     // Managers cannot change any user roles (new requirement)
     if (isManager) {
-      alert('Managers do not have permission to change user roles');
+      toast.error('Managers do not have permission to change user roles');
       return;
     }
     
@@ -97,22 +98,16 @@ export default function UsersManagement() {
       if (availableManagers.length === 0) {
         if (subordinates.length > 0) {
           // Has subordinates - cannot demote at all (neither to employee nor customer)
-          alert(
-            '⚠️ Cannot Demote Last Manager\n\n' +
-            'This is the only manager in the system and they have ' + subordinates.length + ' subordinate(s). ' +
-            'You cannot demote them until:\n\n' +
-            '• Promote another user to manager first (so subordinates can be reassigned)'
+          toast.error(
+            `Cannot demote last manager: They have ${subordinates.length} subordinate(s). Promote another user to manager first.`,
+            { duration: 6000 }
           );
           return;
         } else if (newRole === 'employee') {
           // No subordinates - can become customer but not employee
-          alert(
-            '⚠️ Cannot Demote Last Manager to Employee\n\n' +
-            'This is the only manager in the system. You cannot demote them to employee ' +
-            '(employees need a manager to report to).\n\n' +
-            'To proceed, either:\n' +
-            '• Promote another user to manager first, or\n' +
-            '• Change their role to customer instead (customers don\'t need a manager)'
+          toast.error(
+            'Cannot demote last manager to employee. Promote another user to manager first, or change role to customer.',
+            { duration: 6000 }
           );
           return;
         }
@@ -209,7 +204,7 @@ export default function UsersManagement() {
     try {
       // Only admins should reach this point due to earlier checks
       await updateUserRole(token, userId, newRole, managerId);
-      alert('User role updated successfully');
+      toast.success('User role updated successfully');
       fetchUsers();
     } catch (error: any) {
       console.error('Failed to update user role:', error);
@@ -219,7 +214,7 @@ export default function UsersManagement() {
       const friendlyMessage = errorMessage.includes(':') 
         ? errorMessage.split(':').slice(1).join(':').trim()
         : errorMessage;
-      alert(friendlyMessage);
+      toast.error(friendlyMessage);
     }
   };
 
@@ -237,11 +232,11 @@ export default function UsersManagement() {
       } else {
         await blockUser(token, userId, !currentStatus);
       }
-      alert(`User ${action}ed successfully`);
+      toast.success(`User ${action}ed successfully`);
       fetchUsers();
     } catch (error: any) {
       console.error(`Failed to ${action} user:`, error);
-      alert(error.message || `Failed to ${action} user`);
+      toast.error(error.message || `Failed to ${action} user`);
     }
   };
 
@@ -250,7 +245,7 @@ export default function UsersManagement() {
     
     // For employee role, we need a manager selected
     if (managerSelectData.newRole === 'employee' && selectedManagerId === null) {
-      alert('Please select a manager');
+      toast.error('Please select a manager');
       return;
     }
     
@@ -288,7 +283,7 @@ export default function UsersManagement() {
         managerIdToSend,
         subordinateReassignments
       );
-      alert('User role updated successfully');
+      toast.success('User role updated successfully');
       setShowManagerSelectModal(false);
       setManagerSelectData(null);
       setSelectedManagerId(null);
@@ -300,7 +295,7 @@ export default function UsersManagement() {
       const friendlyMessage = errorMessage.includes(':') 
         ? errorMessage.split(':').slice(1).join(':').trim()
         : errorMessage;
-      alert(friendlyMessage);
+      toast.error(friendlyMessage);
     }
   };
 
@@ -312,7 +307,7 @@ export default function UsersManagement() {
       await fetchUsers(); // Refresh the user list
     } catch (error: any) {
       console.error('Failed to update employee manager:', error);
-      alert(error.message || 'Failed to update employee manager');
+      toast.error(error.message || 'Failed to update employee manager');
     }
   };
 

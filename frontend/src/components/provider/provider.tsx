@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/contexts/theme";
 import { UserWindowProvider } from "@/contexts/user_window";
 import { WebsocketProvider } from "@/contexts/websocket";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "react-hot-toast";
 import { ReactNode, useState } from "react";
 
 export default function Provider({ children }: { children: ReactNode }) {
@@ -24,6 +25,7 @@ export default function Provider({ children }: { children: ReactNode }) {
                                 <AddressProvider>
                                     <MapsProvider>
                                         <WebsocketProvider>
+                                            <Toaster position="top-right" />
                                             {children}
                                         </WebsocketProvider>
                                     </MapsProvider>

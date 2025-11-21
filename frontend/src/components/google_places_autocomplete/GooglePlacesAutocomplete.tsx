@@ -2,6 +2,7 @@
 
 import { Autocomplete } from '@react-google-maps/api';
 import { useState, useRef, useEffect } from 'react';
+import toast from "react-hot-toast";
 
 interface GooglePlacesAutocompleteProps {
   value: string;
@@ -102,7 +103,7 @@ export default function GooglePlacesAutocomplete({
 
       // Validate address has a house/building number
       if (!streetNumber || streetNumber.trim() === '') {
-        alert('Please select a complete address with a house or building number (e.g., "123 Main St" not just "Main St")');
+        toast.error('Please select a complete address with a house or building number (e.g., "123 Main St" not just "Main St")');
         // Call onPlaceSelected FIRST to set the flag, then clear the input
         onPlaceSelected({
           address: '',
@@ -116,7 +117,7 @@ export default function GooglePlacesAutocomplete({
 
       // Validate it's in San Jose
       if (city.toLowerCase() !== 'san jose') {
-        alert('Please select an address within San Jose, CA');
+        toast.error('Please select an address within San Jose, CA');
         // Call onPlaceSelected FIRST to set the flag, then clear the input
         onPlaceSelected({
           address: '',

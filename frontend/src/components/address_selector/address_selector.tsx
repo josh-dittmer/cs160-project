@@ -8,6 +8,7 @@ import { ThemeContext } from "@/contexts/theme";
 import { updateProfile } from "@/lib/api/profile";
 import { GoogleMap, Marker, OverlayView } from "@react-google-maps/api";
 import { ChevronDown, Crosshair, MapPin, X } from "lucide-react";
+import toast from "react-hot-toast";
 import { useContext, useEffect, useState } from "react";
 
 const mapContainerStyle = {
@@ -239,7 +240,7 @@ export default function AddressSelector() {
 
     const handleUseCurrentLocation = () => {
         if (!navigator.geolocation) {
-            alert('Geolocation is not supported by your browser');
+            toast.error('Geolocation is not supported by your browser');
             return;
         }
 
@@ -252,7 +253,7 @@ export default function AddressSelector() {
                 // Reverse geocode to get address
                 try {
                     if (!window.google?.maps) {
-                        alert('Google Maps is still loading. Please try again in a moment.');
+                        toast.error('Google Maps is still loading. Please try again in a moment.');
                         setIsLocating(false);
                         return;
                     }
@@ -293,14 +294,14 @@ export default function AddressSelector() {
 
                             // Validate it's in San Jose
                             if (city.toLowerCase() !== 'san jose') {
-                                alert(`Your current location is in ${city}, but we only deliver to San Jose, CA. Please enter a San Jose address manually.`);
+                                toast.error(`Your current location is in ${city}, but we only deliver to San Jose, CA. Please enter a San Jose address manually.`);
                                 setIsLocating(false);
                                 return;
                             }
 
                             // Validate we have a street address
                             if (!streetNumber || !route) {
-                                alert('Could not determine your exact street address. Please enter it manually.');
+                                toast.error('Could not determine your exact street address. Please enter it manually.');
                                 setIsLocating(false);
                                 return;
                             }
@@ -315,13 +316,13 @@ export default function AddressSelector() {
 
                             setIsLocating(false);
                         } else {
-                            alert('Could not determine your address. Please enter it manually.');
+                            toast.error('Could not determine your address. Please enter it manually.');
                             setIsLocating(false);
                         }
                     });
                 } catch (error) {
                     console.error('Reverse geocoding error:', error);
-                    alert('Failed to get your address. Please enter it manually.');
+                    toast.error('Failed to get your address. Please enter it manually.');
                     setIsLocating(false);
                 }
             },
@@ -329,16 +330,16 @@ export default function AddressSelector() {
                 setIsLocating(false);
                 switch (error.code) {
                     case error.PERMISSION_DENIED:
-                        alert('Location permission denied. Please enable location access in your browser settings or enter your address manually.');
+                        toast.error('Location permission denied. Please enable location access in your browser settings or enter your address manually.');
                         break;
                     case error.POSITION_UNAVAILABLE:
-                        alert('Location information unavailable. Please enter your address manually.');
+                        toast.error('Location information unavailable. Please enter your address manually.');
                         break;
                     case error.TIMEOUT:
-                        alert('Location request timed out. Please try again or enter your address manually.');
+                        toast.error('Location request timed out. Please try again or enter your address manually.');
                         break;
                     default:
-                        alert('An error occurred while getting your location. Please enter your address manually.');
+                        toast.error('An error occurred while getting your location. Please enter your address manually.');
                         break;
                 }
             },
@@ -373,19 +374,19 @@ export default function AddressSelector() {
 
     const handleSaveAddress = async () => {
         if (!token) {
-            alert('You must be logged in to save your address');
+            toast.error('You must be logged in to save your address');
             return;
         }
 
         // Validate required fields
         if (!addressData.address || !addressData.city || !addressData.state || !addressData.zipcode) {
-            alert('Please select a complete address from the dropdown suggestions');
+            toast.error('Please select a complete address from the dropdown suggestions');
             return;
         }
 
         // Validate San Jose location
         if (!addressData.city.toLowerCase().includes('san jose')) {
-            alert('Sorry, we only deliver to San Jose, CA');
+            toast.error('Sorry, we only deliver to San Jose, CA');
             return;
         }
 
@@ -412,11 +413,11 @@ export default function AddressSelector() {
             updateUser(updatedUser);
             // Reset coordinates so they'll be geocoded again with new address
             setCoordinates(null);
-            alert(user?.address ? 'Address updated successfully! 🎉' : 'Address saved successfully! 🎉');
+            toast.success(user?.address ? 'Address updated successfully! 🎉' : 'Address saved successfully! 🎉');
             handleCloseAddressInput();
         } catch (error) {
             console.error('Failed to save address:', error);
-            alert(error instanceof Error ? error.message : 'Failed to save address. Please try again.');
+            toast.error(error instanceof Error ? error.message : 'Failed to save address. Please try again.');
         } finally {
             setIsSaving(false);
         }
