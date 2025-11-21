@@ -384,6 +384,7 @@ function ItemFormModal({
   const [videoUrlInput, setVideoUrlInput] = useState('');
   const videoFileInputRef = React.useRef<HTMLInputElement>(null);
   const formRef = React.useRef<HTMLFormElement>(null);
+  const [autoCase, setAutoCase] = useState(true);
 
   // Fetch categories when modal opens
   useEffect(() => {
@@ -833,11 +834,11 @@ function ItemFormModal({
 
       if (item) {
         // Update existing item
-        await updateItem(token, item.id, submitData);
+        await updateItem(token, item.id, submitData, autoCase);
         alert('Item updated successfully');
       } else {
         // Create new item
-        await createItem(token, submitData);
+        await createItem(token, submitData, autoCase);
         alert('Item created successfully');
       }
       onSuccess();
@@ -895,6 +896,18 @@ function ItemFormModal({
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
               />
+              <div className="mt-2 flex items-center">
+                <input
+                  type="checkbox"
+                  id="autoCase"
+                  checked={autoCase}
+                  onChange={(e) => setAutoCase(e.target.checked)}
+                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <label htmlFor="autoCase" className="ml-2 text-sm text-gray-600">
+                  Auto-format name to Title Case (e.g., "organic apples" → "Organic Apples")
+                </label>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

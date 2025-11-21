@@ -29,6 +29,31 @@ from ..auth import require_admin, require_manager, UserCtx
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 
+# ============ Helper Functions ============
+
+def smart_title_case(text: str) -> str:
+    """
+    Convert text to Title Case while preserving apostrophes and handling hyphens.
+    
+    Examples:
+        "ben & jerry's ice cream" → "Ben & Jerry's Ice Cream"
+        "coca-cola" → "Coca-Cola"
+        "coca-cola's taste" → "Coca-Cola's Taste"
+        "mcdonald's" → "Mcdonald's"
+    """
+    words = text.split()
+    result = []
+    for word in words:
+        # Handle hyphenated words (e.g., "coca-cola" → "Coca-Cola")
+        if '-' in word:
+            parts = [part.capitalize() for part in word.split('-')]
+            result.append('-'.join(parts))
+        else:
+            # Use capitalize() to avoid breaking apostrophes
+            result.append(word.capitalize())
+    return ' '.join(result)
+
+
 # ============ User Management Endpoints ============
 
 @router.get("/users", response_model=List[UserListAdmin])
@@ -645,6 +670,7 @@ def get_item_admin(
 def create_item(
     item_data: ItemCreate,
     request: Request,
+    auto_case: bool = Query(True, description="Automatically convert item name to Title Case"),
     admin: UserCtx = Depends(require_manager),
     db: Session = Depends(get_db),
 ):
@@ -652,7 +678,24 @@ def create_item(
     Create a new item.
     Manager or admin only.
     """
-    new_item = Item(**item_data.model_dump())
+    # Apply Title Case if auto_case is enabled
+    item_name = smart_title_case(item_data.name) if auto_case else item_data.name
+    
+    # Check for duplicate names (case-insensitive)
+    existing_item = db.execute(
+        select(Item).where(func.lower(Item.name) == item_name.lower())
+    ).scalar_one_or_none()
+    
+    if existing_item:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Item with this name already exists: '{existing_item.name}'",
+        )
+    
+    # Create new item with processed name
+    item_dict = item_data.model_dump()
+    item_dict['name'] = item_name
+    new_item = Item(**item_dict)
     db.add(new_item)
     db.commit()
     db.refresh(new_item)
@@ -670,6 +713,7 @@ def create_item(
             "price_cents": new_item.price_cents,
             "category": new_item.category,
             "stock_qty": new_item.stock_qty,
+            "auto_case": auto_case,
         },
         ip_address=get_actor_ip(request),
     )
@@ -682,6 +726,7 @@ def update_item(
     item_id: int,
     item_data: ItemUpdate,
     request: Request,
+    auto_case: bool = Query(True, description="Automatically convert item name to Title Case"),
     admin: UserCtx = Depends(require_manager),
     db: Session = Depends(get_db),
 ):
@@ -712,6 +757,27 @@ def update_item(
     
     # Update only provided fields
     update_data = item_data.model_dump(exclude_unset=True)
+    
+    # If name is being updated, apply Title Case and check for duplicates
+    if 'name' in update_data:
+        new_name = smart_title_case(update_data['name']) if auto_case else update_data['name']
+        
+        # Check for duplicate names (case-insensitive), excluding current item
+        existing_item = db.execute(
+            select(Item).where(
+                func.lower(Item.name) == new_name.lower(),
+                Item.id != item_id
+            )
+        ).scalar_one_or_none()
+        
+        if existing_item:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Item with this name already exists: '{existing_item.name}'",
+            )
+        
+        update_data['name'] = new_name
+    
     for field, value in update_data.items():
         setattr(item, field, value)
     
@@ -734,6 +800,7 @@ def update_item(
         details={
             "item_name": item.name,
             "changed_fields": changed_fields,
+            "auto_case": auto_case if 'name' in item_data.model_dump(exclude_unset=True) else None,
         },
         ip_address=get_actor_ip(request),
     )

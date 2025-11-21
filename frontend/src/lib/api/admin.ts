@@ -228,9 +228,13 @@ export async function getItem(token: string, itemId: number): Promise<ItemAdmin>
 
 export async function createItem(
   token: string,
-  data: ItemCreateData
+  data: ItemCreateData,
+  autoCase: boolean = true
 ): Promise<ItemAdmin> {
-  const response = await fetch(`${API_BASE_URL}/api/admin/items`, {
+  const url = new URL(`${API_BASE_URL}/api/admin/items`);
+  url.searchParams.append('auto_case', autoCase.toString());
+  
+  const response = await fetch(url.toString(), {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -250,9 +254,13 @@ export async function createItem(
 export async function updateItem(
   token: string,
   itemId: number,
-  data: ItemUpdateData
+  data: ItemUpdateData,
+  autoCase: boolean = true
 ): Promise<ItemAdmin> {
-  const response = await fetch(`${API_BASE_URL}/api/admin/items/${itemId}`, {
+  const url = new URL(`${API_BASE_URL}/api/admin/items/${itemId}`);
+  url.searchParams.append('auto_case', autoCase.toString());
+  
+  const response = await fetch(url.toString(), {
     method: 'PUT',
     headers: {
       'Authorization': `Bearer ${token}`,
