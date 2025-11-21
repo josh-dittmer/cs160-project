@@ -22,7 +22,7 @@ class Item(Base):
     __tablename__ = "items"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    name: Mapped[str] = mapped_column(String(255), index=True)
+    name: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     price_cents: Mapped[int] = mapped_column(Integer)
     weight_oz: Mapped[int] = mapped_column(Integer)
     category: Mapped[str | None] = mapped_column(String(64), index=True, nullable=True)
