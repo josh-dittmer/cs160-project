@@ -3,6 +3,7 @@ import "./profile_edit.css";
 import { useState, useRef } from "react";
 import { UserInfo, updateProfile, changePassword } from "@/lib/api/profile";
 import GooglePlacesAutocomplete from "@/components/google_places_autocomplete/GooglePlacesAutocomplete";
+import toast from "react-hot-toast";
 
 type Props = { 
   userData: UserInfo | null;
@@ -157,31 +158,31 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
   const validateProfileData = (): boolean => {
     // Validate address was selected from autocomplete
     if (!isValidAddress) {
-      alert('Please select a valid address from the dropdown suggestions');
+      toast.error('Please select a valid address from the dropdown suggestions');
       return false;
     }
 
     // Validate address is provided
     if (!formData.address || !formData.address.trim()) {
-      alert('Please select a valid address from the suggestions');
+      toast.error('Please select a valid address from the suggestions');
       return false;
     }
 
     // Validate city is San Jose
     if (!formData.city || formData.city.toLowerCase() !== 'san jose') {
-      alert('Address must be in San Jose, CA. Please select a San Jose address from the dropdown.');
+      toast.error('Address must be in San Jose, CA. Please select a San Jose address from the dropdown.');
       return false;
     }
 
     // Validate state is California
     if (!formData.state || formData.state.toLowerCase() !== 'california') {
-      alert('Address must be in California. Please select a San Jose, CA address from the dropdown.');
+      toast.error('Address must be in California. Please select a San Jose, CA address from the dropdown.');
       return false;
     }
 
     // Validate zipcode is present
     if (!formData.zipcode) {
-      alert('Please select a complete address from the dropdown suggestions');
+      toast.error('Please select a complete address from the dropdown suggestions');
       return false;
     }
 
@@ -189,7 +190,7 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
     if (formData.phone) {
       const digits = formData.phone.replace(/\D/g, '');
       if (digits.length > 0 && digits.length !== 10) {
-        alert('Phone number must be 10 digits');
+        toast.error('Phone number must be 10 digits');
         return false;
       }
     }
@@ -208,19 +209,19 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
 
     // If any password field is filled, all must be filled
     if (!passwordData.current_password || !passwordData.new_password || !passwordData.confirm_password) {
-      alert('Please fill in all password fields or leave them empty to skip password change');
+      toast.error('Please fill in all password fields or leave them empty to skip password change');
       return false;
     }
 
     // Validate passwords match
     if (passwordData.new_password !== passwordData.confirm_password) {
-      alert('New passwords do not match');
+      toast.error('New passwords do not match');
       return false;
     }
 
     // Validate password length
     if (passwordData.new_password.length < 8) {
-      alert('Password must be at least 8 characters');
+      toast.error('Password must be at least 8 characters');
       return false;
     }
 
@@ -263,9 +264,9 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
           current_password: passwordData.current_password,
           new_password: passwordData.new_password,
         });
-        alert('Profile and password updated successfully!');
+        toast.success('Profile and password updated successfully!');
       } else {
-        alert('Profile updated successfully!');
+        toast.success('Profile updated successfully!');
       }
 
       // Clear password fields
@@ -276,7 +277,7 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to save changes';
       setError(errorMessage);
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }

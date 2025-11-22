@@ -7,6 +7,7 @@ import { CardTable } from "@/components/employee_table/card_table";
 import { StatusBadge } from "@/components/employee_table/status_badge";
 import { Icons } from "@/components/employee_table/icons";
 import  Modal  from "@/components/modal/modal"
+import toast from "react-hot-toast";
 
 
 type Status = 'In Stock' | 'Out of Stock' | 'Low Stock';
@@ -103,7 +104,7 @@ export default function StockManagementPage(){
             
             setQtyOpen(false);
         } catch (err) {
-            alert(err instanceof Error ? err.message : 'Failed to update stock quantity');
+            toast.error(err instanceof Error ? err.message : 'Failed to update stock quantity');
         } finally {
             setSaving(false);
         }
@@ -121,7 +122,7 @@ export default function StockManagementPage(){
                 p.id === id ? { ...p, stock_qty: 0 } : p
             ));
         } catch (err) {
-            alert(err instanceof Error ? err.message : 'Failed to mark item out of stock');
+            toast.error(err instanceof Error ? err.message : 'Failed to mark item out of stock');
         }
     };
 

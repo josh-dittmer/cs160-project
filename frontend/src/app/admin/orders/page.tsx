@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth';
+import toast from 'react-hot-toast';
 import { 
   listOrders, 
   getOrderDetail, 
@@ -63,7 +64,7 @@ export default function OrdersManagement() {
       setSelectedOrder(detail);
       setShowDetailModal(true);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to fetch order details');
+      toast.error(err instanceof Error ? err.message : 'Failed to fetch order details');
     } finally {
       setDetailLoading(false);
     }
@@ -84,7 +85,7 @@ export default function OrdersManagement() {
         setSelectedOrder(detail);
       }
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to update order status');
+      toast.error(err instanceof Error ? err.message : 'Failed to update order status');
     }
   };
 

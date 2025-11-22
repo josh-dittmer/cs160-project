@@ -29,6 +29,85 @@ from ..auth import require_admin, require_manager, UserCtx
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 
+# ============ Helper Functions ============
+
+def smart_title_case(text: str) -> str:
+    """
+    Convert text to Title Case while preserving apostrophes and handling hyphens.
+    
+    Examples:
+        "ben & jerry's ice cream" → "Ben & Jerry's Ice Cream"
+        "coca-cola" → "Coca-Cola"
+        "coca-cola's taste" → "Coca-Cola's Taste"
+        "mcdonald's" → "Mcdonald's"
+    """
+    words = text.split()
+    result = []
+    for word in words:
+        # Handle hyphenated words (e.g., "coca-cola" → "Coca-Cola")
+        if '-' in word:
+            parts = [part.capitalize() for part in word.split('-')]
+            result.append('-'.join(parts))
+        else:
+            # Use capitalize() to avoid breaking apostrophes
+            result.append(word.capitalize())
+    return ' '.join(result)
+
+
+def validate_item_name(name: str, allow_special_chars: bool, allow_numbers: bool) -> None:
+    """
+    Validate item name based on character restrictions.
+    
+    Logic:
+    - Default: letters, space, hyphen, apostrophe, ampersand
+    - allow_special_chars: Default + additional special chars (but NOT numbers unless also flagged)
+    - allow_numbers: Default + numbers
+    - Both: Default + special chars + numbers
+    
+    Args:
+        name: The item name to validate
+        allow_special_chars: If True, allow additional special characters
+        allow_numbers: If True, allow numbers
+    
+    Raises:
+        HTTPException: If name contains disallowed characters
+    """
+    import re
+    
+    validation_hint = " Update the Name Validation Options to allow numbers and/or special characters."
+    
+    if allow_special_chars and allow_numbers:
+        # Allow everything - no restrictions
+        return
+    elif allow_special_chars:
+        # Allow default chars + other special chars (but NOT numbers)
+        pattern = r'^[a-zA-Z\s\-\'&!@#$%^*()_+=\[\]{};:\'\"<>,.?/\\|`~]+$'
+        error_msg = (
+            "Item name cannot contain numbers when 'Allow numbers' is unchecked."
+            " Enable the 'Allow numbers' option in Name Validation Options to include digits."
+        )
+    elif allow_numbers:
+        # Allow default chars + numbers
+        pattern = r'^[a-zA-Z0-9\s\-\'&]+$'
+        error_msg = (
+            "Item name can only contain letters, numbers, spaces, hyphens, apostrophes, and ampersands."
+            + validation_hint
+        )
+    else:
+        # Default: only letters and default special chars
+        pattern = r'^[a-zA-Z\s\-\'&]+$'
+        error_msg = (
+            "Item name can only contain letters, spaces, hyphens, apostrophes, and ampersands."
+            + validation_hint
+        )
+    
+    if not re.match(pattern, name):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error_msg
+        )
+
+
 # ============ User Management Endpoints ============
 
 @router.get("/users", response_model=List[UserListAdmin])
@@ -645,6 +724,9 @@ def get_item_admin(
 def create_item(
     item_data: ItemCreate,
     request: Request,
+    auto_case: bool = Query(True, description="Automatically convert item name to Title Case"),
+    allow_special_chars: bool = Query(False, description="Allow all special characters in item name"),
+    allow_numbers: bool = Query(False, description="Allow numbers in item name"),
     admin: UserCtx = Depends(require_manager),
     db: Session = Depends(get_db),
 ):
@@ -652,7 +734,27 @@ def create_item(
     Create a new item.
     Manager or admin only.
     """
-    new_item = Item(**item_data.model_dump())
+    # Validate character restrictions
+    validate_item_name(item_data.name, allow_special_chars, allow_numbers)
+    
+    # Apply Title Case if auto_case is enabled
+    item_name = smart_title_case(item_data.name) if auto_case else item_data.name
+    
+    # Check for duplicate names (case-insensitive)
+    existing_item = db.execute(
+        select(Item).where(func.lower(Item.name) == item_name.lower())
+    ).scalar_one_or_none()
+    
+    if existing_item:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Item with this name already exists: '{existing_item.name}'",
+        )
+    
+    # Create new item with processed name
+    item_dict = item_data.model_dump()
+    item_dict['name'] = item_name
+    new_item = Item(**item_dict)
     db.add(new_item)
     db.commit()
     db.refresh(new_item)
@@ -670,6 +772,7 @@ def create_item(
             "price_cents": new_item.price_cents,
             "category": new_item.category,
             "stock_qty": new_item.stock_qty,
+            "auto_case": auto_case,
         },
         ip_address=get_actor_ip(request),
     )
@@ -682,6 +785,9 @@ def update_item(
     item_id: int,
     item_data: ItemUpdate,
     request: Request,
+    auto_case: bool = Query(True, description="Automatically convert item name to Title Case"),
+    allow_special_chars: bool = Query(False, description="Allow all special characters in item name"),
+    allow_numbers: bool = Query(False, description="Allow numbers in item name"),
     admin: UserCtx = Depends(require_manager),
     db: Session = Depends(get_db),
 ):
@@ -712,6 +818,30 @@ def update_item(
     
     # Update only provided fields
     update_data = item_data.model_dump(exclude_unset=True)
+    
+    # If name is being updated, validate and apply Title Case and check for duplicates
+    if 'name' in update_data:
+        # Validate character restrictions
+        validate_item_name(update_data['name'], allow_special_chars, allow_numbers)
+        
+        new_name = smart_title_case(update_data['name']) if auto_case else update_data['name']
+        
+        # Check for duplicate names (case-insensitive), excluding current item
+        existing_item = db.execute(
+            select(Item).where(
+                func.lower(Item.name) == new_name.lower(),
+                Item.id != item_id
+            )
+        ).scalar_one_or_none()
+        
+        if existing_item:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Item with this name already exists: '{existing_item.name}'",
+            )
+        
+        update_data['name'] = new_name
+    
     for field, value in update_data.items():
         setattr(item, field, value)
     
@@ -734,6 +864,7 @@ def update_item(
         details={
             "item_name": item.name,
             "changed_fields": changed_fields,
+            "auto_case": auto_case if 'name' in item_data.model_dump(exclude_unset=True) else None,
         },
         ip_address=get_actor_ip(request),
     )

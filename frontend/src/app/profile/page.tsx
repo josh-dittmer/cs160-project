@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth";
 import { getCurrentUser, updateProfile, UserInfo } from "@/lib/api/profile";
 import EditProfilePanel from "./EditProfilePanel";
+import toast from "react-hot-toast";
 
 export default function ProfilePage() {
   const { user, token, updateUser } = useAuth();
@@ -71,7 +72,7 @@ export default function ProfilePage() {
 
     // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image size should be less than 5MB');
+      toast.error('Image size should be less than 5MB');
       // Clear the input
       e.target.value = '';
       return;
@@ -85,9 +86,9 @@ export default function ProfilePage() {
         const updatedUser = await updateProfile(token, { profile_picture: base64String });
         setUserData(updatedUser);
         updateUser(updatedUser);
-        alert('Profile picture updated successfully!');
+        toast.success('Profile picture updated successfully!');
       } catch (error: any) {
-        alert(error.message || 'Failed to upload image');
+        toast.error(error.message || 'Failed to upload image');
       } finally {
         // Clear the input so the same file can be selected again
         e.target.value = '';
@@ -104,7 +105,7 @@ export default function ProfilePage() {
     try {
       new URL(imageUrl);
     } catch {
-      alert('Please enter a valid URL');
+      toast.error('Please enter a valid URL');
       return;
     }
 
@@ -114,9 +115,9 @@ export default function ProfilePage() {
       updateUser(updatedUser);
       setShowUrlInput(false);
       setImageUrl('');
-      alert('Profile picture updated successfully!');
+      toast.success('Profile picture updated successfully!');
     } catch (error: any) {
-      alert(error.message || 'Failed to update profile picture');
+      toast.error(error.message || 'Failed to update profile picture');
     }
   };
 

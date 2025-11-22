@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth';
 import { useSearchParams, useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 import {
   listItems,
   createItem,
@@ -62,6 +63,13 @@ export default function InventoryManagement() {
     fetchItems();
   }, [token, statusFilter, paramsProcessed]);
 
+  // Cleanup: dismiss all toasts when component unmounts
+  useEffect(() => {
+    return () => {
+      toast.dismiss();
+    };
+  }, []);
+
   const fetchItems = async () => {
     if (!token) return;
     
@@ -75,7 +83,7 @@ export default function InventoryManagement() {
       setItems(data);
     } catch (error) {
       console.error('Failed to fetch items:', error);
-      alert('Failed to fetch items');
+      toast.error('Failed to fetch items');
     } finally {
       setLoading(false);
     }
@@ -94,11 +102,12 @@ export default function InventoryManagement() {
 
     try {
       await deleteItem(token, itemId);
-      alert('Item deactivated successfully');
+      toast.dismiss(); // Clear any previous toasts
+      toast.success('Item deactivated successfully');
       fetchItems();
     } catch (error: any) {
       console.error('Failed to deactivate item:', error);
-      alert(error.message || 'Failed to deactivate item');
+      toast.error(error.message || 'Failed to deactivate item');
     }
   };
 
@@ -106,7 +115,7 @@ export default function InventoryManagement() {
     if (!token) return;
     
     const confirmed = confirm(
-      `⚠️ WARNING: Are you sure you want to PERMANENTLY delete "${itemName}"?\n\n` +
+      `WARNING: Are you sure you want to PERMANENTLY delete "${itemName}"?\n\n` +
       `This action CANNOT be undone! The item will be completely removed from the database.`
     );
     
@@ -114,11 +123,12 @@ export default function InventoryManagement() {
 
     try {
       await permanentlyDeleteItem(token, itemId);
-      alert('Item permanently deleted from database');
+      toast.dismiss(); // Clear any previous toasts
+      toast.success('Item permanently deleted from database');
       fetchItems();
     } catch (error: any) {
       console.error('Failed to permanently delete item:', error);
-      alert(error.message || 'Failed to permanently delete item');
+      toast.error(error.message || 'Failed to permanently delete item');
     }
   };
 
@@ -127,11 +137,12 @@ export default function InventoryManagement() {
     
     try {
       await activateItem(token, itemId, isActive);
-      alert(`Item ${isActive ? 'activated' : 'deactivated'} successfully`);
+      toast.dismiss(); // Clear any previous toasts
+      toast.success(`Item ${isActive ? 'activated' : 'deactivated'} successfully`);
       fetchItems();
     } catch (error: any) {
       console.error('Failed to update item status:', error);
-      alert(error.message || 'Failed to update item status');
+      toast.error(error.message || 'Failed to update item status');
     }
   };
 
@@ -308,7 +319,7 @@ export default function InventoryManagement() {
                   onClick={() => handlePermanentDelete(item.id, item.name)}
                   className="w-full px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium border border-red-800"
                 >
-                  🗑️ Delete Permanently
+                  Delete Permanently
                 </button>
               </div>
             </div>
@@ -328,6 +339,7 @@ export default function InventoryManagement() {
           item={editingItem}
           token={token!}
           onClose={() => {
+            toast.dismiss(); // Clear any pending toasts when modal closes
             setShowCreateModal(false);
             setEditingItem(null);
           }}
@@ -384,6 +396,10 @@ function ItemFormModal({
   const [videoUrlInput, setVideoUrlInput] = useState('');
   const videoFileInputRef = React.useRef<HTMLInputElement>(null);
   const formRef = React.useRef<HTMLFormElement>(null);
+  const [autoCase, setAutoCase] = useState(true);
+  const [allowSpecialChars, setAllowSpecialChars] = useState(false);
+  const [allowNumbers, setAllowNumbers] = useState(false);
+  const [showNameOptions, setShowNameOptions] = useState(false);
 
   // Fetch categories when modal opens
   useEffect(() => {
@@ -407,13 +423,13 @@ function ItemFormModal({
 
     // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image size should be less than 5MB');
+      toast.error('Image size should be less than 5MB');
       return;
     }
 
     // Check file type
     if (!file.type.startsWith('image/')) {
-      alert('Please upload an image file');
+      toast.error('Please upload an image file');
       return;
     }
 
@@ -427,13 +443,13 @@ function ItemFormModal({
         setUploadingImage(false);
       };
       reader.onerror = () => {
-        alert('Failed to read image file');
+        toast.error('Failed to read image file');
         setUploadingImage(false);
       };
       reader.readAsDataURL(file);
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Failed to upload image');
+      toast.error('Failed to upload image');
       setUploadingImage(false);
     }
   };
@@ -472,7 +488,7 @@ function ItemFormModal({
       setAiPrompt('');
     } catch (error) {
       console.error('Error loading image for editing:', error);
-      alert('Failed to load image for editing. Please try uploading the image directly.');
+      toast.error('Failed to load image for editing. Please try uploading the image directly.');
     }
   };
 
@@ -482,13 +498,13 @@ function ItemFormModal({
 
     // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image size should be less than 5MB');
+      toast.error('Image size should be less than 5MB');
       return;
     }
 
     // Check file type
     if (!file.type.startsWith('image/')) {
-      alert('Please upload an image file');
+      toast.error('Please upload an image file');
       return;
     }
 
@@ -500,12 +516,12 @@ function ItemFormModal({
         setAiBaseImage(base64String);
       };
       reader.onerror = () => {
-        alert('Failed to read image file');
+        toast.error('Failed to read image file');
       };
       reader.readAsDataURL(file);
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Failed to upload image');
+      toast.error('Failed to upload image');
     }
   };
 
@@ -519,7 +535,7 @@ function ItemFormModal({
 
   const handleGenerateImage = async () => {
     if (!aiPrompt.trim()) {
-      alert('Please enter a description for the image you want to generate or edit');
+      toast.error('Please enter a description for the image you want to generate or edit');
       return;
     }
 
@@ -527,10 +543,11 @@ function ItemFormModal({
     try {
       const result = await generateImage(token, aiPrompt, aiBaseImage || undefined);
       setFormData({ ...formData, image_url: result.image_data });
-      alert(aiBaseImage ? 'Image edited successfully! You can now preview it below.' : 'Image generated successfully! You can now preview it below.');
+      toast.dismiss(); // Clear any previous toasts
+      toast.success(aiBaseImage ? 'Image edited successfully! You can now preview it below.' : 'Image generated successfully! You can now preview it below.');
     } catch (error: any) {
       console.error('Failed to generate image:', error);
-      alert(error.message || 'Failed to generate image. Please try again.');
+      toast.error(error.message || 'Failed to generate image. Please try again.');
     } finally {
       setGeneratingImage(false);
     }
@@ -538,7 +555,7 @@ function ItemFormModal({
 
   const handleGenerateVideo = async () => {
     if (!videoPrompt.trim()) {
-      alert('Please enter a description for the video you want to generate');
+      toast.error('Please enter a description for the video you want to generate');
       return;
     }
 
@@ -550,10 +567,11 @@ function ItemFormModal({
     try {
       const result = await generateVideoSync(token, videoPrompt, videoModel);
       setFormData({ ...formData, video_url: result.video_data || '' });
-      alert('Video generated successfully! You can now preview it below.');
+      toast.dismiss(); // Clear any previous toasts
+      toast.success('Video generated successfully! You can now preview it below.');
     } catch (error: any) {
       console.error('Failed to generate video:', error);
-      alert(error.message || 'Failed to generate video. Please try again.');
+      toast.error(error.message || 'Failed to generate video. Please try again.');
     } finally {
       setGeneratingVideo(false);
     }
@@ -570,7 +588,7 @@ function ItemFormModal({
 
   const handleAddVideoUrl = () => {
     if (!videoUrlInput.trim()) {
-      alert('Please enter a video URL');
+      toast.error('Please enter a video URL');
       return;
     }
     
@@ -608,14 +626,14 @@ function ItemFormModal({
     // Validate file type
     const validVideoTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'];
     if (!validVideoTypes.includes(file.type)) {
-      alert('Please select a valid video file (MP4, WebM, OGG, or MOV)');
+      toast.error('Please select a valid video file (MP4, WebM, OGG, or MOV)');
       return;
     }
 
     // Validate file size (max 50MB)
     const maxSize = 50 * 1024 * 1024; // 50MB
     if (file.size > maxSize) {
-      alert('Video file is too large. Maximum size is 50MB. Consider compressing the video or using a URL instead.');
+      toast.error('Video file is too large. Maximum size is 50MB. Consider compressing the video or using a URL instead.');
       return;
     }
 
@@ -626,7 +644,7 @@ function ItemFormModal({
       setFormData({ ...formData, video_url: base64String });
     };
     reader.onerror = () => {
-      alert('Error reading video file. Please try again.');
+      toast.error('Error reading video file. Please try again.');
     };
     reader.readAsDataURL(file);
   };
@@ -779,6 +797,65 @@ function ItemFormModal({
     setFormData({ ...formData, price_usd: newValue });
   };
 
+  // Handle name input validation based on checkbox settings
+  const handleNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Allow: tab, escape, enter, backspace, delete, arrow keys
+    const allowedControlKeys = ['Tab', 'Escape', 'Enter', 'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End'];
+    if (allowedControlKeys.includes(e.key) || e.ctrlKey || e.metaKey) {
+      return;
+    }
+    
+    // Default allowed: letters, space, hyphen, apostrophe, ampersand
+    const defaultAllowedRegex = /^[a-zA-Z\s\-'&]$/;
+    const numberRegex = /^[0-9]$/;
+    
+    // Check if it's a letter or default special char (always allowed)
+    if (defaultAllowedRegex.test(e.key)) {
+      return;
+    }
+    
+    // Check if it's a number
+    if (numberRegex.test(e.key)) {
+      if (!allowNumbers) {
+        e.preventDefault();
+      }
+      return;
+    }
+    
+    // For any other character (special chars like @, #, $, etc.)
+    // Only allow if "allow special characters" is checked
+    if (!allowSpecialChars) {
+      e.preventDefault();
+    }
+  };
+
+  const handleNamePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pastedText = e.clipboardData.getData('text');
+    
+    // Build regex based on current settings
+    let regex: RegExp;
+    
+    if (allowSpecialChars && allowNumbers) {
+      // Allow everything - no restrictions
+      return;
+    } else if (allowSpecialChars) {
+      // Allow letters, default special chars, and other special chars (but NOT numbers)
+      regex = /^[a-zA-Z\s\-'&!@#$%^*()_+=\[\]{};:'"<>,.?/\\|`~]+$/;
+    } else if (allowNumbers) {
+      // Allow letters, default special chars, and numbers
+      regex = /^[a-zA-Z0-9\s\-'&]+$/;
+    } else {
+      // Default: only letters and default special chars
+      regex = /^[a-zA-Z\s\-'&]+$/;
+    }
+    
+    // Reject paste if it contains disallowed characters
+    if (!regex.test(pastedText)) {
+      e.preventDefault();
+      toast.error('Pasted text contains characters that are not allowed based on your current settings');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -786,7 +863,7 @@ function ItemFormModal({
     try {
       // Validate price is entered
       if (!formData.price_usd || formData.price_usd === '') {
-        alert('Please enter a price');
+        toast.error('Please enter a price');
         setSaving(false);
         return;
       }
@@ -797,14 +874,27 @@ function ItemFormModal({
       
       // Validate price is greater than 0
       if (priceCents <= 0) {
-        alert('Price must be greater than $0.00');
+        toast.error('Price must be greater than $0.00');
+        setSaving(false);
+        return;
+      }
+
+      // Validate weight is provided and within valid range
+      const weightOz = parseInt(formData.weight_oz as string);
+      if (!formData.weight_oz || isNaN(weightOz) || weightOz <= 0) {
+        toast.error('Weight must be greater than 0 ounces');
+        setSaving(false);
+        return;
+      }
+      if (weightOz > 3200) {
+        toast.error('Weight cannot exceed 3,200 oz (200 lbs) - delivery vehicle capacity limit');
         setSaving(false);
         return;
       }
 
       // Validate image is provided
       if (!formData.image_url || formData.image_url.trim() === '') {
-        alert('Please provide a product image (either URL or upload an image)');
+        toast.error('Please provide a product image (either URL or upload an image)');
         setSaving(false);
         return;
       }
@@ -812,7 +902,7 @@ function ItemFormModal({
       // Validate nutrition JSON if provided
       if (formData.nutrition_json && formData.nutrition_json.trim() !== '') {
         if (!validateNutritionJson(formData.nutrition_json)) {
-          alert(`Invalid nutrition JSON: ${nutritionJsonError}`);
+          toast.error(`Invalid nutrition JSON: ${nutritionJsonError}`);
           setSaving(false);
           return;
         }
@@ -821,7 +911,7 @@ function ItemFormModal({
       const submitData = {
         name: formData.name,
         price_cents: priceCents,
-        weight_oz: parseInt(formData.weight_oz as string) || 0,
+        weight_oz: weightOz,
         category: formData.category,
         image_url: formData.image_url,
         video_url: formData.video_url,
@@ -833,17 +923,18 @@ function ItemFormModal({
 
       if (item) {
         // Update existing item
-        await updateItem(token, item.id, submitData);
-        alert('Item updated successfully');
+        await updateItem(token, item.id, submitData, autoCase, allowSpecialChars, allowNumbers);
+        toast.dismiss(); // Clear any error toasts before showing success
+        toast.success('Item updated successfully');
       } else {
         // Create new item
-        await createItem(token, submitData);
-        alert('Item created successfully');
+        await createItem(token, submitData, autoCase, allowSpecialChars, allowNumbers);
+        toast.dismiss(); // Clear any error toasts before showing success
+        toast.success('Item created successfully');
       }
       onSuccess();
     } catch (error: any) {
-      console.error('Failed to save item:', error);
-      alert(error.message || 'Failed to save item');
+      toast.error(error.message || 'Failed to save item');
     } finally {
       setSaving(false);
     }
@@ -876,7 +967,7 @@ function ItemFormModal({
               disabled={saving}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium disabled:opacity-50 transition-colors"
             >
-              {saving ? 'Saving...' : '💾 Save'}
+              {saving ? 'Saving...' : 'Save'}
             </button>
           </div>
         </div>
@@ -885,16 +976,104 @@ function ItemFormModal({
         <div className="overflow-y-auto flex-1 px-6 py-4">
           <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Name *
-              </label>
+              <div className="flex items-center gap-2 mb-1">
+                <label className="text-sm font-medium text-gray-700">
+                  Name *
+                </label>
+                <div className="group relative inline-block">
+                  <button
+                    type="button"
+                    className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                    aria-label="Name field information"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                  <div className="invisible group-hover:visible absolute left-0 top-6 z-50 w-72 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg">
+                    <p className="font-semibold mb-1">Default Allowed Characters:</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>Letters (A-Z, a-z)</li>
+                      <li>Space</li>
+                      <li>Hyphen (-)</li>
+                      <li>Apostrophe (')</li>
+                      <li>Ampersand (&)</li>
+                    </ul>
+                    <p className="mt-2 text-gray-300 italic">
+                      Click "Name Validation Options" below for more settings.
+                    </p>
+                  </div>
+                </div>
+              </div>
               <input
                 type="text"
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onKeyDown={handleNameKeyDown}
+                onPaste={handleNamePaste}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
               />
+              <div className="mt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowNameOptions(!showNameOptions)}
+                  className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800 focus:outline-none"
+                >
+                  <svg 
+                    className={`w-4 h-4 transition-transform ${showNameOptions ? 'rotate-90' : ''}`}
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  <span className="font-medium">Name Validation Options</span>
+                </button>
+                
+                {showNameOptions && (
+                  <div className="mt-3 ml-6 space-y-2 border-l-2 border-gray-200 pl-4">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="autoCase"
+                        checked={autoCase}
+                        onChange={(e) => setAutoCase(e.target.checked)}
+                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <label htmlFor="autoCase" className="ml-2 text-sm text-gray-600">
+                        Auto-format name to Title Case (e.g., "organic apples" → "Organic Apples")
+                      </label>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="allowSpecialChars"
+                        checked={allowSpecialChars}
+                        onChange={(e) => setAllowSpecialChars(e.target.checked)}
+                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <label htmlFor="allowSpecialChars" className="ml-2 text-sm text-gray-600">
+                        Allow all special characters (@, #, $, %, etc.)
+                      </label>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="allowNumbers"
+                        checked={allowNumbers}
+                        onChange={(e) => setAllowNumbers(e.target.checked)}
+                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <label htmlFor="allowNumbers" className="ml-2 text-sm text-gray-600">
+                        Allow numbers (0-9)
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -927,13 +1106,16 @@ function ItemFormModal({
                 <input
                   type="number"
                   required
-                  min="0"
+                  min="1"
+                  max="3200"
+                  step="1"
                   value={formData.weight_oz}
                   onChange={(e) => setFormData({ ...formData, weight_oz: e.target.value })}
                   onKeyDown={handleNumericKeyDown}
                   onPaste={handleNumericPaste}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
                 />
+                <p className="text-xs text-gray-500 mt-1">Maximum: 3,200 oz (200 lbs)</p>
               </div>
             </div>
 
@@ -1016,7 +1198,7 @@ function ItemFormModal({
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
-                  ✨ Generate with AI
+                  Generate with AI
                 </button>
               </div>
 
@@ -1149,7 +1331,7 @@ function ItemFormModal({
                       )}
                     </button>
                     <p className="text-xs text-gray-500">
-                      💡 Tip: {aiBaseImage ? 'Be specific about what edits you want.' : 'Be specific about the product, lighting, background, and style. Or upload an image to edit it.'} Generation may take 10-30 seconds.
+                      Tip: {aiBaseImage ? 'Be specific about what edits you want.' : 'Be specific about the product, lighting, background, and style. Or upload an image to edit it.'} Generation may take 10-30 seconds.
                     </p>
                   </div>
                 </div>
@@ -1216,9 +1398,8 @@ function ItemFormModal({
                 }`}
               />
               {nutritionJsonError ? (
-                <p className="text-xs text-red-600 mt-1 flex items-start gap-1">
-                  <span className="mt-0.5">⚠️</span>
-                  <span>{nutritionJsonError}</span>
+                <p className="text-xs text-red-600 mt-1">
+                  {nutritionJsonError}
                 </p>
               ) : (
                 <p className="text-xs text-gray-500 mt-1">
@@ -1244,7 +1425,7 @@ function ItemFormModal({
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
-                  🎬 AI Generate
+                  AI Generate
                 </button>
                 <button
                   type="button"
@@ -1255,7 +1436,7 @@ function ItemFormModal({
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
-                  📤 Upload File
+                  Upload File
                 </button>
                 <button
                   type="button"
@@ -1266,7 +1447,7 @@ function ItemFormModal({
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
-                  🔗 Add URL
+                  Add URL
                 </button>
               </div>
 
@@ -1301,7 +1482,7 @@ function ItemFormModal({
                       className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      💡 Tip: Be specific about the product, action, lighting, and style. Veo 3.1 generates 8-second videos with audio.
+                      Tip: Be specific about the product, action, lighting, and style. Veo 3.1 generates 8-second videos with audio.
                     </p>
                   </div>
 
@@ -1320,7 +1501,7 @@ function ItemFormModal({
                         Generating Video... (30-60s)
                       </span>
                     ) : (
-                      '🎬 Generate Video with AI'
+                      'Generate Video with AI'
                     )}
                   </button>
                 </div>
@@ -1347,7 +1528,7 @@ function ItemFormModal({
                         cursor-pointer"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      💡 Accepts MP4, WebM, OGG, or MOV files (max 50MB)
+                      Tip: Accepts MP4, WebM, OGG, or MOV files (max 50MB)
                     </p>
                   </div>
                 </div>
@@ -1358,12 +1539,9 @@ function ItemFormModal({
                 <div className="space-y-3 border border-gray-200 rounded-lg p-4 bg-gray-50">
                   {/* Copyright Warning */}
                   <div className="bg-yellow-50 border border-yellow-300 rounded-md p-3">
-                    <p className="text-xs text-yellow-800 font-medium flex items-start gap-2">
-                      <span className="text-base">⚠️</span>
-                      <span>
-                        <strong>Copyright Warning:</strong> Only use videos you own, created yourself, or have explicit permission to use. 
-                        Using copyrighted content from other brands/creators without permission is illegal and may result in legal action.
-                      </span>
+                    <p className="text-xs text-yellow-800 font-medium">
+                      <strong>Copyright Warning:</strong> Only use videos you own, created yourself, or have explicit permission to use. 
+                      Using copyrighted content from other brands/creators without permission is illegal and may result in legal action.
                     </p>
                   </div>
 
@@ -1379,7 +1557,7 @@ function ItemFormModal({
                       className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      💡 Use only: Your own videos, licensed stock videos, or AI-generated content
+                      Tip: Use only your own videos, licensed stock videos, or AI-generated content
                     </p>
                   </div>
 
@@ -1389,7 +1567,7 @@ function ItemFormModal({
                     disabled={!videoUrlInput.trim()}
                     className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    🔗 Add Video URL
+                    Add Video URL
                   </button>
                 </div>
               )}

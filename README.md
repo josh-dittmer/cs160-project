@@ -20,6 +20,16 @@ git clone https://github.com/josh-dittmer/cs160-project.git
     - ```cs160-project/backend/keys.json```
     - ```cs160-project/frontend/.env.local```
 
+> **Existing vs. first-time runs**
+>
+> • If you're running Docker for the **first time**, skip ahead to step 3 and just build/start normally.  
+> • If you've already run the stack before and have **changed database models**, reset the SQLite volume and rebuild before starting:
+>   ```bash
+>   docker compose down -v
+>   docker compose build
+>   docker compose up
+>   ```
+
 3. Build the Docker images with Docker compose:
 ```
 cd cs160-project/docker
@@ -100,12 +110,12 @@ If you need to reseed with fresh data, delete the existing database first:
 
 **macOS/Linux:**
 ```bash
-rm sqlite.db
+rm db/sqlite.db
 ```
 
 **Windows PowerShell:**
 ```powershell
-Remove-Item sqlite.db
+Remove-Item db\sqlite.db
 ```
 
 #### 3. Seed the database
@@ -268,7 +278,7 @@ pytest tests/ -v
 # Run specific test file
 pytest tests/test_auth.py -v
 
-# Run admin RBAC tests (23 tests)
+# Run admin RBAC tests 
 pytest tests/test_admin.py -v
 ```
 
