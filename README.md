@@ -20,6 +20,16 @@ git clone https://github.com/josh-dittmer/cs160-project.git
     - ```cs160-project/backend/keys.json```
     - ```cs160-project/frontend/.env.local```
 
+> **Existing vs. first-time runs**
+>
+> • If you're running Docker for the **first time**, skip ahead to step 3 and just build/start normally.  
+> • If you've already run the stack before and have **changed database models**, reset the SQLite volume and rebuild before starting:
+>   ```bash
+>   docker compose down -v
+>   docker compose build
+>   docker compose up
+>   ```
+
 3. Build the Docker images with Docker compose:
 ```
 cd cs160-project/docker
