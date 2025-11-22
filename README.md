@@ -268,7 +268,7 @@ pytest tests/ -v
 # Run specific test file
 pytest tests/test_auth.py -v
 
-# Run admin RBAC tests (23 tests)
+# Run admin RBAC tests 
 pytest tests/test_admin.py -v
 ```
 

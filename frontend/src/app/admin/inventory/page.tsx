@@ -879,10 +879,15 @@ function ItemFormModal({
         return;
       }
 
-      // Validate weight is provided and greater than 0
+      // Validate weight is provided and within valid range
       const weightOz = parseInt(formData.weight_oz as string);
       if (!formData.weight_oz || isNaN(weightOz) || weightOz <= 0) {
         toast.error('Weight must be greater than 0 ounces');
+        setSaving(false);
+        return;
+      }
+      if (weightOz > 3200) {
+        toast.error('Weight cannot exceed 3,200 oz (200 lbs) - delivery vehicle capacity limit');
         setSaving(false);
         return;
       }
@@ -1102,6 +1107,7 @@ function ItemFormModal({
                   type="number"
                   required
                   min="1"
+                  max="3200"
                   step="1"
                   value={formData.weight_oz}
                   onChange={(e) => setFormData({ ...formData, weight_oz: e.target.value })}
@@ -1109,6 +1115,7 @@ function ItemFormModal({
                   onPaste={handleNumericPaste}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
                 />
+                <p className="text-xs text-gray-500 mt-1">Maximum: 3,200 oz (200 lbs)</p>
               </div>
             </div>
 

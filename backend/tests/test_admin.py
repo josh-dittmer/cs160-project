@@ -730,6 +730,79 @@ def test_cannot_update_item_to_zero_price():
     assert "price_cents" in str(response.json())
 
 
+def test_cannot_create_item_exceeding_max_weight():
+    """Test that creating an item with weight > 3200 oz (200 lbs) fails"""
+    token = get_admin_token()
+    
+    new_item = {
+        "name": "Test Exceeding Max Weight",
+        "price_cents": 999,
+        "weight_oz": 3201,  # Invalid: exceeds 200 lbs limit
+        "category": "test",
+        "stock_qty": 10
+    }
+    
+    response = client.post(
+        "/api/admin/items",
+        headers={"Authorization": f"Bearer {token}"},
+        json=new_item
+    )
+    assert response.status_code == 422  # Validation error
+    assert "weight_oz" in str(response.json())
+
+
+def test_cannot_update_item_exceeding_max_weight():
+    """Test that updating an item to weight > 3200 oz fails"""
+    token = get_admin_token()
+    
+    # Create valid item first
+    new_item = {
+        "name": "Test Item For Max Weight Update",
+        "price_cents": 500,
+        "weight_oz": 100,
+        "stock_qty": 20
+    }
+    
+    create_response = client.post(
+        "/api/admin/items",
+        headers={"Authorization": f"Bearer {token}"},
+        json=new_item
+    )
+    item_id = create_response.json()["id"]
+    
+    # Try to update weight to exceed limit
+    update_data = {"weight_oz": 3201}  # Invalid: exceeds 200 lbs
+    
+    response = client.put(
+        f"/api/admin/items/{item_id}",
+        headers={"Authorization": f"Bearer {token}"},
+        json=update_data
+    )
+    assert response.status_code == 422  # Validation error
+    assert "weight_oz" in str(response.json())
+
+
+def test_can_create_item_at_max_weight():
+    """Test that creating an item with weight = 3200 oz (200 lbs) succeeds"""
+    token = get_admin_token()
+    
+    new_item = {
+        "name": "Test Max Weight Item",
+        "price_cents": 999,
+        "weight_oz": 3200,  # Valid: exactly at 200 lbs limit
+        "category": "test",
+        "stock_qty": 10
+    }
+    
+    response = client.post(
+        "/api/admin/items",
+        headers={"Authorization": f"Bearer {token}"},
+        json=new_item
+    )
+    assert response.status_code == 201  # Success
+    assert response.json()["weight_oz"] == 3200
+
+
 # ============ Integration Tests ============
 
 def test_full_user_lifecycle():

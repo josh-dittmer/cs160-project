@@ -250,7 +250,7 @@ class ItemCreate(BaseModel):
     """Schema for creating a new item"""
     name: constr(min_length=1, max_length=255)
     price_cents: conint(gt=0)
-    weight_oz: conint(gt=0)
+    weight_oz: conint(gt=0, le=3200)  # Max 200 lbs (3200 oz) - vehicle capacity limit
     category: str | None = None
     image_url: str | None = None
     video_url: str | None = None
@@ -264,7 +264,7 @@ class ItemUpdate(BaseModel):
     """Schema for updating an item (all fields optional)"""
     name: constr(min_length=1, max_length=255) | None = None
     price_cents: conint(gt=0) | None = None
-    weight_oz: conint(gt=0) | None = None
+    weight_oz: conint(gt=0, le=3200) | None = None  # Max 200 lbs (3200 oz) - delivery vehicle capacity limit
     category: str | None = None
     image_url: str | None = None
     video_url: str | None = None
