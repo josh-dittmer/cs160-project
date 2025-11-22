@@ -1362,7 +1362,9 @@ def list_audit_logs(
         subordinate_ids = get_all_subordinate_ids(admin.id, db)
         
         # Get all customer IDs
-        customer_ids = {u.id for u in db.query(User.id).filter(User.role == "customer").all()}
+        customer_ids = set(
+            db.scalars(select(User.id).where(User.role == "customer")).all()
+        )
         
         # Build allowed actor IDs set
         allowed_ids = {admin.id} | subordinate_ids | customer_ids
@@ -1395,7 +1397,9 @@ def get_audit_stats(
     if admin.role == "manager":
         # Managers can only see logs from themselves, their subordinates, and customers
         subordinate_ids = get_all_subordinate_ids(admin.id, db)
-        customer_ids = {u.id for u in db.query(User.id).filter(User.role == "customer").all()}
+        customer_ids = set(
+            db.scalars(select(User.id).where(User.role == "customer")).all()
+        )
         allowed_ids = {admin.id} | subordinate_ids | customer_ids
     
     # Build base query with role-based filtering
