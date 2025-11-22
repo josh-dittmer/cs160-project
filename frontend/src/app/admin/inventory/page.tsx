@@ -107,7 +107,7 @@ export default function InventoryManagement() {
     if (!token) return;
     
     const confirmed = confirm(
-      `⚠️ WARNING: Are you sure you want to PERMANENTLY delete "${itemName}"?\n\n` +
+      `WARNING: Are you sure you want to PERMANENTLY delete "${itemName}"?\n\n` +
       `This action CANNOT be undone! The item will be completely removed from the database.`
     );
     
@@ -309,7 +309,7 @@ export default function InventoryManagement() {
                   onClick={() => handlePermanentDelete(item.id, item.name)}
                   className="w-full px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium border border-red-800"
                 >
-                  🗑️ Delete Permanently
+                  Delete Permanently
                 </button>
               </div>
             </div>
@@ -939,7 +939,7 @@ function ItemFormModal({
               disabled={saving}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium disabled:opacity-50 transition-colors"
             >
-              {saving ? 'Saving...' : '💾 Save'}
+              {saving ? 'Saving...' : 'Save'}
             </button>
           </div>
         </div>
@@ -1167,7 +1167,7 @@ function ItemFormModal({
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
-                  ✨ Generate with AI
+                  Generate with AI
                 </button>
               </div>
 
@@ -1300,7 +1300,7 @@ function ItemFormModal({
                       )}
                     </button>
                     <p className="text-xs text-gray-500">
-                      💡 Tip: {aiBaseImage ? 'Be specific about what edits you want.' : 'Be specific about the product, lighting, background, and style. Or upload an image to edit it.'} Generation may take 10-30 seconds.
+                      Tip: {aiBaseImage ? 'Be specific about what edits you want.' : 'Be specific about the product, lighting, background, and style. Or upload an image to edit it.'} Generation may take 10-30 seconds.
                     </p>
                   </div>
                 </div>
@@ -1367,9 +1367,8 @@ function ItemFormModal({
                 }`}
               />
               {nutritionJsonError ? (
-                <p className="text-xs text-red-600 mt-1 flex items-start gap-1">
-                  <span className="mt-0.5">⚠️</span>
-                  <span>{nutritionJsonError}</span>
+                <p className="text-xs text-red-600 mt-1">
+                  {nutritionJsonError}
                 </p>
               ) : (
                 <p className="text-xs text-gray-500 mt-1">
@@ -1395,7 +1394,7 @@ function ItemFormModal({
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
-                  🎬 AI Generate
+                  AI Generate
                 </button>
                 <button
                   type="button"
@@ -1406,7 +1405,7 @@ function ItemFormModal({
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
-                  📤 Upload File
+                  Upload File
                 </button>
                 <button
                   type="button"
@@ -1417,7 +1416,7 @@ function ItemFormModal({
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
-                  🔗 Add URL
+                  Add URL
                 </button>
               </div>
 
@@ -1452,7 +1451,7 @@ function ItemFormModal({
                       className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      💡 Tip: Be specific about the product, action, lighting, and style. Veo 3.1 generates 8-second videos with audio.
+                      Tip: Be specific about the product, action, lighting, and style. Veo 3.1 generates 8-second videos with audio.
                     </p>
                   </div>
 
@@ -1471,7 +1470,7 @@ function ItemFormModal({
                         Generating Video... (30-60s)
                       </span>
                     ) : (
-                      '🎬 Generate Video with AI'
+                      'Generate Video with AI'
                     )}
                   </button>
                 </div>
@@ -1498,7 +1497,7 @@ function ItemFormModal({
                         cursor-pointer"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      💡 Accepts MP4, WebM, OGG, or MOV files (max 50MB)
+                      Tip: Accepts MP4, WebM, OGG, or MOV files (max 50MB)
                     </p>
                   </div>
                 </div>
@@ -1509,12 +1508,9 @@ function ItemFormModal({
                 <div className="space-y-3 border border-gray-200 rounded-lg p-4 bg-gray-50">
                   {/* Copyright Warning */}
                   <div className="bg-yellow-50 border border-yellow-300 rounded-md p-3">
-                    <p className="text-xs text-yellow-800 font-medium flex items-start gap-2">
-                      <span className="text-base">⚠️</span>
-                      <span>
-                        <strong>Copyright Warning:</strong> Only use videos you own, created yourself, or have explicit permission to use. 
-                        Using copyrighted content from other brands/creators without permission is illegal and may result in legal action.
-                      </span>
+                    <p className="text-xs text-yellow-800 font-medium">
+                      <strong>Copyright Warning:</strong> Only use videos you own, created yourself, or have explicit permission to use. 
+                      Using copyrighted content from other brands/creators without permission is illegal and may result in legal action.
                     </p>
                   </div>
 
@@ -1530,7 +1526,7 @@ function ItemFormModal({
                       className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      💡 Use only: Your own videos, licensed stock videos, or AI-generated content
+                      Tip: Use only your own videos, licensed stock videos, or AI-generated content
                     </p>
                   </div>
 
@@ -1540,7 +1536,7 @@ function ItemFormModal({
                     disabled={!videoUrlInput.trim()}
                     className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    🔗 Add Video URL
+                    Add Video URL
                   </button>
                 </div>
               )}
