@@ -879,6 +879,14 @@ function ItemFormModal({
         return;
       }
 
+      // Validate weight is provided and greater than 0
+      const weightOz = parseInt(formData.weight_oz as string);
+      if (!formData.weight_oz || isNaN(weightOz) || weightOz <= 0) {
+        toast.error('Weight must be greater than 0 ounces');
+        setSaving(false);
+        return;
+      }
+
       // Validate image is provided
       if (!formData.image_url || formData.image_url.trim() === '') {
         toast.error('Please provide a product image (either URL or upload an image)');
@@ -898,7 +906,7 @@ function ItemFormModal({
       const submitData = {
         name: formData.name,
         price_cents: priceCents,
-        weight_oz: parseInt(formData.weight_oz as string) || 0,
+        weight_oz: weightOz,
         category: formData.category,
         image_url: formData.image_url,
         video_url: formData.video_url,
@@ -1093,7 +1101,8 @@ function ItemFormModal({
                 <input
                   type="number"
                   required
-                  min="0"
+                  min="1"
+                  step="1"
                   value={formData.weight_oz}
                   onChange={(e) => setFormData({ ...formData, weight_oz: e.target.value })}
                   onKeyDown={handleNumericKeyDown}

@@ -249,8 +249,8 @@ class UserManagerUpdate(BaseModel):
 class ItemCreate(BaseModel):
     """Schema for creating a new item"""
     name: constr(min_length=1, max_length=255)
-    price_cents: conint(ge=0)
-    weight_oz: conint(ge=0)
+    price_cents: conint(gt=0)
+    weight_oz: conint(gt=0)
     category: str | None = None
     image_url: str | None = None
     video_url: str | None = None
@@ -263,8 +263,8 @@ class ItemCreate(BaseModel):
 class ItemUpdate(BaseModel):
     """Schema for updating an item (all fields optional)"""
     name: constr(min_length=1, max_length=255) | None = None
-    price_cents: conint(ge=0) | None = None
-    weight_oz: conint(ge=0) | None = None
+    price_cents: conint(gt=0) | None = None
+    weight_oz: conint(gt=0) | None = None
     category: str | None = None
     image_url: str | None = None
     video_url: str | None = None
