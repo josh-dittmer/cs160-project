@@ -63,6 +63,13 @@ export default function InventoryManagement() {
     fetchItems();
   }, [token, statusFilter, paramsProcessed]);
 
+  // Cleanup: dismiss all toasts when component unmounts
+  useEffect(() => {
+    return () => {
+      toast.dismiss();
+    };
+  }, []);
+
   const fetchItems = async () => {
     if (!token) return;
     
@@ -95,6 +102,7 @@ export default function InventoryManagement() {
 
     try {
       await deleteItem(token, itemId);
+      toast.dismiss(); // Clear any previous toasts
       toast.success('Item deactivated successfully');
       fetchItems();
     } catch (error: any) {
@@ -115,6 +123,7 @@ export default function InventoryManagement() {
 
     try {
       await permanentlyDeleteItem(token, itemId);
+      toast.dismiss(); // Clear any previous toasts
       toast.success('Item permanently deleted from database');
       fetchItems();
     } catch (error: any) {
@@ -128,6 +137,7 @@ export default function InventoryManagement() {
     
     try {
       await activateItem(token, itemId, isActive);
+      toast.dismiss(); // Clear any previous toasts
       toast.success(`Item ${isActive ? 'activated' : 'deactivated'} successfully`);
       fetchItems();
     } catch (error: any) {
@@ -329,6 +339,7 @@ export default function InventoryManagement() {
           item={editingItem}
           token={token!}
           onClose={() => {
+            toast.dismiss(); // Clear any pending toasts when modal closes
             setShowCreateModal(false);
             setEditingItem(null);
           }}
@@ -532,6 +543,7 @@ function ItemFormModal({
     try {
       const result = await generateImage(token, aiPrompt, aiBaseImage || undefined);
       setFormData({ ...formData, image_url: result.image_data });
+      toast.dismiss(); // Clear any previous toasts
       toast.success(aiBaseImage ? 'Image edited successfully! You can now preview it below.' : 'Image generated successfully! You can now preview it below.');
     } catch (error: any) {
       console.error('Failed to generate image:', error);
@@ -555,6 +567,7 @@ function ItemFormModal({
     try {
       const result = await generateVideoSync(token, videoPrompt, videoModel);
       setFormData({ ...formData, video_url: result.video_data || '' });
+      toast.dismiss(); // Clear any previous toasts
       toast.success('Video generated successfully! You can now preview it below.');
     } catch (error: any) {
       console.error('Failed to generate video:', error);
@@ -898,10 +911,12 @@ function ItemFormModal({
       if (item) {
         // Update existing item
         await updateItem(token, item.id, submitData, autoCase, allowSpecialChars, allowNumbers);
+        toast.dismiss(); // Clear any error toasts before showing success
         toast.success('Item updated successfully');
       } else {
         // Create new item
         await createItem(token, submitData, autoCase, allowSpecialChars, allowNumbers);
+        toast.dismiss(); // Clear any error toasts before showing success
         toast.success('Item created successfully');
       }
       onSuccess();

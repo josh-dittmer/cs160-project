@@ -26,7 +26,11 @@ export default function Provider({ children }: { children: ReactNode }) {
                                     <MapsProvider>
                                         <WebsocketProvider>
                                             <Toaster 
-                                                position="top-center"
+                                                position="top-right"
+                                                reverseOrder={false}
+                                                gutter={8}
+                                                containerClassName=""
+                                                containerStyle={{}}
                                                 toastOptions={{
                                                     duration: 4000,
                                                     style: {
@@ -53,7 +57,7 @@ export default function Provider({ children }: { children: ReactNode }) {
                                                         },
                                                     },
                                                     error: {
-                                                        duration: 6000,
+                                                        duration: 5000,
                                                         iconTheme: {
                                                             primary: '#ef4444',
                                                             secondary: '#fff',
