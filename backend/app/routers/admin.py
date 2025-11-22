@@ -54,6 +54,49 @@ def smart_title_case(text: str) -> str:
     return ' '.join(result)
 
 
+def validate_item_name(name: str, allow_special_chars: bool, allow_numbers: bool) -> None:
+    """
+    Validate item name based on character restrictions.
+    
+    Logic:
+    - Default: letters, space, hyphen, apostrophe, ampersand
+    - allow_special_chars: Default + additional special chars (but NOT numbers unless also flagged)
+    - allow_numbers: Default + numbers
+    - Both: Default + special chars + numbers
+    
+    Args:
+        name: The item name to validate
+        allow_special_chars: If True, allow additional special characters
+        allow_numbers: If True, allow numbers
+    
+    Raises:
+        HTTPException: If name contains disallowed characters
+    """
+    import re
+    
+    if allow_special_chars and allow_numbers:
+        # Allow everything - no restrictions
+        return
+    elif allow_special_chars:
+        # Allow default chars + other special chars (but NOT numbers)
+        pattern = r'^[a-zA-Z\s\-\'&!@#$%^*()_+=\[\]{};:\'\"<>,.?/\\|`~]+$'
+        error_msg = "Item name cannot contain numbers when 'Allow numbers' is unchecked"
+    elif allow_numbers:
+        # Allow default chars + numbers
+        pattern = r'^[a-zA-Z0-9\s\-\'&]+$'
+        error_msg = "Item name can only contain letters, numbers, spaces, hyphens, apostrophes, and ampersands"
+    else:
+        # Default: only letters and default special chars
+        pattern = r'^[a-zA-Z\s\-\'&]+$'
+        error_msg = "Item name can only contain letters, spaces, hyphens, apostrophes, and ampersands"
+    
+    if not re.match(pattern, name):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error_msg
+        )
+
+
 # ============ User Management Endpoints ============
 
 @router.get("/users", response_model=List[UserListAdmin])
@@ -671,6 +714,8 @@ def create_item(
     item_data: ItemCreate,
     request: Request,
     auto_case: bool = Query(True, description="Automatically convert item name to Title Case"),
+    allow_special_chars: bool = Query(False, description="Allow all special characters in item name"),
+    allow_numbers: bool = Query(False, description="Allow numbers in item name"),
     admin: UserCtx = Depends(require_manager),
     db: Session = Depends(get_db),
 ):
@@ -678,6 +723,9 @@ def create_item(
     Create a new item.
     Manager or admin only.
     """
+    # Validate character restrictions
+    validate_item_name(item_data.name, allow_special_chars, allow_numbers)
+    
     # Apply Title Case if auto_case is enabled
     item_name = smart_title_case(item_data.name) if auto_case else item_data.name
     
@@ -727,6 +775,8 @@ def update_item(
     item_data: ItemUpdate,
     request: Request,
     auto_case: bool = Query(True, description="Automatically convert item name to Title Case"),
+    allow_special_chars: bool = Query(False, description="Allow all special characters in item name"),
+    allow_numbers: bool = Query(False, description="Allow numbers in item name"),
     admin: UserCtx = Depends(require_manager),
     db: Session = Depends(get_db),
 ):
@@ -758,8 +808,11 @@ def update_item(
     # Update only provided fields
     update_data = item_data.model_dump(exclude_unset=True)
     
-    # If name is being updated, apply Title Case and check for duplicates
+    # If name is being updated, validate and apply Title Case and check for duplicates
     if 'name' in update_data:
+        # Validate character restrictions
+        validate_item_name(update_data['name'], allow_special_chars, allow_numbers)
+        
         new_name = smart_title_case(update_data['name']) if auto_case else update_data['name']
         
         # Check for duplicate names (case-insensitive), excluding current item

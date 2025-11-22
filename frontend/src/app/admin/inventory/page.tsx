@@ -386,6 +386,9 @@ function ItemFormModal({
   const videoFileInputRef = React.useRef<HTMLInputElement>(null);
   const formRef = React.useRef<HTMLFormElement>(null);
   const [autoCase, setAutoCase] = useState(true);
+  const [allowSpecialChars, setAllowSpecialChars] = useState(false);
+  const [allowNumbers, setAllowNumbers] = useState(false);
+  const [showNameOptions, setShowNameOptions] = useState(false);
 
   // Fetch categories when modal opens
   useEffect(() => {
@@ -781,6 +784,65 @@ function ItemFormModal({
     setFormData({ ...formData, price_usd: newValue });
   };
 
+  // Handle name input validation based on checkbox settings
+  const handleNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Allow: tab, escape, enter, backspace, delete, arrow keys
+    const allowedControlKeys = ['Tab', 'Escape', 'Enter', 'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End'];
+    if (allowedControlKeys.includes(e.key) || e.ctrlKey || e.metaKey) {
+      return;
+    }
+    
+    // Default allowed: letters, space, hyphen, apostrophe, ampersand
+    const defaultAllowedRegex = /^[a-zA-Z\s\-'&]$/;
+    const numberRegex = /^[0-9]$/;
+    
+    // Check if it's a letter or default special char (always allowed)
+    if (defaultAllowedRegex.test(e.key)) {
+      return;
+    }
+    
+    // Check if it's a number
+    if (numberRegex.test(e.key)) {
+      if (!allowNumbers) {
+        e.preventDefault();
+      }
+      return;
+    }
+    
+    // For any other character (special chars like @, #, $, etc.)
+    // Only allow if "allow special characters" is checked
+    if (!allowSpecialChars) {
+      e.preventDefault();
+    }
+  };
+
+  const handleNamePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pastedText = e.clipboardData.getData('text');
+    
+    // Build regex based on current settings
+    let regex: RegExp;
+    
+    if (allowSpecialChars && allowNumbers) {
+      // Allow everything - no restrictions
+      return;
+    } else if (allowSpecialChars) {
+      // Allow letters, default special chars, and other special chars (but NOT numbers)
+      regex = /^[a-zA-Z\s\-'&!@#$%^*()_+=\[\]{};:'"<>,.?/\\|`~]+$/;
+    } else if (allowNumbers) {
+      // Allow letters, default special chars, and numbers
+      regex = /^[a-zA-Z0-9\s\-'&]+$/;
+    } else {
+      // Default: only letters and default special chars
+      regex = /^[a-zA-Z\s\-'&]+$/;
+    }
+    
+    // Reject paste if it contains disallowed characters
+    if (!regex.test(pastedText)) {
+      e.preventDefault();
+      toast.error('Pasted text contains characters that are not allowed based on your current settings');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -835,11 +897,11 @@ function ItemFormModal({
 
       if (item) {
         // Update existing item
-        await updateItem(token, item.id, submitData, autoCase);
+        await updateItem(token, item.id, submitData, autoCase, allowSpecialChars, allowNumbers);
         toast.success('Item updated successfully');
       } else {
         // Create new item
-        await createItem(token, submitData, autoCase);
+        await createItem(token, submitData, autoCase, allowSpecialChars, allowNumbers);
         toast.success('Item created successfully');
       }
       onSuccess();
@@ -886,27 +948,103 @@ function ItemFormModal({
         <div className="overflow-y-auto flex-1 px-6 py-4">
           <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Name *
-              </label>
+              <div className="flex items-center gap-2 mb-1">
+                <label className="text-sm font-medium text-gray-700">
+                  Name *
+                </label>
+                <div className="group relative inline-block">
+                  <button
+                    type="button"
+                    className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                    aria-label="Name field information"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                  <div className="invisible group-hover:visible absolute left-0 top-6 z-50 w-72 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg">
+                    <p className="font-semibold mb-1">Default Allowed Characters:</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>Letters (A-Z, a-z)</li>
+                      <li>Space</li>
+                      <li>Hyphen (-)</li>
+                      <li>Apostrophe (')</li>
+                      <li>Ampersand (&)</li>
+                    </ul>
+                    <p className="mt-2 text-gray-300 italic">
+                      Click "Name Validation Options" below for more settings.
+                    </p>
+                  </div>
+                </div>
+              </div>
               <input
                 type="text"
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onKeyDown={handleNameKeyDown}
+                onPaste={handleNamePaste}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
               />
-              <div className="mt-2 flex items-center">
-                <input
-                  type="checkbox"
-                  id="autoCase"
-                  checked={autoCase}
-                  onChange={(e) => setAutoCase(e.target.checked)}
-                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <label htmlFor="autoCase" className="ml-2 text-sm text-gray-600">
-                  Auto-format name to Title Case (e.g., "organic apples" → "Organic Apples")
-                </label>
+              <div className="mt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowNameOptions(!showNameOptions)}
+                  className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800 focus:outline-none"
+                >
+                  <svg 
+                    className={`w-4 h-4 transition-transform ${showNameOptions ? 'rotate-90' : ''}`}
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  <span className="font-medium">Name Validation Options</span>
+                </button>
+                
+                {showNameOptions && (
+                  <div className="mt-3 ml-6 space-y-2 border-l-2 border-gray-200 pl-4">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="autoCase"
+                        checked={autoCase}
+                        onChange={(e) => setAutoCase(e.target.checked)}
+                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <label htmlFor="autoCase" className="ml-2 text-sm text-gray-600">
+                        Auto-format name to Title Case (e.g., "organic apples" → "Organic Apples")
+                      </label>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="allowSpecialChars"
+                        checked={allowSpecialChars}
+                        onChange={(e) => setAllowSpecialChars(e.target.checked)}
+                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <label htmlFor="allowSpecialChars" className="ml-2 text-sm text-gray-600">
+                        Allow all special characters (@, #, $, %, etc.)
+                      </label>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="allowNumbers"
+                        checked={allowNumbers}
+                        onChange={(e) => setAllowNumbers(e.target.checked)}
+                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <label htmlFor="allowNumbers" className="ml-2 text-sm text-gray-600">
+                        Allow numbers (0-9)
+                      </label>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

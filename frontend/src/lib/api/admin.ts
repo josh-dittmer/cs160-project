@@ -229,10 +229,14 @@ export async function getItem(token: string, itemId: number): Promise<ItemAdmin>
 export async function createItem(
   token: string,
   data: ItemCreateData,
-  autoCase: boolean = true
+  autoCase: boolean = true,
+  allowSpecialChars: boolean = false,
+  allowNumbers: boolean = false
 ): Promise<ItemAdmin> {
   const url = new URL(`${API_BASE_URL}/api/admin/items`);
   url.searchParams.append('auto_case', autoCase.toString());
+  url.searchParams.append('allow_special_chars', allowSpecialChars.toString());
+  url.searchParams.append('allow_numbers', allowNumbers.toString());
   
   const response = await fetch(url.toString(), {
     method: 'POST',
@@ -255,10 +259,14 @@ export async function updateItem(
   token: string,
   itemId: number,
   data: ItemUpdateData,
-  autoCase: boolean = true
+  autoCase: boolean = true,
+  allowSpecialChars: boolean = false,
+  allowNumbers: boolean = false
 ): Promise<ItemAdmin> {
   const url = new URL(`${API_BASE_URL}/api/admin/items/${itemId}`);
   url.searchParams.append('auto_case', autoCase.toString());
+  url.searchParams.append('allow_special_chars', allowSpecialChars.toString());
+  url.searchParams.append('allow_numbers', allowNumbers.toString());
   
   const response = await fetch(url.toString(), {
     method: 'PUT',
