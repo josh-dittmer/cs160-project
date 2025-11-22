@@ -134,7 +134,7 @@ def test_admin_endpoints_require_admin_role():
         headers={"Authorization": f"Bearer {token}"}
     )
     assert response.status_code == 403
-    assert "Admin access required" in response.json()["detail"]
+    assert "Manager or admin access required" in response.json()["detail"]
 
 
 def test_admin_can_access_admin_endpoints():
@@ -823,11 +823,21 @@ def test_full_user_lifecycle():
     user_id = user_data["id"]
     assert user_data["role"] == "customer"  # Default role
     
-    # Admin promotes to employee
+    # Ensure there is at least one manager to assign employees to
+    db = SessionLocal()
+    try:
+        manager = db.query(User).filter(User.role == "manager").first()
+        if not manager:
+            manager = create_test_user(db, MANAGER_EMAIL, "manager")
+        manager_id = manager.id
+    finally:
+        db.close()
+    
+    # Admin promotes to employee (must assign manager)
     promote_response = client.put(
         f"/api/admin/users/{user_id}/role",
         headers={"Authorization": f"Bearer {token}"},
-        json={"role": "employee"}
+        json={"role": "employee", "manager_id": manager_id}
     )
     assert promote_response.status_code == 200
     assert promote_response.json()["user"]["role"] == "employee"
