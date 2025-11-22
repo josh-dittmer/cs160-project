@@ -170,7 +170,7 @@ def test_auto_case_off_preserves_original_case(client, admin_token):
     response = client.post(
         "/api/admin/items",
         headers={"Authorization": f"Bearer {admin_token}"},
-        params={"auto_case": False},
+        params={"auto_case": False, "allow_numbers": True},
         json={
             "name": "iPhone 15",
             "price_cents": 99900,
