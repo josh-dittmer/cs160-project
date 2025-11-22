@@ -110,12 +110,12 @@ If you need to reseed with fresh data, delete the existing database first:
 
 **macOS/Linux:**
 ```bash
-rm sqlite.db
+rm db/sqlite.db
 ```
 
 **Windows PowerShell:**
 ```powershell
-Remove-Item sqlite.db
+Remove-Item db\sqlite.db
 ```
 
 #### 3. Seed the database
