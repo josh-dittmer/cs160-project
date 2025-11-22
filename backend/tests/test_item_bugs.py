@@ -39,15 +39,29 @@ def override_get_db():
         db.close()
 
 
-app.dependency_overrides[get_db] = override_get_db
-
-
 @pytest.fixture
 def client():
     """Create test client and setup database."""
     Base.metadata.create_all(bind=engine)
     yield TestClient(app)
     Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture(autouse=True)
+def override_db_dependency():
+    """
+    Ensure get_db uses the in-memory SQLite session for these tests only,
+    then restore the original dependency override afterwards.
+    """
+    previous_override = app.dependency_overrides.get(get_db)
+    app.dependency_overrides[get_db] = override_get_db
+    try:
+        yield
+    finally:
+        if previous_override is not None:
+            app.dependency_overrides[get_db] = previous_override
+        else:
+            app.dependency_overrides.pop(get_db, None)
 
 
 @pytest.fixture

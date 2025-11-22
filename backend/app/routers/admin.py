@@ -74,21 +74,32 @@ def validate_item_name(name: str, allow_special_chars: bool, allow_numbers: bool
     """
     import re
     
+    validation_hint = " Update the Name Validation Options to allow numbers and/or special characters."
+    
     if allow_special_chars and allow_numbers:
         # Allow everything - no restrictions
         return
     elif allow_special_chars:
         # Allow default chars + other special chars (but NOT numbers)
         pattern = r'^[a-zA-Z\s\-\'&!@#$%^*()_+=\[\]{};:\'\"<>,.?/\\|`~]+$'
-        error_msg = "Item name cannot contain numbers when 'Allow numbers' is unchecked"
+        error_msg = (
+            "Item name cannot contain numbers when 'Allow numbers' is unchecked."
+            " Enable the 'Allow numbers' option in Name Validation Options to include digits."
+        )
     elif allow_numbers:
         # Allow default chars + numbers
         pattern = r'^[a-zA-Z0-9\s\-\'&]+$'
-        error_msg = "Item name can only contain letters, numbers, spaces, hyphens, apostrophes, and ampersands"
+        error_msg = (
+            "Item name can only contain letters, numbers, spaces, hyphens, apostrophes, and ampersands."
+            + validation_hint
+        )
     else:
         # Default: only letters and default special chars
         pattern = r'^[a-zA-Z\s\-\'&]+$'
-        error_msg = "Item name can only contain letters, spaces, hyphens, apostrophes, and ampersands"
+        error_msg = (
+            "Item name can only contain letters, spaces, hyphens, apostrophes, and ampersands."
+            + validation_hint
+        )
     
     if not re.match(pattern, name):
         raise HTTPException(
