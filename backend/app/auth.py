@@ -287,3 +287,46 @@ def can_block_user(actor_role: str, target_role: str) -> bool:
         return True  # Admin can block anyone (self-blocking prevented in endpoint)
     
     return False
+
+
+def get_all_subordinate_ids(manager_id: int, db: Session) -> set[int]:
+    """
+    Recursively get all subordinate user IDs for a manager.
+    
+    This function traverses the reporting hierarchy to find all users who
+    directly or indirectly report to the given manager.
+    
+    Args:
+        manager_id: ID of the manager
+        db: Database session
+    
+    Returns:
+        Set of user IDs that directly or indirectly report to the manager.
+        Returns empty set if manager has no subordinates.
+    
+    Note:
+        Handles circular relationships with visited tracking to prevent infinite loops.
+    """
+    subordinate_ids = set()
+    visited = set()
+    
+    def _get_subordinates_recursive(current_manager_id: int):
+        """Inner recursive function to traverse the hierarchy."""
+        # Prevent infinite loops from circular relationships
+        if current_manager_id in visited:
+            return
+        visited.add(current_manager_id)
+        
+        # Get all direct reports
+        direct_reports = db.query(User).filter(User.reports_to == current_manager_id).all()
+        
+        for subordinate in direct_reports:
+            # Add this subordinate to the set
+            subordinate_ids.add(subordinate.id)
+            # Recursively get their subordinates
+            _get_subordinates_recursive(subordinate.id)
+    
+    # Start the recursive traversal
+    _get_subordinates_recursive(manager_id)
+    
+    return subordinate_ids

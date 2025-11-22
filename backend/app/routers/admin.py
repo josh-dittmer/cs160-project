@@ -24,7 +24,7 @@ from ..schemas import (
     AuditLogOut,
     AuditLogStats,
 )
-from ..auth import require_admin, require_manager, UserCtx
+from ..auth import require_admin, require_manager, UserCtx, get_all_subordinate_ids
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -1350,6 +1350,30 @@ def list_audit_logs(
                 detail="Invalid to_date format. Use ISO format (e.g., 2025-12-31T23:59:59Z)",
             )
     
+    # Apply role-based filtering for managers
+    if admin.role == "manager":
+        # Managers can only see logs from:
+        # 1. Themselves
+        # 2. Their subordinates (direct and indirect)
+        # 3. All customers
+        # Exclude system actions (actor_id = NULL)
+        
+        # Get all subordinate IDs
+        subordinate_ids = get_all_subordinate_ids(admin.id, db)
+        
+        # Get all customer IDs
+        customer_ids = {u.id for u in db.query(User.id).filter(User.role == "customer").all()}
+        
+        # Build allowed actor IDs set
+        allowed_ids = {admin.id} | subordinate_ids | customer_ids
+        
+        # Apply filters: exclude NULL actor_ids and only show allowed actors
+        stmt = stmt.where(
+            AuditLog.actor_id.isnot(None),
+            AuditLog.actor_id.in_(allowed_ids)
+        )
+    # Admin sees all logs (no additional filtering)
+    
     # Order by timestamp descending (newest first) and apply pagination
     stmt = stmt.order_by(AuditLog.timestamp.desc()).limit(limit).offset(offset)
     
@@ -1366,27 +1390,55 @@ def get_audit_stats(
     Get audit log statistics.
     Manager or admin only.
     """
+    # Determine allowed actor IDs based on role
+    allowed_ids = None
+    if admin.role == "manager":
+        # Managers can only see logs from themselves, their subordinates, and customers
+        subordinate_ids = get_all_subordinate_ids(admin.id, db)
+        customer_ids = {u.id for u in db.query(User.id).filter(User.role == "customer").all()}
+        allowed_ids = {admin.id} | subordinate_ids | customer_ids
+    
+    # Build base query with role-based filtering
+    def apply_manager_filter(query):
+        """Helper to apply manager filtering to any query"""
+        if allowed_ids is not None:
+            # Manager: filter by allowed actor IDs and exclude NULL
+            return query.filter(
+                AuditLog.actor_id.isnot(None),
+                AuditLog.actor_id.in_(allowed_ids)
+            )
+        # Admin: no filtering
+        return query
+    
     # Total logs count
-    total_logs = db.query(func.count(AuditLog.id)).scalar() or 0
+    total_logs_query = db.query(func.count(AuditLog.id))
+    total_logs_query = apply_manager_filter(total_logs_query)
+    total_logs = total_logs_query.scalar() or 0
     
     # Logs in last 24 hours
     last_24h = datetime.now(timezone.utc) - timedelta(hours=24)
-    logs_last_24h = db.query(func.count(AuditLog.id)).filter(
+    logs_last_24h_query = db.query(func.count(AuditLog.id)).filter(
         AuditLog.timestamp >= last_24h
-    ).scalar() or 0
+    )
+    logs_last_24h_query = apply_manager_filter(logs_last_24h_query)
+    logs_last_24h = logs_last_24h_query.scalar() or 0
     
     # Logs in last 7 days
     last_7d = datetime.now(timezone.utc) - timedelta(days=7)
-    logs_last_7d = db.query(func.count(AuditLog.id)).filter(
+    logs_last_7d_query = db.query(func.count(AuditLog.id)).filter(
         AuditLog.timestamp >= last_7d
-    ).scalar() or 0
+    )
+    logs_last_7d_query = apply_manager_filter(logs_last_7d_query)
+    logs_last_7d = logs_last_7d_query.scalar() or 0
     
     # Top 10 action types
-    top_actions_query = (
-        db.query(
-            AuditLog.action_type,
-            func.count(AuditLog.id).label('count')
-        )
+    top_actions_query = db.query(
+        AuditLog.action_type,
+        func.count(AuditLog.id).label('count')
+    )
+    top_actions_query = apply_manager_filter(top_actions_query)
+    top_actions_result = (
+        top_actions_query
         .group_by(AuditLog.action_type)
         .order_by(func.count(AuditLog.id).desc())
         .limit(10)
@@ -1394,16 +1446,17 @@ def get_audit_stats(
     )
     top_actions = [
         {"action_type": row[0], "count": row[1]}
-        for row in top_actions_query
+        for row in top_actions_result
     ]
     
     # Top 10 actors
-    top_actors_query = (
-        db.query(
-            AuditLog.actor_email,
-            func.count(AuditLog.id).label('count')
-        )
-        .filter(AuditLog.actor_email.isnot(None))
+    top_actors_query = db.query(
+        AuditLog.actor_email,
+        func.count(AuditLog.id).label('count')
+    ).filter(AuditLog.actor_email.isnot(None))
+    top_actors_query = apply_manager_filter(top_actors_query)
+    top_actors_result = (
+        top_actors_query
         .group_by(AuditLog.actor_email)
         .order_by(func.count(AuditLog.id).desc())
         .limit(10)
@@ -1411,7 +1464,7 @@ def get_audit_stats(
     )
     top_actors = [
         {"actor_email": row[0], "count": row[1]}
-        for row in top_actors_query
+        for row in top_actors_result
     ]
     
     return AuditLogStats(
