@@ -387,7 +387,10 @@ def test_google_auth_invalid_token():
 
 def test_google_auth_no_client_id():
     """Test that Google OAuth fails when GOOGLE_CLIENT_ID is not configured"""
-    with patch.dict(os.environ, {"GOOGLE_CLIENT_ID": ""}, clear=True):
+    from app.routers import auth as auth_module
+    
+    # Mock the module-level constant directly (env var is loaded at import time)
+    with patch.object(auth_module, 'GOOGLE_CLIENT_ID', ''):
         response = client.post(
             "/api/auth/google",
             json={"id_token": "fake-token"},
