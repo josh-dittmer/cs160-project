@@ -1,5 +1,5 @@
 import { CartItemT, OrderT } from "@/lib/api/models";
-import { formatDate, formatTime } from "@/lib/util/date";
+import { ensureUtc, formatDate, formatTime } from "@/lib/util/date";
 import { Receipt, ShoppingCart } from "lucide-react";
 import { motion } from "motion/react";
 import OrderSummary from "../order_summary/order_summary";
@@ -16,8 +16,8 @@ function ItemSnippet({ cartItem }: { cartItem: CartItemT }) {
 }
 
 export default function OrderCard({ order }: { order: OrderT }) {
-    const createdDateStr = formatDate(new Date(order.created_at));
-    const deliveredDateStr = order.delivered_at ? 'Delivered at ' + formatTime(new Date(order.delivered_at)) : 'Not delivered';
+    const createdDateStr = formatDate(ensureUtc(order.created_at));
+    const deliveredDateStr = order.delivered_at ? 'Delivered at ' + formatTime(ensureUtc(order.delivered_at)) : 'Not delivered';
 
     return (
         <div className="w-full p-3 border border-bg-dark rounded-xl max-w-2xl grid grid-rows-[175px_auto]">
