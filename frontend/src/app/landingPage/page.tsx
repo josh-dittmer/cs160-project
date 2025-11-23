@@ -6,30 +6,59 @@ import { MapPin, Truck, ShoppingBag } from "lucide-react";
 export default function OFSOfficialLandingPage() {
   return (
     <div className="min-h-screen bg-white text-gray-900">
-      {/* Hero Section */}
-      <section className="bg-green-500 text-white h-screen flex flex-col justify-center px-6 text-center bg-cover bg-center">
-        <img src="/logo.png" alt="OFS Logo" className="mx-auto w-40 h-20" />
-        <motion.h1
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-4xl font-bold mb-4"
-        >
-          On-Demand Food Delivery Service (OFS)
-        </motion.h1>
-        <p className="text-lg max-w-xl mx-auto">
-          Fresh groceries, lightning-fast delivery, and a smart robot-powered route system.
-          Your city’s most reliable food delivery platform.
-        </p>
-        <div className="py-10 text-center space-x-4">
-            <a href="/login">
-                <button className="bg-white text-green-700 font-semibold px-6 py-3 rounded-xl shadow hover:bg-gray-100 transition">Sign In</button>
-            </a>
-            <a href="signup">
-                <button className="bg-green-800 text-white font-semibold px-6 py-3 rounded-xl shadow hover:bg-green-900 transition">Sign Up</button>
+        {/* Hero Section */}
+        <section className="relative h-screen w-full overflow-hidden">
 
-            </a>
-        </div>
+        {/* Background Video */}
+            <video
+            src="/Videos.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute top-0 left-0 w-full h-full object-cover"
+            />
+
+        {/* Green Rectangle Content Box */}
+            <div className="relative z-10 bg-green-600 opacity-90 w-full max-w-2xl mx-auto mt-24 p-10 rounded-2xl text-center text-white shadow-xl">
+                <img src="/logo.png" alt="OFS Logo" className="mx-auto w-40 h-20 mb-4" />
+
+                <motion.h1
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="text-4xl font-bold mb-4"
+                >
+                On-Demand Food Delivery Service (OFS)
+                </motion.h1>
+
+                <p className="text-lg max-w-xl mx-auto mb-6">
+                Fresh groceries, lightning-fast delivery, and a smart robot-powered route system.
+                Your city’s most reliable food delivery platform.
+                </p>
+
+
+                <div className="text-center space-x-4">
+                    <a href="/login">
+                        <button className="bg-white text-green-700 font-semibold px-6 py-3 rounded-xl shadow hover:bg-gray-100 transition">Sign In</button>
+                    </a>
+                    <a href="/signup">
+                        <button className="bg-green-800 text-white font-semibold px-6 py-3 rounded-xl shadow hover:bg-green-900 transition">Sign Up</button>
+                    </a>
+                </div>
+            </div>
+
+        </section>
+
+      {/* Introduction */}
+      <section className="max-w-5xl mx-auto py-16 px-6">
+        <h2 className="text-3xl font-semibold mb-4">About OFS</h2>
+        <p className="text-lg leading-relaxed">
+          OFS is a on-demand food delivery service built for convenience and reliability.
+          We focus on organic products, real‑time delivery tracking, robot-assisted route optimization,
+          and a clean shopping experience. Whether you're at home or work, OFS makes grocery delivery
+          simple and fast.
+        </p>
       </section>
 
       {/* Fresh & Healthy Section */}
@@ -44,18 +73,6 @@ export default function OFSOfficialLandingPage() {
             </p>
         </div>
         </section>
-
-
-      {/* Introduction */}
-      <section className="max-w-5xl mx-auto py-16 px-6">
-        <h2 className="text-3xl font-semibold mb-4">About OFS</h2>
-        <p className="text-lg leading-relaxed">
-          OFS is a on-demand food delivery service built for convenience and reliability.
-          We focus on organic products, real‑time delivery tracking, robot-assisted route optimization,
-          and a clean shopping experience. Whether you're at home or work, OFS makes grocery delivery
-          simple and fast.
-        </p>
-      </section>
 
         {/* Address Section */}
       <section className="max-w-5xl mx-auto py-16 px-6">
