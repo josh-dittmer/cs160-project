@@ -10,6 +10,7 @@ interface AuthContextType {
     logout: () => void;
     updateUser: (user: UserInfo) => void;
     isAuthenticated: boolean;
+    isReady: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -18,6 +19,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<UserInfo | null>(null);
     const [token, setToken] = useState<string | null>(null);
     const [expires, setExpires] = useState<number | null>(null);
+    const [isReady, setIsReady] = useState(false);
 
     const login = useCallback((newToken: string, newUser: UserInfo, expires: number) => {
         const expiresMs = expires * 1000;
@@ -27,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('auth_token', newToken);
         localStorage.setItem('user_info', JSON.stringify(newUser));
         localStorage.setItem('auth_expires', expires.toString());
+        setIsReady(true);
     }, []);
 
     const logout = useCallback(() => {
@@ -36,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('user_info');
         localStorage.removeItem('auth_expires');
+        setIsReady(true);
     }, []);
 
     const updateUser = useCallback((newUser: UserInfo) => {
@@ -45,59 +49,74 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Load auth state from localStorage on mount
     useEffect(() => {
-        const storedToken = localStorage.getItem('auth_token');
-        const storedUser = localStorage.getItem('user_info');
-        const storedExpires = localStorage.getItem('auth_expires');
-
-        if (!storedToken || !storedUser || !storedExpires) {
-            logout();
-            return;
-        }
-
-        let parsedUser: UserInfo | null = null;
-        try {
-            parsedUser = JSON.parse(storedUser);
-        } catch (error) {
-            console.error('Failed to parse stored user info', error);
-            logout();
-            return;
-        }
-
-        const expiresEpochSeconds = Number(storedExpires);
-        const expiresAtMs = Number.isFinite(expiresEpochSeconds)
-            ? expiresEpochSeconds * 1000
-            : NaN;
-
-        if (!Number.isFinite(expiresAtMs) || expiresAtMs <= Date.now()) {
-            logout();
-            return;
-        }
-
-        setToken(storedToken);
-        setUser(parsedUser);
-        setExpires(expiresAtMs);
-
+        let isMounted = true;
         const controller = new AbortController();
 
-        const refreshUser = async () => {
+        const hydrateAuthState = async () => {
+            const storedToken = localStorage.getItem('auth_token');
+            const storedUser = localStorage.getItem('user_info');
+            const storedExpires = localStorage.getItem('auth_expires');
+
+            if (!storedToken || !storedUser || !storedExpires) {
+                if (isMounted) {
+                    logout();
+                }
+                return;
+            }
+
+            let parsedUser: UserInfo | null = null;
+            try {
+                parsedUser = JSON.parse(storedUser);
+            } catch (error) {
+                console.error('Failed to parse stored user info', error);
+                if (isMounted) {
+                    logout();
+                }
+                return;
+            }
+
+            const expiresEpochSeconds = Number(storedExpires);
+            const expiresAtMs = Number.isFinite(expiresEpochSeconds)
+                ? expiresEpochSeconds * 1000
+                : NaN;
+
+            if (!Number.isFinite(expiresAtMs) || expiresAtMs <= Date.now()) {
+                if (isMounted) {
+                    logout();
+                }
+                return;
+            }
+
+            if (!isMounted) {
+                return;
+            }
+
+            setToken(storedToken);
+            setUser(parsedUser);
+            setExpires(expiresAtMs);
+            setIsReady(true);
+
             try {
                 const latestUser = await getCurrentUser(storedToken);
-                if (controller.signal.aborted) {
+                if (controller.signal.aborted || !isMounted) {
                     return;
                 }
                 setUser(latestUser);
                 localStorage.setItem('user_info', JSON.stringify(latestUser));
             } catch (error) {
                 console.error('Failed to refresh session', error);
-                if (!controller.signal.aborted) {
+                if (!controller.signal.aborted && isMounted) {
                     logout();
                 }
             }
         };
 
-        refreshUser();
+        hydrateAuthState();
 
-        return () => controller.abort();
+        return () => {
+            isMounted = false;
+            controller.abort();
+        };
     }, [logout]);
 
     const value = {
@@ -107,6 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         updateUser,
         isAuthenticated: !!token && !!user,
+        isReady,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -17,7 +17,7 @@ function getStatus(stock_qty: number): Status {
 }
 
 export default function InventoryPage() {
-    const { token, user } = useAuth();
+    const { token, user, isReady } = useAuth();
     const router = useRouter();
     const [products, setProducts] = useState<ItemEmployee[]>([]);
     const [query, setQuery] = useState("");
@@ -27,6 +27,10 @@ export default function InventoryPage() {
     const [error, setError] = useState<string | null>(null);
     
     useEffect(() => {
+        if (!isReady) {
+            return;
+        }
+
         if (!token) {
             router.push('/login');
             return;
@@ -38,7 +42,7 @@ export default function InventoryPage() {
         }
 
         loadProducts();
-    }, [token, user, router]);
+    }, [isReady, token, user, router]);
 
     const loadProducts = async () => {
         if (!token) return;

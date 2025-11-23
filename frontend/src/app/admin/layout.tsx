@@ -7,18 +7,25 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, isReady } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
+    if (!isReady) {
+      return;
+    }
     if (!isAuthenticated) {
       router.push('/login');
     } else if (user?.role !== 'admin' && user?.role !== 'manager') {
       // Redirect non-admin/non-manager users to customer dashboard
       router.push('/home/dashboard');
     }
-  }, [isAuthenticated, user, router]);
+  }, [isReady, isAuthenticated, user, router]);
+
+  if (!isReady) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
 
   if (!isAuthenticated || (user?.role !== 'admin' && user?.role !== 'manager')) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;

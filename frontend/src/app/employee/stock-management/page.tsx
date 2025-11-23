@@ -19,7 +19,7 @@ function getStatus(stock_qty: number): Status {
 }
 
 export default function StockManagementPage(){
-    const { token, user } = useAuth();
+    const { token, user, isReady } = useAuth();
     const router = useRouter();
     
     //State for table and filtering
@@ -39,6 +39,10 @@ export default function StockManagementPage(){
     const asInt = (s: string) => Math.max(0, parseInt(s || '0', 10) || 0);
 
     useEffect(() => {
+        if (!isReady) {
+            return;
+        }
+
         if (!token) {
             router.push('/login');
             return;
@@ -50,7 +54,7 @@ export default function StockManagementPage(){
         }
 
         loadProducts();
-    }, [token, user, router]);
+    }, [isReady, token, user, router]);
 
     const loadProducts = async () => {
         if (!token) return;

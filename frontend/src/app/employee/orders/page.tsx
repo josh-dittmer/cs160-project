@@ -6,7 +6,7 @@ import { listOrders, OrderListEmployee } from '@/lib/api/employee';
 import { useRouter } from 'next/navigation';
 
 export default function EmployeeOrdersPage() {
-  const { token, user } = useAuth();
+  const { token, user, isReady } = useAuth();
   const router = useRouter();
   const [orders, setOrders] = useState<OrderListEmployee[]>([]);
   const [loading, setLoading] = useState(true);
@@ -15,6 +15,10 @@ export default function EmployeeOrdersPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'delivered' | 'pending'>('all');
 
   useEffect(() => {
+    if (!isReady) {
+      return;
+    }
+
     if (!token) {
       router.push('/login');
       return;
@@ -26,7 +30,7 @@ export default function EmployeeOrdersPage() {
     }
 
     loadOrders();
-  }, [token, user, statusFilter, router]);
+  }, [isReady, token, user, statusFilter, router]);
 
   const loadOrders = async () => {
     if (!token) return;
