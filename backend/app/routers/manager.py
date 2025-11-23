@@ -11,7 +11,7 @@ from ..schemas import (
     UserRoleUpdate,
     UserBlockUpdate,
 )
-from ..auth import require_manager, UserCtx, can_modify_user_role, can_block_user
+from ..auth import require_manager, UserCtx, can_block_user, get_all_subordinate_ids
 
 router = APIRouter(prefix="/api/manager", tags=["manager"])
 
@@ -55,7 +55,7 @@ def block_user(
     db: Session = Depends(get_db),
 ):
     """
-    Block or unblock a user (managers can block/unblock customers and employees).
+    Block or unblock a user.
     Manager cannot block themselves.
     Manager or admin only.
     """
@@ -73,12 +73,19 @@ def block_user(
             detail="User not found",
         )
     
-    # Check if this user can be blocked by the manager
     if not can_block_user(manager.role, user.role):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"You do not have permission to block users with role '{user.role}'",
         )
+    
+    if manager.role == "manager" and user.role == "employee":
+        subordinate_ids = get_all_subordinate_ids(manager.id, db)
+        if user.id not in subordinate_ids:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Managers can only block subordinates they manage",
+            )
     
     # Store old status for audit log
     old_status = user.is_active
