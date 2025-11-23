@@ -7,6 +7,7 @@ import { useUpsertCartItemMutation } from "@/lib/mutations/cart_item/upsert";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth";
 import { addFavorite, removeFavorite, isFavorited } from "@/lib/api/favorites";
+import { toast } from 'react-hot-toast';
 
 export default function ItemCard({ item, onFavoriteToggle }: { item: ItemT; onFavoriteToggle?: () => void }) {
   const { mutate } = useUpsertCartItemMutation();
@@ -31,7 +32,10 @@ export default function ItemCard({ item, onFavoriteToggle }: { item: ItemT; onFa
 
   // Toggle favorite status using backend API
   const toggleFavorite = async () => {
-    if (!token || isLoading) return;
+    if (!token || isLoading) {
+        toast.error("Please log in to favorite items.", { duration: 1500 });
+        return;   
+    }
     
     setIsLoading(true);
     try {
@@ -85,7 +89,7 @@ export default function ItemCard({ item, onFavoriteToggle }: { item: ItemT; onFa
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.99 }}
               onClick={toggleFavorite}
-              disabled={isLoading || !token}
+              disabled={isLoading}
               className={`p-1 rounded-full transition ${
                 isFavorite ? "bg-yellow-400" : "bg-bg-light hover:bg-bg-medium"
               } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}

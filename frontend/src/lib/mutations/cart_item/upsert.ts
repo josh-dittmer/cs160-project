@@ -2,6 +2,7 @@ import { useAuth } from "@/contexts/auth";
 import { GenericResponse, UpsertCartItemRequest } from "@/lib/api/models";
 import { post, request } from "@/lib/api/request";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from 'react-hot-toast';
 
 export const useUpsertCartItemMutation = () => {
     const client = useQueryClient();
