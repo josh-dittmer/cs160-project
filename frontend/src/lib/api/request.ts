@@ -2,6 +2,7 @@ import { isLeft } from 'fp-ts/lib/Either';
 import * as t from 'io-ts';
 import { PathReporter } from 'io-ts/PathReporter';
 import { Endpoints } from './endpoints';
+import { toast } from 'react-hot-toast';
 
 
 export type RequestData<C extends t.Mixed> = {
@@ -56,6 +57,7 @@ export async function request<C extends t.Mixed>(path: string, data: RequestData
     
     if (response.status === 401) {
         // todo: redirect to login
+        toast.error("Please log in to perform this action.");
         throw new Error('unauthorized');
     } else if (response.status !== 200 && response.status !== 201) {
         throw new Error('request failed');

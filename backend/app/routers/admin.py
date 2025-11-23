@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, or_, func
 
 from ..database import get_db
-from ..models import User, Item, Order, OrderItem, AuditLog, CartItem, Review
+from ..models import User, Item, Order, OrderItem, AuditLog, CartItem, Review, OrderStatus
 from ..audit import create_audit_log, get_actor_ip
 from ..schemas import (
     UserListAdmin,
@@ -1251,8 +1251,10 @@ def update_order_status(
             detail="Order not found",
         )
     
-    # Store old status for audit log
+    # Store old values for audit log
     old_delivered_at = order.delivered_at
+    old_status = order.status
+    old_delivery_vehicle_id = order.delivery_vehicle_id
     
     if status_update.delivered:
         # Mark as delivered with current timestamp
@@ -1262,6 +1264,18 @@ def update_order_status(
         # Mark as pending (not delivered)
         order.delivered_at = None
         message = "Order marked as pending"
+
+    # Determine new order status if not explicitly provided
+    new_status = status_update.status
+    if new_status is None:
+        new_status = OrderStatus.DELIVERED if status_update.delivered else OrderStatus.PACKING
+    order.status = new_status
+
+    # Update delivery vehicle association if provided; otherwise clear on delivery
+    if status_update.delivery_vehicle_id is not None:
+        order.delivery_vehicle_id = status_update.delivery_vehicle_id
+    elif status_update.delivered:
+        order.delivery_vehicle_id = None
     
     db.commit()
     db.refresh(order)
@@ -1284,6 +1298,10 @@ def update_order_status(
             "user_email": user_email,
             "old_delivered_at": str(old_delivered_at) if old_delivered_at else None,
             "new_delivered_at": str(order.delivered_at) if order.delivered_at else None,
+            "old_status": old_status.value if old_status else None,
+            "new_status": order.status.value if order.status else None,
+            "old_delivery_vehicle_id": old_delivery_vehicle_id,
+            "new_delivery_vehicle_id": order.delivery_vehicle_id,
         },
         ip_address=get_actor_ip(request),
     )
@@ -1293,6 +1311,8 @@ def update_order_status(
         "message": message,
         "order_id": order.id,
         "delivered_at": order.delivered_at,
+        "status": order.status.value,
+        "delivery_vehicle_id": order.delivery_vehicle_id,
     }
 
 

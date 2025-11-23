@@ -9,22 +9,55 @@ export function formatDate(d: Date): string {
 }
 
 /**
- * Format the time portion of a Date as "h:mm am/pm".
- * Hours are not zero-padded (e.g. "9:05 am", "12:30 pm").
+ * Format the time portion of a Date as "h:mm am/pm TZ".
+ * Example: "10:37 am PST"
  */
 export function formatTime(d: Date): string {
-    let hours = d.getHours();
-    const minutes = d.getMinutes();
-    const isPm = hours >= 12;
+    // Use Intl.DateTimeFormat to get the timezone abbreviation
+    const timeString = d.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZoneName: 'short' // This adds PST, EST, etc.
+    }).toLowerCase(); // "10:37 am pst"
 
-    // Convert to 12-hour clock and ensure hours are not zero-padded
-    hours = hours % 12;
-    if (hours === 0) hours = 12;
-
-    // Minutes should be zero-padded to 2 digits
-    const mins = minutes.toString().padStart(2, '0');
-    const suffix = isPm ? 'pm' : 'am';
-
-    return `${hours}:${mins} ${suffix}`;
+    // Optional: Capitalize the timezone part back if you prefer "10:37 am PST"
+    // but simple lowercase might be fine or we can adjust. 
+    // Let's make it "10:37 am PST" for better readability.
+    
+    // toLocaleTimeString might return "10:37 am pst" or "10:37 AM PST" depending on browser.
+    // Let's handle it manually to ensure "am/pm" is lowercase but TZ is uppercase if possible,
+    // or just rely on browser default. Browser default usually gives "10:37 AM PST".
+    
+    // If we strictly want "10:37 am PST":
+    const parts = d.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZoneName: 'short'
+    }).split(' ');
+    
+    // parts usually ["10:37", "AM", "PST"] or ["10:37", "AM", "GMT-8"]
+    
+    if (parts.length >= 3) {
+        const ampm = parts[1].toLowerCase();
+        const tz = parts.slice(2).join(' '); // Handle "GMT-8" or "Pacific Standard Time" if short fails
+        return `${parts[0]} ${ampm} ${tz}`;
+    }
+    
+    return timeString;
 }
 
+/**
+ * Helper to ensure a date string from the API is treated as UTC
+ * if it doesn't have timezone info.
+ */
+export function ensureUtc(dateStr: string | Date): Date {
+    if (dateStr instanceof Date) return dateStr;
+    
+    // If it's a string and looks like ISO but missing Z or offset
+    if (typeof dateStr === 'string' && !dateStr.endsWith('Z') && !dateStr.includes('+')) {
+        return new Date(dateStr + 'Z');
+    }
+    return new Date(dateStr);
+}

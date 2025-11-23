@@ -18,7 +18,7 @@ export default function ActiveOrderCard({ order }: { order: OrderT }) {
                 </div>
                 <div className="flex justify-end mt-2">
                     <button
-                        onClick={() => window.location.href = `/delivery/${order.id}`}
+                        onClick={() => window.location.href = `/orderDetails/${order.id}`}
                         className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full text-sm font-medium transition"
                     >
                         View Order Detail

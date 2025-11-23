@@ -26,7 +26,7 @@ export default function CartIcon() {
         // If the user is already on the payment page, refresh it
         if (pathname === "/payment") {
             // TODO: change the UI of alert later
-            toast.info("Please continue to checkout. Shopping cart is not available right now.");
+            toast("Please continue to checkout. Shopping cart is not available right now.");
             router.refresh();
             return;
         }

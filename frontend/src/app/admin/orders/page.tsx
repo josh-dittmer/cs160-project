@@ -76,7 +76,11 @@ export default function OrdersManagement() {
     }
 
     try {
-      await updateOrderStatus(token!, orderId, !currentStatus);
+      const markingDelivered = !currentStatus;
+      await updateOrderStatus(token!, orderId, markingDelivered, {
+        status: markingDelivered ? 'delivered' : 'packing',
+        deliveryVehicleId: markingDelivered ? null : undefined,
+      });
       // Refresh the orders list
       await fetchOrders();
       // If the modal is open for this order, update it
