@@ -441,10 +441,16 @@ export async function getOrderDetail(
   return response.json();
 }
 
+export interface UpdateOrderStatusOptions {
+  status?: 'packing' | 'shipped' | 'delivered' | 'canceled';
+  deliveryVehicleId?: number | null;
+}
+
 export async function updateOrderStatus(
   token: string,
   orderId: number,
-  delivered: boolean
+  delivered: boolean,
+  options?: UpdateOrderStatusOptions
 ): Promise<any> {
   const response = await fetch(`${API_BASE_URL}/api/admin/orders/${orderId}/status`, {
     method: 'PUT',
@@ -452,7 +458,13 @@ export async function updateOrderStatus(
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ delivered }),
+    body: JSON.stringify({
+      delivered,
+      ...(options?.status ? { status: options.status } : {}),
+      ...(options?.deliveryVehicleId !== undefined
+        ? { delivery_vehicle_id: options.deliveryVehicleId }
+        : {}),
+    }),
   });
 
   if (!response.ok) {
