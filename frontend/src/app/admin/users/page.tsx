@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/auth';
 import toast from 'react-hot-toast';
 import { 
@@ -218,8 +218,42 @@ export default function UsersManagement() {
     }
   };
 
+  const managerSubordinateIds = useMemo(() => {
+    if (!isManager || !currentUser?.id) return new Set<number>();
+    const subordinates = new Set<number>();
+    const visited = new Set<number>();
+
+    const traverse = (managerId: number) => {
+      if (visited.has(managerId)) return;
+      visited.add(managerId);
+      users.forEach((user) => {
+        if (user.reports_to === managerId) {
+          if (!subordinates.has(user.id)) {
+            subordinates.add(user.id);
+            traverse(user.id);
+          }
+        }
+      });
+    };
+
+    traverse(currentUser.id);
+    return subordinates;
+  }, [isManager, currentUser?.id, users]);
+
   const handleBlockToggle = async (userId: number, currentStatus: boolean) => {
     if (!token) return;
+
+    if (isManager) {
+      const targetUser = users.find((u) => u.id === userId);
+      if (!targetUser) return;
+      if (
+        targetUser.role === 'employee' &&
+        !managerSubordinateIds.has(targetUser.id)
+      ) {
+        toast.error('Managers can only block subordinates they manage');
+        return;
+      }
+    }
     
     const action = currentStatus ? 'block' : 'unblock';
     if (!confirm(`Are you sure you want to ${action} this user?`)) {
@@ -313,9 +347,14 @@ export default function UsersManagement() {
 
   // Helper to check if manager can modify this user
   const canManagerModifyUser = (user: UserAdmin): boolean => {
-    if (!isManager) return true; // Admin can modify anyone
-    // Manager cannot modify admins, managers, or themselves
-    return user.role !== 'admin' && user.role !== 'manager' && user.id !== currentUser?.id;
+    if (!isManager) return true;
+    if (!currentUser) return false;
+    if (user.id === currentUser.id) return false;
+    if (user.role === 'admin' || user.role === 'manager') return false;
+    if (user.role === 'employee') {
+      return managerSubordinateIds.has(user.id);
+    }
+    return true;
   };
 
   const filteredUsers = users.filter(user => {

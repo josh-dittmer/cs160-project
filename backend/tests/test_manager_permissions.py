@@ -151,6 +151,33 @@ def test_manager_can_block_employee():
     assert "blocked successfully" in response.json()["message"].lower()
 
 
+def test_manager_cannot_block_non_subordinate_employee():
+    db = SessionLocal()
+    try:
+        create_test_user(db, MANAGER_EMAIL, "manager", MANAGER_PASSWORD)
+        manager2 = create_test_user(db, "manager2@test.com", "manager", TEST_PASSWORD)
+        employee = create_test_user(
+            db,
+            "employee2@test.com",
+            "employee",
+            TEST_PASSWORD,
+            reports_to=manager2.id,
+        )
+        employee_id = employee.id
+    finally:
+        db.close()
+    
+    manager_token = get_token(MANAGER_EMAIL, MANAGER_PASSWORD)
+    
+    response = client.put(
+        f"/api/manager/users/{employee_id}/block",
+        headers={"Authorization": f"Bearer {manager_token}"},
+        json={"is_active": False},
+    )
+    assert response.status_code == 403
+    assert "subordinates" in response.json()["detail"].lower()
+
+
 def test_manager_can_block_customer():
     """Test that managers can block customers"""
     admin_id, manager_id, employee_id, customer_id = setup_test_users()
