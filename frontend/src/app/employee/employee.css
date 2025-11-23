@@ -12,6 +12,12 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  position: fixed; /* Fix sidebar to viewport */
+  top: 0;
+  left: 0;
+  height: 100vh; /* Full height */
+  z-index: 10; /* Ensure it stays on top */
+  overflow-y: auto; /* Allow scrolling within sidebar if needed */
 }
 
 .logo {
@@ -60,6 +66,9 @@
 /* Sign Out */
 .signout-container {
   padding: 20px;
+  background-color: #f9f9f9; /* Match background */
+  /* Ensure it stays at the bottom even if menu is short, handled by flex justify-between on .sidebar */
+  margin-top: auto; 
 }
 
 .signout-btn {
@@ -81,7 +90,8 @@
   flex-grow: 1;
   background-color: white;
   padding: 40px;
-  overflow-y: auto;
+  margin-left: 240px; /* Offset content by sidebar width */
+  min-height: 100vh;
 }
 
 .page-title {
@@ -90,6 +100,3 @@
     letter-spacing: -0.02em;
    margin-bottom: 24px;
 }
-
-
-
