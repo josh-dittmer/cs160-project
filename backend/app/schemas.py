@@ -340,6 +340,8 @@ class OrderDetailAdmin(BaseModel):
 class OrderStatusUpdate(BaseModel):
     """Schema for updating order delivery status"""
     delivered: bool
+    status: OrderStatus | None = None
+    delivery_vehicle_id: int | None = None
 
 
 # ============ Audit Log Schemas ============
