@@ -7,7 +7,7 @@ import { listItems } from "@/lib/api/employee";
 import "./dashboard.css";
 
 export default function DashboardPage() {
-  const { user, token } = useAuth();
+  const { user, token, isReady } = useAuth();
   const router = useRouter();
   const [stats, setStats] = useState({
     totalItems: 0,
@@ -17,6 +17,10 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!isReady) {
+      return;
+    }
+
     if (!token) {
       router.push('/login');
       return;
@@ -28,7 +32,7 @@ export default function DashboardPage() {
     }
 
     loadStats();
-  }, [token, user, router]);
+  }, [isReady, token, user, router]);
 
   const loadStats = async () => {
     if (!token) return;

@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/auth';
 import { listItems, ItemEmployee } from '@/lib/api/employee';
 
 export default function EmployeeAlertsPage() {
-  const { token, user } = useAuth();
+  const { token, user, isReady } = useAuth();
   const router = useRouter();
   const [lowStockItems, setLowStockItems] = useState<ItemEmployee[]>([]);
   const [outOfStockItems, setOutOfStockItems] = useState<ItemEmployee[]>([]);
@@ -14,6 +14,10 @@ export default function EmployeeAlertsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!isReady) {
+      return;
+    }
+
     if (!token) {
       router.push('/login');
       return;
@@ -25,7 +29,7 @@ export default function EmployeeAlertsPage() {
     }
 
     loadAlerts();
-  }, [token, user, router]);
+  }, [isReady, token, user, router]);
 
   const loadAlerts = async () => {
     if (!token) return;
@@ -242,7 +246,7 @@ export default function EmployeeAlertsPage() {
       {/* Summary */}
       {outOfStockItems.length === 0 && lowStockItems.length === 0 && (
         <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
-          <p className="text-lg text-blue-800 font-semibold">🎉 All items are well stocked!</p>
+          <p className="text-lg text-blue-800 font-semibold">All items are well stocked!</p>
           <p className="text-sm text-blue-600 mt-2">No immediate action required.</p>
         </div>
       )}
