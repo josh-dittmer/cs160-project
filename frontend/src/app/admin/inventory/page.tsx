@@ -1479,8 +1479,8 @@ function ItemFormModal({
                           disabled={generatingVideo}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm"
                         >
-                          <option value="veo-3.1-fast-generate-preview">Fast (~1 min)</option>
-                          <option value="veo-3.1-generate-preview">Best Quality (~2 mins)</option>
+                          <option value="veo-3.1-fast-generate-preview">Fast (~1 min wait time)</option>
+                          <option value="veo-3.1-generate-preview">Best Quality (~2 mins wait time)</option>
                         </select>
                       </div>
 
