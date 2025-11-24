@@ -37,8 +37,8 @@ export default function OFSOfficialLandingPage() {
                 Your city’s most reliable food delivery platform.
                 </p>
 
-
-                <div className="text-center space-x-4">
+                <div className="text-center space-y-6">
+                    <div className="text-center space-x-5">
                     <a href="/login">
                         <button className="bg-white text-green-700 font-semibold px-6 py-3 rounded-xl shadow hover:bg-gray-100 transition">Sign In</button>
                     </a>
@@ -46,7 +46,16 @@ export default function OFSOfficialLandingPage() {
                         <button className="bg-green-800 text-white font-semibold px-6 py-3 rounded-xl shadow hover:bg-green-900 transition">Sign Up</button>
                     </a>
                 </div>
-            </div>
+                    <p className="text-white text-sm">
+                    Don't have an account? No worries -
+                    <a href="/home/dashboard" className="underline font-semibold ml-1 hover:text-gray-200">
+                    view our products
+                    </a>
+                    .
+                    </p>
+                </div>
+                </div>
+
 
 
 
