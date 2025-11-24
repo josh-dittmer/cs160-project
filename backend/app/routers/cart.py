@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 from ..models import Item, CartItem
 from ..schemas import CartItemOut, CartItemIn, CartItemsResponse

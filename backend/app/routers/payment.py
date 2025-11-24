@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from typing import List
+from typing import List, Dict, Any
 from ..models import Item, CartItem, Order, OrderItem
 from ..schemas import CartItemOut, ConfirmPaymentRequest, ConfirmPaymentResponse, CreatePaymentIntentResponse, CreateSetupIntenetResponse
 from sqlalchemy.orm import Session
@@ -13,6 +13,42 @@ import os
 from datetime import datetime
 
 router = APIRouter(prefix="/api/payment", tags=["cart"])
+
+@router.get("/validate-cart")
+def validate_cart(
+    user: UserCtx = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Validates that all items in the user's cart are still in stock with sufficient quantities.
+    Returns: {valid: bool, errors: List[str], removed_items: List[Dict]}
+    """
+    cart_items = db.query(CartItem, Item).join(Item).filter(
+        CartItem.user_id == user.id
+    ).all()
+    
+    errors: List[str] = []
+    removed_items: List[Dict[str, Any]] = []
+    
+    for row in cart_items:
+        ci: CartItem = row[0]
+        it: Item = row[1]
+        
+        if ci.quantity > it.stock_qty:
+            if it.stock_qty == 0:
+                error_msg = f"'{it.name}' is now out of stock."
+                errors.append(error_msg)
+                removed_items.append({"item_id": it.id, "item_name": it.name, "reason": "out_of_stock"})
+            else:
+                error_msg = f"'{it.name}' has limited availability. Only {it.stock_qty} available, but you have {ci.quantity} in your cart."
+                errors.append(error_msg)
+                removed_items.append({"item_id": it.id, "item_name": it.name, "available": it.stock_qty, "requested": ci.quantity, "reason": "insufficient_stock"})
+    
+    return {
+        "valid": len(errors) == 0,
+        "errors": errors,
+        "removed_items": removed_items
+    }
 
 @router.post("/confirm-payment/", response_model=ConfirmPaymentResponse)
 def confirm_payment(
