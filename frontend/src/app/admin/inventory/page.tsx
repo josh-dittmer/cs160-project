@@ -379,7 +379,7 @@ function ItemFormModal({
     is_active: item?.is_active ?? true,
   });
   const [saving, setSaving] = useState(false);
-  const [imageUploadMode, setImageUploadMode] = useState<'url' | 'upload' | 'ai'>('url');
+  const [imageUploadMode, setImageUploadMode] = useState<'upload' | 'ai'>('upload');
   const [uploadingImage, setUploadingImage] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
@@ -894,7 +894,7 @@ function ItemFormModal({
 
       // Validate image is provided
       if (!formData.image_url || formData.image_url.trim() === '') {
-        toast.error('Please provide a product image (either URL or upload an image)');
+        toast.error('Please provide a product image (upload an image or generate with AI)');
         setSaving(false);
         return;
       }
@@ -1165,19 +1165,8 @@ function ItemFormModal({
                 Product Image *
               </label>
               
-              {/* Toggle between URL, Upload, and AI Generation */}
+              {/* Toggle between Upload and AI Generation */}
               <div className="flex gap-2 mb-3">
-                <button
-                  type="button"
-                  onClick={() => setImageUploadMode('url')}
-                  className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    imageUploadMode === 'url'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  Image URL
-                </button>
                 <button
                   type="button"
                   onClick={() => setImageUploadMode('upload')}
@@ -1202,15 +1191,7 @@ function ItemFormModal({
                 </button>
               </div>
 
-              {imageUploadMode === 'url' ? (
-                <input
-                  type="url"
-                  value={formData.image_url}
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
-                />
-              ) : imageUploadMode === 'upload' ? (
+              {imageUploadMode === 'upload' ? (
                 <div className="space-y-2">
                   <input
                     ref={fileInputRef}
