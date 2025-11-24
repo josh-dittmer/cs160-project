@@ -3,12 +3,24 @@
 import { ItemDetailT } from "@/lib/api/models";
 import { useUpsertCartItemMutation } from "@/lib/mutations/cart_item/upsert";
 import { motion } from "motion/react";
+import { useCartItemsQuery } from "@/lib/queries/cart_items";
+import { toast } from 'react-hot-toast';
 
 export default function AddToCartButton({ item }: { item: ItemDetailT }) {
     const { mutate } = useUpsertCartItemMutation();
-
+    const { data: cart } = useCartItemsQuery();
 
     const addToCart = () => {
+        const alreadyInCart = cart?.items?.some(
+        (cartItem) => cartItem.item.id === item.id
+        );
+
+        if (alreadyInCart) {
+            toast.error("Item already added to cart. Please change quantity in cart.", {
+            duration: 1800,
+            });
+            return;
+        }
         mutate({
             item_id: item.id,
             quantity: 1
