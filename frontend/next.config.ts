@@ -1,21 +1,20 @@
-import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-    images: {
-        remotePatterns: [
-            {
-                protocol: 'https',
-                hostname: 'images.unsplash.com',
-            },
-        ],
-    },
-    experimental: {
-        viewTransition: true
-    },
-    output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined
-};
+const nextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+    ],
+  },
 
-module.exports = {
+  experimental: {
+    viewTransition: true,
+  },
+
+  output: process.env.NODE_ENV === "production" ? "standalone" : undefined,
+
   async redirects() {
     return [
       {
@@ -27,5 +26,4 @@ module.exports = {
   },
 };
 
-
-export default nextConfig;
+module.exports = nextConfig;
