@@ -393,7 +393,7 @@ function ItemFormModal({
   const [videoPrompt, setVideoPrompt] = useState('');
   const [generatingVideo, setGeneratingVideo] = useState(false);
   const [videoModel, setVideoModel] = useState<'veo-3.1-generate-preview' | 'veo-3.1-fast-generate-preview'>('veo-3.1-fast-generate-preview');
-  const [videoMethod, setVideoMethod] = useState<'ai' | 'url' | 'upload'>('ai');
+  const [videoMethod, setVideoMethod] = useState<'ai' | 'url' | 'upload'>('url');
   const [videoUrlInput, setVideoUrlInput] = useState('');
   const videoFileInputRef = React.useRef<HTMLInputElement>(null);
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -562,7 +562,7 @@ function ItemFormModal({
       return;
     }
 
-    if (!confirm('Video generation takes 30-60 seconds and costs ~$0.10-0.15. Continue?')) {
+    if (!confirm('Video generation takes 1-2 minutes. Continue?')) {
       return;
     }
 
@@ -1433,28 +1433,6 @@ function ItemFormModal({
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={() => setVideoMethod('ai')}
-                      className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                        videoMethod === 'ai'
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      }`}
-                    >
-                      AI Generate
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setVideoMethod('upload')}
-                      className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                        videoMethod === 'upload'
-                          ? 'bg-green-600 text-white'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      }`}
-                    >
-                      Upload File
-                    </button>
-                    <button
-                      type="button"
                       onClick={() => setVideoMethod('url')}
                       className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                         videoMethod === 'url'
@@ -1463,6 +1441,28 @@ function ItemFormModal({
                       }`}
                     >
                       Add URL
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVideoMethod('upload')}
+                      className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                        videoMethod === 'upload'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      Upload File
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVideoMethod('ai')}
+                      className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                        videoMethod === 'ai'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      Generate with AI
                     </button>
                   </div>
 
@@ -1479,8 +1479,8 @@ function ItemFormModal({
                           disabled={generatingVideo}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm"
                         >
-                          <option value="veo-3.1-fast-generate-preview">Fast (~30s, $0.10)</option>
-                          <option value="veo-3.1-generate-preview">Best Quality (~60s, $0.15)</option>
+                          <option value="veo-3.1-fast-generate-preview">Fast (~1 min)</option>
+                          <option value="veo-3.1-generate-preview">Best Quality (~2 mins)</option>
                         </select>
                       </div>
 
@@ -1513,7 +1513,7 @@ function ItemFormModal({
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                             </svg>
-                            Generating Video... (30-60s)
+                            Generating Video... (1-2 mins)
                           </span>
                         ) : (
                           'Generate Video with AI'
@@ -1538,8 +1538,8 @@ function ItemFormModal({
                             file:mr-4 file:py-2 file:px-4
                             file:rounded-md file:border-0
                             file:text-sm file:font-semibold
-                            file:bg-green-50 file:text-green-700
-                            hover:file:bg-green-100
+                            file:bg-blue-100 file:text-blue-700
+                            hover:file:bg-blue-200
                             cursor-pointer"
                         />
                         <p className="text-xs text-gray-500 mt-1">
