@@ -15,4 +15,17 @@ const nextConfig: NextConfig = {
     output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined
 };
 
+module.exports = {
+  async redirects() {
+    return [
+      {
+        source: "/",
+        destination: "/landingPage",
+        permanent: false,
+      },
+    ];
+  },
+};
+
+
 export default nextConfig;
