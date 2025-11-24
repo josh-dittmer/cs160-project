@@ -45,8 +45,10 @@ export default function ItemCard({ item, onFavoriteToggle }: { item: ItemT; onFa
       if (isFavorite) {
         await removeFavorite(token, item.id);
         setIsFavorite(false);
+        toast("Removed from favorites.", { duration : 1500 });
       } else {
         await addFavorite(token, item.id);
+        toast.success("Added to favorites.", { duration : 1500 });
         setIsFavorite(true);
       }
       
