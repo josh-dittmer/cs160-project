@@ -8,10 +8,17 @@ export const useCartItemsQuery = () => {
 
     return useQuery({
         queryKey: ['cartItems'],
-        queryFn: () => request('/api/cart', get({
-            token: token ?? undefined,
-            decoder: CartItemsResponse
-        })),
-        enabled: isAuthenticated
-    })
+        queryFn: () =>
+            request(
+                '/api/cart',
+                get({
+                    token: token ?? undefined,
+                    decoder: CartItemsResponse,
+                })
+            ),
+        enabled: isAuthenticated,
+        refetchOnMount: "always",
+        refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
+    });
 };

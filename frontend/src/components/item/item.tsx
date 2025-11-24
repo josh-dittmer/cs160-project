@@ -8,12 +8,15 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth";
 import { addFavorite, removeFavorite, isFavorited } from "@/lib/api/favorites";
 import { toast } from 'react-hot-toast';
+import { useCartItemsQuery } from "@/lib/queries/cart_items";
+
 
 export default function ItemCard({ item, onFavoriteToggle }: { item: ItemT; onFavoriteToggle?: () => void }) {
   const { mutate } = useUpsertCartItemMutation();
   const { token } = useAuth();
   const [isFavorite, setIsFavorite] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { data: cart } = useCartItemsQuery();
 
   // Load initial favorite status from backend
   useEffect(() => {
@@ -63,6 +66,24 @@ export default function ItemCard({ item, onFavoriteToggle }: { item: ItemT; onFa
   };
 
   const addToCart = (id: number) => {
+    if (!cart?.items) {
+        mutate({ item_id: id, quantity: 1 });
+        return;
+    }
+
+    const isInCart = cart.items.some(
+        (cartItem) => cartItem.item.id === id
+    );
+
+    // Check if the item is in the cart already
+    if (isInCart) {
+        toast.error("Item already added to cart. Please change quantity in cart.", {
+            duration: 1800,
+        });
+
+        return;
+    }
+
     mutate({ item_id: id, quantity: 1 });
   };
 
