@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 from google import genai
 from google.genai import types
 
-from ..auth import require_admin, UserCtx
+from ..auth import require_manager, UserCtx
 
 router = APIRouter(prefix="/api/admin/video", tags=["video-generation"])
 
@@ -70,7 +70,7 @@ video_operations = {}
 @router.post("/generate", response_model=VideoGenerationResponse)
 async def generate_video(
     request: VideoGenerationRequest,
-    admin: UserCtx = Depends(require_admin),
+    user: UserCtx = Depends(require_manager),
 ):
     """
     Generate a video using AI based on a text prompt.
@@ -81,7 +81,7 @@ async def generate_video(
     
     For synchronous generation (blocks until complete), use the /generate-sync endpoint.
     
-    Admin only.
+    Admin and Manager only.
     """
     try:
         # Initialize Gemini client
@@ -172,7 +172,7 @@ async def generate_video(
 @router.get("/status/{operation_id}", response_model=VideoStatusResponse)
 async def check_video_status(
     operation_id: str,
-    admin: UserCtx = Depends(require_admin),
+    user: UserCtx = Depends(require_manager),
 ):
     """
     Check the status of a video generation operation.
@@ -180,7 +180,7 @@ async def check_video_status(
     Poll this endpoint to check if video generation is complete.
     When status is 'completed', the video_data field will contain the base64-encoded video.
     
-    Admin only.
+    Admin and Manager only.
     """
     if operation_id not in video_operations:
         raise HTTPException(
@@ -277,7 +277,7 @@ async def check_video_status(
 @router.post("/generate-sync", response_model=VideoGenerationResponse)
 async def generate_video_sync(
     request: VideoGenerationRequest,
-    admin: UserCtx = Depends(require_admin),
+    user: UserCtx = Depends(require_manager),
 ):
     """
     Generate a video synchronously (blocks until complete).
@@ -289,7 +289,7 @@ async def generate_video_sync(
     For better UX with long-running operations, use the async /generate endpoint
     and poll /status/{operation_id}.
     
-    Admin only.
+    Admin and Manager only.
     """
     try:
         # Initialize Gemini client
@@ -455,14 +455,14 @@ async def generate_video_sync(
 @router.delete("/operation/{operation_id}")
 async def delete_operation(
     operation_id: str,
-    admin: UserCtx = Depends(require_admin),
+    user: UserCtx = Depends(require_manager),
 ):
     """
     Delete a video generation operation from memory.
     
     Use this to clean up completed or failed operations.
     
-    Admin only.
+    Admin and Manager only.
     """
     if operation_id in video_operations:
         del video_operations[operation_id]
@@ -476,11 +476,11 @@ async def delete_operation(
 
 @router.get("/health")
 async def check_video_api_health(
-    admin: UserCtx = Depends(require_admin),
+    user: UserCtx = Depends(require_manager),
 ):
     """
     Check if the Gemini Veo API is properly configured.
-    Admin only.
+    Admin and Manager only.
     """
     api_key = os.getenv("GEMINI_API_KEY")
     

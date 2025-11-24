@@ -13,7 +13,7 @@ from google import genai
 from google.genai import types
 from PIL import Image
 
-from ..auth import require_admin, UserCtx
+from ..auth import require_manager, UserCtx
 
 router = APIRouter(prefix="/api/admin/image", tags=["image-generation"])
 
@@ -44,7 +44,7 @@ def initialize_gemini_client():
 @router.post("/generate", response_model=ImageGenerationResponse)
 async def generate_image(
     request: ImageGenerationRequest,
-    admin: UserCtx = Depends(require_admin),
+    user: UserCtx = Depends(require_manager),
 ):
     """
     Generate an image using AI based on a text prompt.
@@ -54,7 +54,7 @@ async def generate_image(
     returned as a base64-encoded data URI that can be used directly
     in the frontend.
     
-    Admin only.
+    Admin and Manager only.
     """
     try:
         # Initialize Gemini client
@@ -257,11 +257,11 @@ async def generate_image(
 
 @router.get("/health")
 async def check_api_health(
-    admin: UserCtx = Depends(require_admin),
+    user: UserCtx = Depends(require_manager),
 ):
     """
     Check if the Gemini API is properly configured.
-    Admin only.
+    Admin and Manager only.
     """
     api_key = os.getenv("GEMINI_API_KEY")
     

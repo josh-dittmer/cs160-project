@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth';
 import { useSearchParams, useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import {
   listItems,
   createItem,
@@ -379,7 +380,7 @@ function ItemFormModal({
     is_active: item?.is_active ?? true,
   });
   const [saving, setSaving] = useState(false);
-  const [imageUploadMode, setImageUploadMode] = useState<'url' | 'upload' | 'ai'>('url');
+  const [imageUploadMode, setImageUploadMode] = useState<'upload' | 'ai'>('upload');
   const [uploadingImage, setUploadingImage] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
@@ -392,7 +393,7 @@ function ItemFormModal({
   const [videoPrompt, setVideoPrompt] = useState('');
   const [generatingVideo, setGeneratingVideo] = useState(false);
   const [videoModel, setVideoModel] = useState<'veo-3.1-generate-preview' | 'veo-3.1-fast-generate-preview'>('veo-3.1-fast-generate-preview');
-  const [videoMethod, setVideoMethod] = useState<'ai' | 'url' | 'upload'>('ai');
+  const [videoMethod, setVideoMethod] = useState<'ai' | 'url' | 'upload'>('url');
   const [videoUrlInput, setVideoUrlInput] = useState('');
   const videoFileInputRef = React.useRef<HTMLInputElement>(null);
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -400,6 +401,8 @@ function ItemFormModal({
   const [allowSpecialChars, setAllowSpecialChars] = useState(false);
   const [allowNumbers, setAllowNumbers] = useState(false);
   const [showNameOptions, setShowNameOptions] = useState(false);
+  const [showNutritionSection, setShowNutritionSection] = useState(false);
+  const [showVideoSection, setShowVideoSection] = useState(false);
 
   // Fetch categories when modal opens
   useEffect(() => {
@@ -559,7 +562,7 @@ function ItemFormModal({
       return;
     }
 
-    if (!confirm('Video generation takes 30-60 seconds and costs ~$0.10-0.15. Continue?')) {
+    if (!confirm('Video generation takes 1-2 minutes. Continue?')) {
       return;
     }
 
@@ -894,7 +897,7 @@ function ItemFormModal({
 
       // Validate image is provided
       if (!formData.image_url || formData.image_url.trim() === '') {
-        toast.error('Please provide a product image (either URL or upload an image)');
+        toast.error('Please provide a product image (upload an image or generate with AI)');
         setSaving(false);
         return;
       }
@@ -1165,19 +1168,8 @@ function ItemFormModal({
                 Product Image *
               </label>
               
-              {/* Toggle between URL, Upload, and AI Generation */}
+              {/* Toggle between Upload and AI Generation */}
               <div className="flex gap-2 mb-3">
-                <button
-                  type="button"
-                  onClick={() => setImageUploadMode('url')}
-                  className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    imageUploadMode === 'url'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  Image URL
-                </button>
                 <button
                   type="button"
                   onClick={() => setImageUploadMode('upload')}
@@ -1202,15 +1194,7 @@ function ItemFormModal({
                 </button>
               </div>
 
-              {imageUploadMode === 'url' ? (
-                <input
-                  type="url"
-                  value={formData.image_url}
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
-                />
-              ) : imageUploadMode === 'upload' ? (
+              {imageUploadMode === 'upload' ? (
                 <div className="space-y-2">
                   <input
                     ref={fileInputRef}
@@ -1383,222 +1367,255 @@ function ItemFormModal({
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nutrition Information (JSON)
-                <span className="text-xs text-gray-500 ml-2">(Optional)</span>
-              </label>
-              <textarea
-                rows={6}
-                value={formData.nutrition_json}
-                onChange={handleNutritionJsonChange}
-                placeholder='{"calories": 100, "protein": {"value": 5, "unit": "g"}, "totalFat": {"value": 2, "unit": "g"}}'
-                className={`w-full px-3 py-2 border rounded-md bg-white text-gray-900 font-mono text-sm ${
-                  nutritionJsonError ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
-                }`}
-              />
-              {nutritionJsonError ? (
-                <p className="text-xs text-red-600 mt-1">
-                  {nutritionJsonError}
-                </p>
-              ) : (
-                <p className="text-xs text-gray-500 mt-1">
-                  Enter nutrition data as valid JSON format (must be an object)
-                </p>
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowNutritionSection(!showNutritionSection)}
+                className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700">
+                    Nutrition Information (JSON)
+                  </span>
+                  <span className="text-xs text-gray-500">(Optional)</span>
+                </div>
+                {showNutritionSection ? (
+                  <ChevronUp className="w-5 h-5 text-gray-500" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-gray-500" />
+                )}
+              </button>
+              {showNutritionSection && (
+                <div className="p-4 border-t border-gray-200">
+                  <textarea
+                    rows={6}
+                    value={formData.nutrition_json}
+                    onChange={handleNutritionJsonChange}
+                    placeholder='{"calories": 100, "protein": {"value": 5, "unit": "g"}, "totalFat": {"value": 2, "unit": "g"}}'
+                    className={`w-full px-3 py-2 border rounded-md bg-white text-gray-900 font-mono text-sm ${
+                      nutritionJsonError ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+                  {nutritionJsonError ? (
+                    <p className="text-xs text-red-600 mt-1">
+                      {nutritionJsonError}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Enter nutrition data as valid JSON format (must be an object)
+                    </p>
+                  )}
+                </div>
               )}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Product Video (Optional)
-                <span className="text-xs text-gray-500 ml-2">Add a marketing video</span>
-              </label>
-              
-              {/* Video Method Selector */}
-              <div className="flex gap-2 mb-3">
-                <button
-                  type="button"
-                  onClick={() => setVideoMethod('ai')}
-                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                    videoMethod === 'ai'
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  AI Generate
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setVideoMethod('upload')}
-                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                    videoMethod === 'upload'
-                      ? 'bg-green-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  Upload File
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setVideoMethod('url')}
-                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                    videoMethod === 'url'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  Add URL
-                </button>
-              </div>
-
-              {/* AI Video Generation */}
-              {videoMethod === 'ai' && (
-                <div className="space-y-3 border border-gray-200 rounded-lg p-4 bg-gray-50">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Video Quality
-                    </label>
-                    <select
-                      value={videoModel}
-                      onChange={(e) => setVideoModel(e.target.value as any)}
-                      disabled={generatingVideo}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm"
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowVideoSection(!showVideoSection)}
+                className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700">
+                    Product Video
+                  </span>
+                  <span className="text-xs text-gray-500">(Optional)</span>
+                </div>
+                {showVideoSection ? (
+                  <ChevronUp className="w-5 h-5 text-gray-500" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-gray-500" />
+                )}
+              </button>
+              {showVideoSection && (
+                <div className="p-4 border-t border-gray-200 space-y-4">
+                  {/* Video Method Selector */}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setVideoMethod('url')}
+                      className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                        videoMethod === 'url'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
                     >
-                      <option value="veo-3.1-fast-generate-preview">Fast (~30s, $0.10)</option>
-                      <option value="veo-3.1-generate-preview">Best Quality (~60s, $0.15)</option>
-                    </select>
+                      Add URL
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVideoMethod('upload')}
+                      className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                        videoMethod === 'upload'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      Upload File
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVideoMethod('ai')}
+                      className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                        videoMethod === 'ai'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      Generate with AI
+                    </button>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Describe your video
-                    </label>
-                    <textarea
-                      value={videoPrompt}
-                      onChange={(e) => setVideoPrompt(e.target.value)}
-                      placeholder="Example: 'A fresh organic apple rotating slowly on a white surface with soft lighting and a subtle shadow'"
-                      rows={3}
-                      disabled={generatingVideo}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Tip: Be specific about the product, action, lighting, and style. Veo 3.1 generates 8-second videos with audio.
-                    </p>
-                  </div>
+                  {/* AI Video Generation */}
+                  {videoMethod === 'ai' && (
+                    <div className="space-y-3 border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Video Quality
+                        </label>
+                        <select
+                          value={videoModel}
+                          onChange={(e) => setVideoModel(e.target.value as any)}
+                          disabled={generatingVideo}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm"
+                        >
+                          <option value="veo-3.1-fast-generate-preview">Fast (~1 min wait time)</option>
+                          <option value="veo-3.1-generate-preview">Best Quality (~2 mins wait time)</option>
+                        </select>
+                      </div>
 
-                  <button
-                    type="button"
-                    onClick={handleGenerateVideo}
-                    disabled={generatingVideo || !videoPrompt.trim()}
-                    className="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {generatingVideo ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
-                        Generating Video... (30-60s)
-                      </span>
-                    ) : (
-                      'Generate Video with AI'
-                    )}
-                  </button>
-                </div>
-              )}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Describe your video
+                        </label>
+                        <textarea
+                          value={videoPrompt}
+                          onChange={(e) => setVideoPrompt(e.target.value)}
+                          placeholder="Example: 'A fresh organic apple rotating slowly on a white surface with soft lighting and a subtle shadow'"
+                          rows={3}
+                          disabled={generatingVideo}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Tip: Be specific about the product, action, lighting, and style. Veo 3.1 generates 8-second videos with audio.
+                        </p>
+                      </div>
 
-              {/* Video File Upload */}
-              {videoMethod === 'upload' && (
-                <div className="space-y-3 border border-gray-200 rounded-lg p-4 bg-gray-50">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Upload Video File
-                    </label>
-                    <input
-                      ref={videoFileInputRef}
-                      type="file"
-                      accept="video/mp4,video/webm,video/ogg,video/quicktime"
-                      onChange={handleVideoFileSelect}
-                      className="block w-full text-sm text-gray-900
-                        file:mr-4 file:py-2 file:px-4
-                        file:rounded-md file:border-0
-                        file:text-sm file:font-semibold
-                        file:bg-green-50 file:text-green-700
-                        hover:file:bg-green-100
-                        cursor-pointer"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Tip: Accepts MP4, WebM, OGG, or MOV files (max 50MB)
-                    </p>
-                  </div>
-                </div>
-              )}
+                      <button
+                        type="button"
+                        onClick={handleGenerateVideo}
+                        disabled={generatingVideo || !videoPrompt.trim()}
+                        className="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {generatingVideo ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                            Generating Video... (1-2 mins)
+                          </span>
+                        ) : (
+                          'Generate Video with AI'
+                        )}
+                      </button>
+                    </div>
+                  )}
 
-              {/* Video URL Input */}
-              {videoMethod === 'url' && (
-                <div className="space-y-3 border border-gray-200 rounded-lg p-4 bg-gray-50">
-                  {/* Copyright Warning */}
-                  <div className="bg-yellow-50 border border-yellow-300 rounded-md p-3">
-                    <p className="text-xs text-yellow-800 font-medium">
-                      <strong>Copyright Warning:</strong> Only use videos you own, created yourself, or have explicit permission to use. 
-                      Using copyrighted content from other brands/creators without permission is illegal and may result in legal action.
-                    </p>
-                  </div>
+                  {/* Video File Upload */}
+                  {videoMethod === 'upload' && (
+                    <div className="space-y-3 border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Upload Video File
+                        </label>
+                        <input
+                          ref={videoFileInputRef}
+                          type="file"
+                          accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                          onChange={handleVideoFileSelect}
+                          className="block w-full text-sm text-gray-900
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-md file:border-0
+                            file:text-sm file:font-semibold
+                            file:bg-blue-100 file:text-blue-700
+                            hover:file:bg-blue-200
+                            cursor-pointer"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Tip: Accepts MP4, WebM, OGG, or MOV files (max 50MB)
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Video URL
-                    </label>
-                    <input
-                      type="url"
-                      value={videoUrlInput}
-                      onChange={(e) => setVideoUrlInput(e.target.value)}
-                      placeholder="YouTube, YouTube Shorts, Vimeo, or direct video URL"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Tip: Use only your own videos, licensed stock videos, or AI-generated content
-                    </p>
-                  </div>
+                  {/* Video URL Input */}
+                  {videoMethod === 'url' && (
+                    <div className="space-y-3 border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      {/* Copyright Warning */}
+                      <div className="bg-yellow-50 border border-yellow-300 rounded-md p-3">
+                        <p className="text-xs text-yellow-800 font-medium">
+                          <strong>Copyright Warning:</strong> Only use videos you own, created yourself, or have explicit permission to use. 
+                          Using copyrighted content from other brands/creators without permission is illegal and may result in legal action.
+                        </p>
+                      </div>
 
-                  <button
-                    type="button"
-                    onClick={handleAddVideoUrl}
-                    disabled={!videoUrlInput.trim()}
-                    className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Add Video URL
-                  </button>
-                </div>
-              )}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Video URL
+                        </label>
+                        <input
+                          type="url"
+                          value={videoUrlInput}
+                          onChange={(e) => setVideoUrlInput(e.target.value)}
+                          placeholder="YouTube, YouTube Shorts, Vimeo, or direct video URL"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Tip: Use only your own videos, licensed stock videos, or AI-generated content
+                        </p>
+                      </div>
 
-              {/* Video Preview */}
-              {formData.video_url && (
-                <div className="mt-3">
-                  <p className="text-xs text-gray-600 mb-2">Preview:</p>
-                  <div className="w-full bg-black rounded-md overflow-hidden">
-                    {formData.video_url.includes('youtube.com/embed') || formData.video_url.includes('vimeo.com') ? (
-                      <iframe
-                        src={formData.video_url}
-                        className="w-full aspect-video"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    ) : (
-                      <video
-                        src={formData.video_url}
-                        controls
-                        className="w-full"
-                      />
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleRemoveVideo}
-                    className="mt-2 w-full px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors"
-                  >
-                    Remove Video
-                  </button>
+                      <button
+                        type="button"
+                        onClick={handleAddVideoUrl}
+                        disabled={!videoUrlInput.trim()}
+                        className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Add Video URL
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Video Preview */}
+                  {formData.video_url && (
+                    <div className="mt-3">
+                      <p className="text-xs text-gray-600 mb-2">Preview:</p>
+                      <div className="w-full bg-black rounded-md overflow-hidden">
+                        {formData.video_url.includes('youtube.com/embed') || formData.video_url.includes('vimeo.com') ? (
+                          <iframe
+                            src={formData.video_url}
+                            className="w-full aspect-video"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                        ) : (
+                          <video
+                            src={formData.video_url}
+                            controls
+                            className="w-full"
+                          />
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRemoveVideo}
+                        className="mt-2 w-full px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors"
+                      >
+                        Remove Video
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
