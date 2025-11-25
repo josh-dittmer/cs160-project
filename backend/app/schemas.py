@@ -145,7 +145,7 @@ class SearchSuggestion(BaseModel):
 
 class CartItemOut(BaseModel):
     quantity: int
-    item: ItemListOut
+    item: ItemDetailOut
     
     class Config:
         # allow constructing from SQLAlchemy model instances (attributes)
