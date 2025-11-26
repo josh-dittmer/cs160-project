@@ -15,10 +15,10 @@ client = TestClient(app)
 
 # Test data
 ADMIN_EMAIL = "admin@test.com"
-ADMIN_PASSWORD = "admin123"
+ADMIN_PASSWORD = "Admin@1234567890"
 
 TEST_USER_EMAIL = "user@test.com"
-TEST_USER_PASSWORD = "userpass123"
+TEST_USER_PASSWORD = "UserPass@12345!"
 
 MANAGER_EMAIL = "manager@test.com"
 EMPLOYEE_EMAIL = "employee@test.com"

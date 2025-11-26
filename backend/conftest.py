@@ -11,7 +11,7 @@ sys.path.insert(0, str(backend_dir))
 # Test configuration
 BASE_URL = "http://localhost:8080"
 ADMIN_EMAIL = "admin@sjsu.edu"
-ADMIN_PASSWORD = "admin123"
+ADMIN_PASSWORD = "Admin@1234567890"
 
 
 @pytest.fixture

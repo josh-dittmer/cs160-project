@@ -16,14 +16,14 @@ client = TestClient(app)
 
 # Test data
 ADMIN_EMAIL = "admin@managertest.com"
-ADMIN_PASSWORD = "admin123"
+ADMIN_PASSWORD = "Admin@1234567890"
 
 MANAGER_EMAIL = "manager@managertest.com"
-MANAGER_PASSWORD = "manager123"
+MANAGER_PASSWORD = "Manager@Test1234"
 
 EMPLOYEE_EMAIL = "employee@managertest.com"
 CUSTOMER_EMAIL = "customer@managertest.com"
-TEST_PASSWORD = "test123"
+TEST_PASSWORD = "TestUser@12345!"
 
 
 def setup_module():

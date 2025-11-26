@@ -16,10 +16,10 @@ client = TestClient(app)
 
 # Test data
 TEST_USER_EMAIL = "cart_test_user@example.com"
-TEST_USER_PASSWORD = "testpass123"
+TEST_USER_PASSWORD = "TestPass@12345!"
 
 OTHER_USER_EMAIL = "cart_other_user@example.com"
-OTHER_USER_PASSWORD = "testpass123"
+OTHER_USER_PASSWORD = "TestPass@12345!"
 
 
 def setup_module():

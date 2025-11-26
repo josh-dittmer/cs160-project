@@ -1,9 +1,11 @@
 import "./profile.css";
 import "./profile_edit.css";
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { UserInfo, updateProfile, changePassword } from "@/lib/api/profile";
 import GooglePlacesAutocomplete from "@/components/google_places_autocomplete/GooglePlacesAutocomplete";
 import toast from "react-hot-toast";
+import { validatePassword, PASSWORD_MIN_LENGTH } from "@/lib/util/password-validation";
+import { Check, X } from "lucide-react";
 
 type Props = { 
   userData: UserInfo | null;
@@ -69,6 +71,19 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
   const [isValidAddress, setIsValidAddress] = useState(!!userData?.address); // Track if address was selected from autocomplete
   const lastAutocompleteSelectionTime = useRef<number>(0); // Timestamp of last autocomplete selection
   const [isPasswordSectionExpanded, setIsPasswordSectionExpanded] = useState(false); // Track password section expansion
+  const [newPasswordFocused, setNewPasswordFocused] = useState(false); // Track new password field focus
+
+  const passwordChecks = useMemo(() => {
+    const pwd = passwordData.new_password;
+    return [
+      { label: `At least ${PASSWORD_MIN_LENGTH} characters`, met: pwd.length >= PASSWORD_MIN_LENGTH },
+      { label: "At least one uppercase letter (A-Z)", met: /[A-Z]/.test(pwd) },
+      { label: "At least one lowercase letter (a-z)", met: /[a-z]/.test(pwd) },
+      { label: "At least one number (0-9)", met: /\d/.test(pwd) },
+      { label: "At least one special character (!@#$%^&*...)", met: /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(pwd) },
+      { label: "No leading or trailing spaces", met: pwd.length === 0 || (!pwd.startsWith(' ') && !pwd.endsWith(' ')) },
+    ];
+  }, [passwordData.new_password]);
 
   // Handle phone number input
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -200,28 +215,25 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
 
   // Helper function to validate password data
   const validatePasswordData = (): boolean => {
-    // Only validate if user has entered password data
     const hasPasswordData = passwordData.current_password || passwordData.new_password || passwordData.confirm_password;
     
     if (!hasPasswordData) {
-      return true; // No password change requested, validation passes
+      return true;
     }
 
-    // If any password field is filled, all must be filled
     if (!passwordData.current_password || !passwordData.new_password || !passwordData.confirm_password) {
       toast.error('Please fill in all password fields or leave them empty to skip password change');
       return false;
     }
 
-    // Validate passwords match
     if (passwordData.new_password !== passwordData.confirm_password) {
       toast.error('New passwords do not match');
       return false;
     }
 
-    // Validate password length
-    if (passwordData.new_password.length < 8) {
-      toast.error('Password must be at least 8 characters');
+    const validation = validatePassword(passwordData.new_password);
+    if (!validation.isValid) {
+      toast.error(validation.errors[0]);
       return false;
     }
 
@@ -430,9 +442,11 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
                       <input 
                         id="newpass" 
                         type={showNewPassword ? "text" : "password"}
-                        placeholder="New password (min 8 characters)"
+                        placeholder="New password (min 14 characters)"
                         value={passwordData.new_password}
                         onChange={(e) => setPasswordData({...passwordData, new_password: e.target.value})}
+                        onFocus={() => setNewPasswordFocused(true)}
+                        onBlur={() => setNewPasswordFocused(false)}
                       />
                       <button 
                         type="button" 
@@ -443,6 +457,37 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
                         {showNewPassword ? '👁️' : '👁️‍🗨️'}
                       </button>
                     </div>
+                    {(newPasswordFocused || passwordData.new_password.length > 0) && (
+                      <div className="mt-3 p-3 bg-white border border-gray-200 rounded-lg">
+                        <p className="text-sm font-semibold text-gray-700 mb-2">
+                          Password Requirements:
+                        </p>
+                        <ul className="space-y-1.5">
+                          {passwordChecks.map((check, idx) => (
+                            <li key={idx} className="flex items-center gap-2">
+                              {passwordData.new_password.length > 0 ? (
+                                check.met ? (
+                                  <Check size={16} className="text-green-600 flex-shrink-0" />
+                                ) : (
+                                  <X size={16} className="text-red-500 flex-shrink-0" />
+                                )
+                              ) : (
+                                <div className="w-4 h-4 rounded-full border-2 border-gray-400 flex-shrink-0" />
+                              )}
+                              <span className={`text-sm ${
+                                passwordData.new_password.length === 0 
+                                  ? 'text-gray-600' 
+                                  : check.met 
+                                    ? 'text-green-700' 
+                                    : 'text-red-600'
+                              }`}>
+                                {check.label}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
 
                   <div className="field">
