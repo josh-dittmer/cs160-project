@@ -1,6 +1,33 @@
 from datetime import datetime
-from pydantic import BaseModel, conint, constr, EmailStr
+import re
+from pydantic import BaseModel, conint, constr, EmailStr, field_validator
 from .models import OrderStatus
+
+
+PASSWORD_MIN_LENGTH = 14
+PASSWORD_REQUIREMENTS = """Password must:
+- Be at least 14 characters long
+- Contain at least one uppercase letter
+- Contain at least one lowercase letter
+- Contain at least one number
+- Contain at least one special character (!@#$%^&*()_+-=[]{}|;:,.<>?)
+- Not start or end with a space"""
+
+
+def validate_password_strength(password: str) -> str:
+    if password.startswith(' ') or password.endswith(' '):
+        raise ValueError('Password cannot start or end with a space')
+    if len(password) < PASSWORD_MIN_LENGTH:
+        raise ValueError(f'Password must be at least {PASSWORD_MIN_LENGTH} characters long')
+    if not re.search(r'[A-Z]', password):
+        raise ValueError('Password must contain at least one uppercase letter')
+    if not re.search(r'[a-z]', password):
+        raise ValueError('Password must contain at least one lowercase letter')
+    if not re.search(r'\d', password):
+        raise ValueError('Password must contain at least one number')
+    if not re.search(r'[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]', password):
+        raise ValueError('Password must contain at least one special character')
+    return password
 
 class ItemOut(BaseModel):
     """Basic item schema (for favorites and simple listings)."""
@@ -66,8 +93,13 @@ class ReviewIn(BaseModel):
 class UserCreate(BaseModel):
     """Schema for user registration"""
     email: EmailStr
-    password: constr(min_length=8)
+    password: str
     full_name: str | None = None
+
+    @field_validator('password')
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        return validate_password_strength(v)
 
 
 class UserLogin(BaseModel):
@@ -128,7 +160,12 @@ class UserProfileUpdate(BaseModel):
 class PasswordChange(BaseModel):
     """Schema for changing password"""
     current_password: str
-    new_password: constr(min_length=8)
+    new_password: str
+
+    @field_validator('new_password')
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        return validate_password_strength(v)
 
 
 class SearchSuggestion(BaseModel):

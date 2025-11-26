@@ -126,7 +126,7 @@ This will create the database tables and an admin user.
 python -m app.seed
 ```
 
-**Admin Credentials:** `admin@sjsu.edu` / `admin123`
+**Admin Credentials:** `admin@sjsu.edu` / `Admin@1234567890`
 
 #### 4. Start the backend server
 
@@ -226,7 +226,7 @@ cs160-project/
 - **Role-Based Access Control**
   - Four user roles: Admin, Manager, Employee, Customer
   - Admin panel for user, inventory, and order management
-  - Default admin login: `admin@sjsu.edu` / `admin123`
+  - Default admin login: `admin@sjsu.edu` / `Admin@1234567890`
   - See [docs/ADMIN.md](docs/ADMIN.md) for complete admin documentation
   - See [docs/ORDER_MANAGEMENT.md](docs/ORDER_MANAGEMENT.md) for order management details
 

@@ -73,7 +73,7 @@ def admin_token(client):
     from app.auth import get_password_hash
     admin = User(
         email="admin@test.com",
-        hashed_password=get_password_hash("adminpass123"),
+        hashed_password=get_password_hash("AdminPass@12345!"),
         full_name="Admin User",
         role="admin",
         is_active=True
@@ -85,7 +85,7 @@ def admin_token(client):
     # Login to get token
     response = client.post(
         "/api/auth/login",
-        json={"email": "admin@test.com", "password": "adminpass123"}
+        json={"email": "admin@test.com", "password": "AdminPass@12345!"}
     )
     assert response.status_code == 200
     return response.json()["access_token"]

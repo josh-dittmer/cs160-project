@@ -3,9 +3,10 @@
 import GoogleSignInButton from "@/components/google_signin_button/google_signin_button";
 import { useAuth } from "@/contexts/auth";
 import { googleAuth, signup } from "@/lib/api/auth";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Check, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { validatePassword, PASSWORD_MIN_LENGTH } from "@/lib/util/password-validation";
 
 export default function SignupPage() {
     const [email, setEmail] = useState("");
@@ -14,12 +15,31 @@ export default function SignupPage() {
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [passwordFocused, setPasswordFocused] = useState(false);
     const router = useRouter();
     const { login } = useAuth();
+
+    const passwordChecks = useMemo(() => {
+        return [
+            { label: `At least ${PASSWORD_MIN_LENGTH} characters`, met: password.length >= PASSWORD_MIN_LENGTH },
+            { label: "At least one uppercase letter (A-Z)", met: /[A-Z]/.test(password) },
+            { label: "At least one lowercase letter (a-z)", met: /[a-z]/.test(password) },
+            { label: "At least one number (0-9)", met: /\d/.test(password) },
+            { label: "At least one special character (!@#$%^&*...)", met: /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password) },
+            { label: "No leading or trailing spaces", met: password.length === 0 || (!password.startsWith(' ') && !password.endsWith(' ')) },
+        ];
+    }, [password]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
+
+        const validation = validatePassword(password);
+        if (!validation.isValid) {
+            setError(validation.errors[0]);
+            return;
+        }
+
         setIsLoading(true);
 
         try {
@@ -116,9 +136,11 @@ export default function SignupPage() {
                             type={showPassword ? "text" : "password"}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                            onFocus={() => setPasswordFocused(true)}
+                            onBlur={() => setPasswordFocused(false)}
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400"
                             required
-                            minLength={8}
+                            minLength={14}
                         />
                         <button
                             type="button"
@@ -129,9 +151,38 @@ export default function SignupPage() {
                             {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                         </button>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Must be at least 8 characters
-                    </p>
+                    
+                    {(passwordFocused || password.length > 0) && (
+                        <div className="mt-3 p-3 bg-white dark:bg-white border border-gray-200 dark:border-gray-300 rounded-lg">
+                            <p className="text-sm font-semibold text-gray-700 mb-2">
+                                Password Requirements:
+                            </p>
+                            <ul className="space-y-1.5">
+                                {passwordChecks.map((check, idx) => (
+                                    <li key={idx} className="flex items-center gap-2">
+                                        {password.length > 0 ? (
+                                            check.met ? (
+                                                <Check size={16} className="text-green-600 flex-shrink-0" />
+                                            ) : (
+                                                <X size={16} className="text-red-500 flex-shrink-0" />
+                                            )
+                                        ) : (
+                                            <div className="w-4 h-4 rounded-full border-2 border-gray-400 flex-shrink-0" />
+                                        )}
+                                        <span className={`text-sm ${
+                                            password.length === 0 
+                                                ? 'text-gray-600' 
+                                                : check.met 
+                                                    ? 'text-green-700' 
+                                                    : 'text-red-600'
+                                        }`}>
+                                            {check.label}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                 </div>
 
                 <button
