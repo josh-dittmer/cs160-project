@@ -100,7 +100,7 @@ def test_signup_duplicate_email():
         "/api/auth/signup",
         json={
             "email": TEST_USER_EMAIL,
-            "password": "differentpassword123",
+            "password": "DifferentPass@123!",
             "full_name": "Different Name",
         },
     )
