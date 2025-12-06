@@ -892,7 +892,11 @@ def delete_item(
     
     item.is_active = False
     db.commit()
-    
+
+    # remove item from all carts
+    db.query(CartItem).filter_by(item_id=item_id).delete()
+    db.commit()
+
     # Create audit log
     create_audit_log(
         db=db,

@@ -186,6 +186,13 @@ def create_payment_intent(
     for row in items:
         ci: CartItem = row[0]
         it: Item = row[1]
+
+        # skip if item is deactivated
+        if it.is_active is False:
+            db.delete(ci)
+            db.commit()
+            continue
+
         cart_item = CartItemOut(
             quantity=ci.quantity,
             item=it
