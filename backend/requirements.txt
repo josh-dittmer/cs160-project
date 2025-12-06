@@ -53,3 +53,4 @@ Pillow==11.0.0
 stripe==13.0.1
 google-maps-routing==0.7.0
 google-maps-routeoptimization==0.2.0
+geopy==2.4.1
