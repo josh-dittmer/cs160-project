@@ -429,7 +429,7 @@ SAMPLE_ITEMS = [
     dict(
         name="Organic Milk",
         price_cents=549,
-        weight_oz=64,
+        weight_oz=640,
         category="dairy",
         stock_qty=40,
         image_url="https://images.unsplash.com/photo-1550583724-b2692b85b150",
