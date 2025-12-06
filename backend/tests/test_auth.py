@@ -16,7 +16,7 @@ client = TestClient(app)
 
 # Test data
 TEST_USER_EMAIL = "test@example.com"
-TEST_USER_PASSWORD = "testpassword123"
+TEST_USER_PASSWORD = "TestPassword@123!"
 TEST_USER_NAME = "Test User"
 
 GOOGLE_USER_EMAIL = "google@example.com"
@@ -100,7 +100,7 @@ def test_signup_duplicate_email():
         "/api/auth/signup",
         json={
             "email": TEST_USER_EMAIL,
-            "password": "differentpassword123",
+            "password": "DifferentPass@123!",
             "full_name": "Different Name",
         },
     )
@@ -126,7 +126,7 @@ def test_signup_short_password():
         "/api/auth/signup",
         json={
             "email": TEST_USER_EMAIL,
-            "password": "short",  # Less than 8 characters
+            "password": "Short@12345",  # Less than 14 characters
         },
     )
     assert response.status_code == 422  # Validation error
@@ -334,7 +334,7 @@ def test_google_auth_link_existing_email():
     try:
         existing_user = User(
             email=GOOGLE_USER_EMAIL,
-            hashed_password=get_password_hash("somepassword"),
+            hashed_password=get_password_hash("SomePassword@123!"),
             full_name=GOOGLE_USER_NAME,
         )
         db.add(existing_user)

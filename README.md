@@ -126,7 +126,21 @@ This will create the database tables and an admin user.
 python -m app.seed
 ```
 
-**Admin Credentials:** `admin@sjsu.edu` / `admin123`
+**Seeded Test Accounts:**
+
+| Role | Email | Password |
+|------|-------|----------|
+| **Admin** | `admin@sjsu.edu` | `Admin@1234567890` |
+| **Manager** | `mike@sjsu.edu` | `Mike@1234567890` |
+| **Manager** | `mark@sjsu.edu` | `Mark@1234567890` |
+| **Employee** | `alice@sjsu.edu` | `Alice@1234567890` |
+| **Employee** | `bob@sjsu.edu` | `Bob@1234567890` |
+| **Employee** | `trudy@sjsu.edu` | `Trudy@1234567890` |
+| **Customer** | `george@sjsu.edu` | `George@1234567890` |
+| **Customer** | `alex@sjsu.edu` | `Alex@1234567890` |
+| **Customer** | `john@sjsu.edu` | `John@1234567890` |
+
+> **Note:** Passwords follow the pattern: `Name@1234567890`
 
 #### 4. Start the backend server
 
@@ -226,7 +240,7 @@ cs160-project/
 - **Role-Based Access Control**
   - Four user roles: Admin, Manager, Employee, Customer
   - Admin panel for user, inventory, and order management
-  - Default admin login: `admin@sjsu.edu` / `admin123`
+  - Default admin login: `admin@sjsu.edu` / `Admin@1234567890` (see Quick Start for all test accounts)
   - See [docs/ADMIN.md](docs/ADMIN.md) for complete admin documentation
   - See [docs/ORDER_MANAGEMENT.md](docs/ORDER_MANAGEMENT.md) for order management details
 

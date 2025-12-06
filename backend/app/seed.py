@@ -776,14 +776,15 @@ def seed():
     try:
         # Create admin user if not exists
         admin_email = "admin@sjsu.edu"
-        admin_password = "admin123"
+        admin_name = "System Administrator"
+        admin_password = "Admin@1234567890"
         
         admin_user = db.query(User).filter(User.email == admin_email).first()
         if not admin_user:
             admin_user = User(
                 email=admin_email,
                 hashed_password=get_password_hash(admin_password),
-                full_name="System Administrator",
+                full_name=admin_name,
                 role="admin",
                 reports_to=None,  # Admin reports to no one
                 stripe_customer_id=create_stripe_customer(admin_email).id,
@@ -802,14 +803,15 @@ def seed():
         
         # Create manager user (Mike)
         manager_email = "mike@sjsu.edu"
-        manager_password = "mike12345"
+        manager_name = "Mike"
+        manager_password = "Mike@1234567890"
         
         manager_user = db.query(User).filter(User.email == manager_email).first()
         if not manager_user:
             manager_user = User(
                 email=manager_email,
                 hashed_password=get_password_hash(manager_password),
-                full_name="Mike",
+                full_name=manager_name,
                 role="manager",
                 reports_to=None,  # Managers don't report to anyone
                 stripe_customer_id=create_stripe_customer(manager_email).id,
@@ -832,14 +834,15 @@ def seed():
         
         # Create manager user (Mark)
         mark_email = "mark@sjsu.edu"
-        mark_password = "mark12345"
+        mark_name = "Mark"
+        mark_password = "Mark@1234567890"
         
         mark_user = db.query(User).filter(User.email == mark_email).first()
         if not mark_user:
             mark_user = User(
                 email=mark_email,
                 hashed_password=get_password_hash(mark_password),
-                full_name="Mark",
+                full_name=mark_name,
                 role="manager",
                 reports_to=None,  # Managers don't report to anyone
                 stripe_customer_id=create_stripe_customer(mark_email).id,
@@ -862,9 +865,9 @@ def seed():
         
         # Create employee users (report to Mike)
         sample_employees = [
-            {"name": "Alice", "email": "alice@sjsu.edu", "password": "alice12345"},
-            {"name": "Bob", "email": "bob@sjsu.edu", "password": "bob12345"},
-            {"name": "Trudy", "email": "trudy@sjsu.edu", "password": "trudy12345"},
+            {"name": "Alice", "email": "alice@sjsu.edu", "password": "Alice@1234567890"},
+            {"name": "Bob", "email": "bob@sjsu.edu", "password": "Bob@1234567890"},
+            {"name": "Trudy", "email": "trudy@sjsu.edu", "password": "Trudy@1234567890"},
         ]
         
         for employee in sample_employees:
@@ -900,9 +903,9 @@ def seed():
         
         # Create sample customer users
         sample_customers = [
-            {"name": "George", "email": "george@sjsu.edu", "password": "george12345"},
-            {"name": "Alex", "email": "alex@sjsu.edu", "password": "alex12345"},
-            {"name": "John", "email": "john@sjsu.edu", "password": "john12345"},
+            {"name": "George", "email": "george@sjsu.edu", "password": "George@1234567890"},
+            {"name": "Alex", "email": "alex@sjsu.edu", "password": "Alex@1234567890"},
+            {"name": "John", "email": "john@sjsu.edu", "password": "John@1234567890"},
         ]
         
         for customer in sample_customers:
