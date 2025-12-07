@@ -205,17 +205,18 @@ cs160-project/
 │   │   ├── seed.py      # Database seeding
 │   │   └── routers/     # API route handlers
 │   ├── docs/            # API documentation
+│   ├── tests/           # Unit, integration, and E2E tests
 │   └── requirements.txt # Python dependencies
 │
 ├── frontend/            # Next.js frontend
 │   ├── src/
 │   │   ├── app/        # Next.js app router pages
 │   │   ├── components/ # React components
-│   │   ├── contexts/   # React contexts (auth, theme)
+│   │   ├── contexts/   # React contexts (auth, theme, cart)
 │   │   └── lib/        # API client and utilities
 │   └── package.json    # Node dependencies
 │
-└── tests/              # Test files
+└── docker/              # Docker configuration files
 ```
 
 ---
@@ -235,14 +236,11 @@ cs160-project/
   - Top-right address selector with interactive map view
   - Current location detection and geocoding
   - Auto-formatted phone numbers
-  - See [docs/PROFILE_IMPLEMENTATION_SUMMARY.md](docs/PROFILE_IMPLEMENTATION_SUMMARY.md) for details
 
 - **Role-Based Access Control**
   - Four user roles: Admin, Manager, Employee, Customer
   - Admin panel for user, inventory, and order management
   - Default admin login: `admin@sjsu.edu` / `Admin@1234567890` (see Quick Start for all test accounts)
-  - See [docs/ADMIN.md](docs/ADMIN.md) for complete admin documentation
-  - See [docs/ORDER_MANAGEMENT.md](docs/ORDER_MANAGEMENT.md) for order management details
 
 - **AI-Powered Image Generation**
   - Generate product images from text descriptions using Google Gemini AI
@@ -250,7 +248,6 @@ cs160-project/
   - Specialized for food product photography
   - Automatic image optimization (JPEG, 85% quality)
   - Admin-only access with proper authentication
-  - See [docs/AI_IMAGE_GENERATION.md](docs/AI_IMAGE_GENERATION.md) for setup guide
 
 - **AI-Powered Video Generation** 
   - Generate professional marketing videos from text descriptions using Veo 3.1
@@ -259,7 +256,6 @@ cs160-project/
   - Two generation modes: Standard (best quality) and Fast (optimized speed)
   - Async and sync generation workflows
   - Perfect for product demos, ads, and social media content
-  - See [backend/docs/api/VIDEO_API.md](backend/docs/api/VIDEO_API.md) for API documentation
 
 - **Smart Search**
   - Real-time autocomplete suggestions
@@ -436,14 +432,12 @@ CS160 Project Team 6
 - Verify `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` is set in `frontend/.env.local`
 - Ensure **Places API**, **Maps JavaScript API**, and **Geocoding API** are enabled in Google Cloud Console
 - Restart the frontend dev server after adding the API key: `npm run dev`
-- See [docs/GOOGLE_MAPS_SETUP.md](docs/GOOGLE_MAPS_SETUP.md) for complete setup guide
 
 ### AI image generation not working
 - Verify `GEMINI_API_KEY` is set in `backend/.env`
 - Check your API quota at https://ai.dev/usage?tab=rate-limit
 - Free tier has strict limits - wait 20-30 seconds between requests
 - Consider upgrading to paid tier for production use
-- See [docs/AI_IMAGE_GENERATION.md](docs/AI_IMAGE_GENERATION.md) for setup and troubleshooting
 
 ### AI video generation not working
 - Verify `GEMINI_API_KEY` is set in `backend/.env` (same key as image generation)
@@ -451,22 +445,13 @@ CS160 Project Team 6
 - Check your API quota and billing at https://ai.google.dev/pricing
 - Generation takes 30-60 seconds - use async endpoint for better UX
 - Test the API health: `GET /api/admin/video/health`
-- Run test script (from backend directory): `python test_video_generation.py`
-- See [backend/docs/api/VIDEO_API.md](backend/docs/api/VIDEO_API.md) for complete API documentation
 
 ---
 
 ## 📚 Documentation
 
-For more detailed information about specific features:
+For more detailed information about the API:
 
-- **[docs/AI_IMAGE_GENERATION.md](docs/AI_IMAGE_GENERATION.md)** - AI image generation setup and usage guide
-- **[backend/docs/api/VIDEO_API.md](backend/docs/api/VIDEO_API.md)** - AI video generation API documentation 
-- **[docs/PROFILE_IMPLEMENTATION_SUMMARY.md](docs/PROFILE_IMPLEMENTATION_SUMMARY.md)** - User profile, address selector, map integration
-- **[docs/GOOGLE_MAPS_SETUP.md](docs/GOOGLE_MAPS_SETUP.md)** - Google Maps API setup guide
-- **[docs/ADMIN.md](docs/ADMIN.md)** - Admin panel and role-based access control
-- **[docs/IMPLEMENTATION_SUMMARY.md](docs/IMPLEMENTATION_SUMMARY.md)** - Admin RBAC implementation details
-- **[docs/AUTHENTICATION_INTEGRATION.md](docs/AUTHENTICATION_INTEGRATION.md)** - Authentication system details
-- **[backend/docs/](backend/docs/)** - API documentation and search implementation
+- **[backend/docs/api/API.md](backend/docs/api/API.md)** - Complete API endpoint documentation
 
 ---
