@@ -274,6 +274,207 @@ cs160-project/
 
 ---
 
+## 📖 User Guide
+
+This guide explains how to use the OFS (On-Demand Food Delivery Service) application.
+
+### Getting Started
+
+#### Landing Page
+When you first visit the application, you'll see the landing page featuring:
+- A video background showcasing OFS
+- **Sign In** and **Sign Up** buttons to access your account
+- A link to **view products** without logging in (guest browsing)
+- Information about OFS services and delivery area (San Jose, CA)
+
+#### Creating an Account
+1. Click **Sign Up** on the landing page
+2. Fill in your details:
+   - **Full Name** (optional)
+   - **Email** (required)
+   - **Password** (required) - must meet the following requirements:
+     - At least 14 characters long
+     - At least one uppercase letter (A-Z)
+     - At least one lowercase letter (a-z)
+     - At least one number (0-9)
+     - At least one special character (!@#$%^&*()_+-=[]{}|;:,.<>?)
+     - Cannot start or end with a space
+3. Alternatively, click **Sign up with Google** for quick registration
+4. After signup, you'll be redirected to the customer dashboard
+
+#### Signing In
+1. Click **Sign In** on the landing page
+2. Enter your email and password, or use **Sign in with Google**
+3. You'll be redirected to the appropriate dashboard based on your role:
+   - **Customers** → Home Dashboard
+   - **Employees** → Employee Dashboard
+   - **Managers** → Manager Dashboard
+   - **Admins** → Admin Dashboard
+
+---
+
+### Customer Experience
+
+#### Browsing Products
+The home dashboard displays products organized by category:
+- **Fruits** - Fresh fruits carousel
+- **Vegetables** - Fresh vegetables carousel
+- **Meat** - Meat products carousel
+- **Dairy** - Dairy products carousel
+- **Grains** - Grain products carousel
+
+Use the **circular carousel navigation** (arrows) to browse items within each category.
+
+#### Searching for Products
+The search bar at the top supports:
+- **Real-time autocomplete** - suggestions appear as you type
+- **Fuzzy matching** - handles typos (e.g., "oganic aples" finds "Organic Apples")
+- **Voice search** - click the microphone icon to search by voice (Chrome, Edge, Safari)
+- **Keyboard navigation** - use Arrow keys to navigate suggestions, Enter to select, Escape to close
+
+If your search matches exactly one item, you'll be taken directly to that item's page.
+
+#### Viewing Product Details
+Click on any product to see:
+- Large product image with **zoom on hover**
+- Product name, category, and price
+- Stock availability
+- Product description
+- **Nutrition Facts** (expandable panel)
+- **Product video** (if available)
+- **Add to Cart** button with quantity selector
+
+#### Adding Items to Cart
+- **From product cards**: Hover over a product and click the **+** button
+- **From product detail page**: Use the quantity selector and click **Add to Cart**
+- Items already in cart will show a notification - adjust quantity in the cart instead
+
+#### Managing Your Cart
+Click the **cart icon** in the top-right to open the cart preview:
+- View all items with images, prices, and weights
+- Adjust quantities using **+** and trash buttons
+- See total price and weight
+- **Free shipping** for orders under 20 lbs (otherwise $10 shipping fee)
+- Click **Continue** to proceed to checkout
+
+#### Favorites
+Save items for later by clicking the **star icon** on any product card:
+- Access your favorites from the sidebar: **Favorites**
+- Click the star again to remove from favorites
+- Requires login
+
+#### Setting Your Delivery Address
+Click the **location icon** in the top bar to set your delivery address:
+- **Use My Current Location** - auto-detect your address (must be in San Jose, CA)
+- **Manual entry** - type your address and select from Google Places suggestions
+- View your saved address on an interactive map
+- Edit your address anytime by clicking the location selector
+
+> **Note**: OFS currently delivers only to San Jose, CA addresses.
+
+#### Checkout Process
+1. From the cart, click **Continue** to go to checkout
+2. Review your order:
+   - Verify your delivery address (click **Change address** if needed)
+   - Review items and quantities (adjust if needed)
+   - Check shipping details and total weight
+3. Enter payment information via **Stripe**:
+   - Credit/debit card details
+   - Secure payment processing
+4. Click **Complete Purchase** to place your order
+
+#### Tracking Orders
+Access your orders from the sidebar: **Orders**
+
+**Active Orders** (Packing or Shipped):
+- Click on an order to view details and track delivery
+- See real-time delivery status and progress bar
+- View delivery route on an interactive map
+- Track the delivery robot's location
+
+**Completed Orders**:
+- View order history with all details
+- See items purchased, quantities, and totals
+
+---
+
+### Profile Management
+
+Access your profile by clicking your **My Account** button in the sidebar.
+
+#### View & Edit Profile
+- **Profile picture**: Upload an image file 
+- **Name**: Update your display name
+- **Phone**: Add or update phone number (auto-formatted)
+- **Address**: Update delivery address
+- **Password**: Change your password (email/password users only; not for users signed in through Google)
+
+---
+
+### Employee Experience
+
+Employees have access to inventory and order management tools.
+
+#### Employee Dashboard
+Shows quick stats:
+- Total items in inventory
+- Low stock items (≤10 units)
+- Out of stock items
+
+#### Quick Actions
+- **Query Inventory** - Search and view all products
+- **Update Stock Quantity** - Adjust inventory levels
+- **View Orders** - See orders assigned for packing/delivery
+- **View Stock Alerts** - Monitor low stock and out-of-stock items
+
+---
+
+### Manager Experience
+
+Managers can manage users and inventory within their team.
+
+#### Manager Dashboard
+Access via `/manager/dashboard` after login. Includes:
+- System statistics overview
+- Order statistics
+- User role breakdown
+- Quick action links
+
+#### Manager Capabilities
+- **Users** - Manage subordinate employees (block/unblock)
+- **Inventory** - Full CRUD for products (add, edit, delete, activate/deactivate, delete permanently)
+  - **AI Image Generation** - Generate product images using Gemini 2.5 Flash Image (Nano Banana)
+  - **AI Video Generation** - Generate marketing videos using Veo 3.1
+- **Orders** - View and manage orders
+- **Audit Logs** - View system activity logs of customers, subordinate employees, and themselves
+- **Customer View** - Preview the customer experience
+
+---
+
+### Admin Experience
+
+Admins have full system access and control.
+
+#### Admin Dashboard
+Access via `/admin/dashboard` after login. Displays:
+- Total users, orders, and items
+- Active/inactive items count
+- Low stock alerts
+- Order statistics (pending, delivered)
+- User role breakdown
+- Audit log activity (last 24 hours)
+
+#### Admin Capabilities
+- **Users** - Manage all users (change roles, block/unblock, assign managers)
+- **Inventory** - Full CRUD for products (add, edit, delete, activate/deactivate, delete permanently)
+  - **AI Image Generation** - Generate product images using Gemini 2.5 Flash Image (Nano Banana)
+  - **AI Video Generation** - Generate marketing videos using Veo 3.1
+- **Orders** - View all orders and update delivery status
+- **Audit Logs** - Complete system activity log with filtering of all users
+- **Customer View** - Preview the customer experience
+
+---
+
 ## 🧪 Running Tests
 
 ### Unit/Integration Tests
