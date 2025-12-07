@@ -280,14 +280,16 @@ cs160-project/
 
 ## 🧪 Running Tests
 
+### Unit/Integration Tests
+
 **macOS/Linux:**
 ```bash
 # Navigate to backend directory and activate virtual environment
 cd cs160-project/backend
 source .venv/bin/activate
 
-# Run all tests
-pytest tests/ -v
+# Run all unit tests
+pytest tests/ -v --ignore=tests/e2e
 
 # Run specific test file
 pytest tests/test_auth.py -v
@@ -302,15 +304,52 @@ pytest tests/test_admin.py -v
 cd cs160-project\backend
 .venv\Scripts\activate
 
-# Run all tests
-pytest tests/ -v
+# Run all unit tests
+pytest tests/ -v --ignore=tests/e2e
 
 # Run specific test file
 pytest tests/test_auth.py -v
 
-# Run admin RBAC tests (23 tests)
+# Run admin RBAC tests
 pytest tests/test_admin.py -v
 ```
+
+### E2E Tests (Playwright)
+
+E2E tests use Playwright to test the full application in a browser. **Both frontend and backend must be running.**
+
+**First-time setup:**
+```bash
+# Install Playwright browsers (only needed once)
+playwright install chromium
+```
+
+**Running E2E tests:**
+
+```bash
+# Make sure both servers are running first:
+# Terminal 1: cd backend && uvicorn app.main:app --reload --port 8080
+# Terminal 2: cd frontend && npm run dev
+
+# Navigate to backend and activate venv
+cd cs160-project/backend
+source .venv/bin/activate  # or .venv\Scripts\activate on Windows
+
+# Run all e2e tests
+pytest tests/e2e/ -v
+
+# Run specific e2e test file
+pytest tests/e2e/test_auth.py -v
+
+# Run e2e tests with headed browser (see the browser)
+pytest tests/e2e/ -v --headed
+```
+
+**E2E Test Files:**
+- `test_landing_page.py` - Landing page content and navigation
+- `test_auth.py` - Login and signup functionality
+- `test_navigation.py` - Role-based navigation and routing
+- `test_home.py` - Home dashboard and product browsing
 
 > **Note:** If you have `.venv` in the project root, activate it there first, then `cd backend` before running tests.
 
