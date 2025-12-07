@@ -16,7 +16,13 @@ export default function ActiveOrderCard({ order }: { order: OrderT }) {
                 <div className="flex flex-col gap-2 w-full">
                     <OrderSummary order={order} />
                 </div>
-                <div className="flex justify-end mt-2">
+                <div className="flex justify-between mt-2">
+                     <button
+                        onClick={() => alert("Cancel order clicked!")} // placeholder
+                        className="text-red-600 border border-red-600 px-4 py-2 rounded-full text-sm font-medium transition hover:bg-red-600 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Cancel Order
+                    </button>
                     <button
                         onClick={() => window.location.href = `/orderDetails/${order.id}`}
                         className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full text-sm font-medium transition"
