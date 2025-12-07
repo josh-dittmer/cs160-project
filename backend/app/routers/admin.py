@@ -7,6 +7,7 @@ from sqlalchemy import select, or_, func
 from ..database import get_db
 from ..models import User, Item, Order, OrderItem, AuditLog, CartItem, Review, OrderStatus
 from ..audit import create_audit_log, get_actor_ip
+from ..cart import adjust_carts_for_stock_change
 from ..schemas import (
     UserListAdmin,
     UserRoleUpdate,
@@ -842,13 +843,18 @@ def update_item(
         
         update_data['name'] = new_name
     
+    old_stock_qty = item.stock_qty
+    
     for field, value in update_data.items():
         setattr(item, field, value)
     
     db.commit()
     db.refresh(item)
     
-    # Create audit log with changed fields
+    cart_adjustments = None
+    if 'stock_qty' in update_data and update_data['stock_qty'] < old_stock_qty:
+        cart_adjustments = adjust_carts_for_stock_change(db, item_id, update_data['stock_qty'])
+    
     changed_fields = {}
     for field, new_value in update_data.items():
         if field in old_values and old_values[field] != new_value:
@@ -865,6 +871,7 @@ def update_item(
             "item_name": item.name,
             "changed_fields": changed_fields,
             "auto_case": auto_case if 'name' in item_data.model_dump(exclude_unset=True) else None,
+            "cart_adjustments": cart_adjustments,
         },
         ip_address=get_actor_ip(request),
     )

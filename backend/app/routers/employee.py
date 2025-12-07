@@ -7,6 +7,7 @@ from sqlalchemy import select, or_, func
 from ..database import get_db
 from ..models import User, Item, Order, OrderItem
 from ..audit import create_audit_log, get_actor_ip
+from ..cart import adjust_carts_for_stock_change
 from ..schemas import (
     ItemDetailOut,
     ItemStockUpdate,
@@ -119,11 +120,6 @@ def update_item_stock(
     employee: UserCtx = Depends(require_employee),
     db: Session = Depends(get_db),
 ):
-    """
-    Update item stock quantity only.
-    Employees can ONLY update the stock_qty field, no other fields.
-    Employee, manager, or admin only.
-    """
     item = db.get(Item, item_id)
     if not item:
         raise HTTPException(
@@ -131,15 +127,16 @@ def update_item_stock(
             detail="Item not found",
         )
     
-    # Store old stock quantity for audit log
     old_stock_qty = item.stock_qty
     
-    # Update only stock quantity
     item.stock_qty = stock_data.stock_qty
     db.commit()
     db.refresh(item)
     
-    # Create audit log
+    cart_adjustments = None
+    if stock_data.stock_qty < old_stock_qty:
+        cart_adjustments = adjust_carts_for_stock_change(db, item_id, stock_data.stock_qty)
+    
     create_audit_log(
         db=db,
         action_type="item_stock_updated",
@@ -152,6 +149,7 @@ def update_item_stock(
             "old_stock_qty": old_stock_qty,
             "new_stock_qty": stock_data.stock_qty,
             "actor_role": employee.role,
+            "cart_adjustments": cart_adjustments,
         },
         ip_address=get_actor_ip(request),
     )

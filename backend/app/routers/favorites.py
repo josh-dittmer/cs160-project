@@ -15,10 +15,14 @@ def get_user_favorites(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    user = db.query(User).filter(User.id == current_user.id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user.favorited_items
+    active_favorites = (
+        db.query(Item)
+        .join(Favorite, Favorite.item_id == Item.id)
+        .filter(Favorite.user_id == current_user.id)
+        .filter(Item.is_active == True)
+        .all()
+    )
+    return active_favorites
 
 
 # Add a new favorite
@@ -31,6 +35,8 @@ def add_favorite(
     item = db.query(Item).filter(Item.id == item_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
+    if not item.is_active:
+        raise HTTPException(status_code=400, detail="Cannot favorite a deactivated item")
 
     existing = (
         db.query(Favorite)

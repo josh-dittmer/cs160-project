@@ -4,7 +4,7 @@ import LoadingSpinner from "@/components/loading_spinner/loading_spinner";
 import { useAuth } from "@/contexts/auth";
 import { useConfirmPaymentMutation } from "@/lib/mutations/confirm_payment";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 function displayAddress(address: string, city: string | null, state: string | null, zipcode: string | null) {
     return `${address}, ${city}, ${state} ${zipcode}`;
@@ -22,13 +22,18 @@ export default function PaymentCompletePage() {
 
     const router = useRouter();
 
+    const hasMutated = useRef(false);
+
     useEffect(() => {
+        if (hasMutated.current) return;
+
         if (token &&
             intentId &&
             clientSecret &&
             user?.address &&
             user?.longitude &&
             user?.latitude) {
+            hasMutated.current = true;
             mutate({
                 request: {
                     intentId,
@@ -45,7 +50,7 @@ export default function PaymentCompletePage() {
                 token: token
             });
         }
-    }, [token, intentId, clientSecret, mutate]);
+    }, [token, intentId, clientSecret, mutate, user]);
 
     useEffect(() => {
         if (data) {

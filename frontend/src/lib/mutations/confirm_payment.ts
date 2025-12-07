@@ -11,7 +11,7 @@ export const useConfirmPaymentMutation = () => {
     const client = useQueryClient();
 
     return useMutation({
-        mutationFn: (vars: ConfirmPaymentVars) => request('/api/payment/confirm-payment', post({
+        mutationFn: (vars: ConfirmPaymentVars) => request('/api/payment/confirm-payment/', post({
             token: vars.token,
             decoder: ConfirmPaymentResponse,
             payload: vars.request

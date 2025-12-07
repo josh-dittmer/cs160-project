@@ -19,15 +19,29 @@ def list_cart_items(
     ).all()
 
     cart_items: List[CartItemOut] = []
+    needs_commit = False
 
     for row in items:
         ci: CartItem = row[0]
         it: Item = row[1]
+        
+        if it.stock_qty == 0:
+            db.delete(ci)
+            needs_commit = True
+            continue
+        
+        if ci.quantity > it.stock_qty:
+            ci.quantity = it.stock_qty
+            needs_commit = True
+        
         cart_item = CartItemOut(
             quantity=ci.quantity,
             item=it
         )
         cart_items.append(cart_item)
+
+    if needs_commit:
+        db.commit()
 
     price_data: CartPriceData = calculate_cart_total(cart_items)
 
@@ -46,30 +60,33 @@ def update_cart(
     user: UserCtx = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    # Check if item exists and has sufficient stock
     item = db.query(Item).filter_by(id=payload.item_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Item not found.")
-    
-    if payload.quantity > 0 and payload.quantity > item.stock_qty:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Insufficient stock. Available: {item.stock_qty}, Requested: {payload.quantity}"
-        )
     
     cart_item = db.query(CartItem).filter_by(
         user_id=user.id, item_id=payload.item_id
     ).first()
 
-    if cart_item:
-        if payload.quantity <= 0:
-            # Remove from cart
+    current_quantity = cart_item.quantity if cart_item else 0
+
+    if payload.quantity <= 0:
+        if cart_item:
             db.delete(cart_item)
-        else:
-            # Update quantity
-            cart_item.quantity = payload.quantity
+        db.commit()
+        return {"ok": True}
+    
+    is_increasing = payload.quantity > current_quantity
+    
+    if is_increasing and payload.quantity > item.stock_qty:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Insufficient stock. Available: {item.stock_qty}, Requested: {payload.quantity}"
+        )
+
+    if cart_item:
+        cart_item.quantity = payload.quantity
     else:
-        # Add new item to cart
         db.add(CartItem(
             quantity=payload.quantity,
             item_id=payload.item_id,

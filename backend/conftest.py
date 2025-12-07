@@ -43,7 +43,7 @@ def headers(admin_token):
     return {"Authorization": f"Bearer {admin_token}"}
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def base_url():
     """
     Fixture that provides the API base URL.
