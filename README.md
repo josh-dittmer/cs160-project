@@ -205,17 +205,18 @@ cs160-project/
 │   │   ├── seed.py      # Database seeding
 │   │   └── routers/     # API route handlers
 │   ├── docs/            # API documentation
+│   ├── tests/           # Unit, integration, and E2E tests
 │   └── requirements.txt # Python dependencies
 │
 ├── frontend/            # Next.js frontend
 │   ├── src/
 │   │   ├── app/        # Next.js app router pages
 │   │   ├── components/ # React components
-│   │   ├── contexts/   # React contexts (auth, theme)
+│   │   ├── contexts/   # React contexts (auth, theme, cart)
 │   │   └── lib/        # API client and utilities
 │   └── package.json    # Node dependencies
 │
-└── tests/              # Test files
+└── docker/              # Docker configuration files
 ```
 
 ---
@@ -235,14 +236,11 @@ cs160-project/
   - Top-right address selector with interactive map view
   - Current location detection and geocoding
   - Auto-formatted phone numbers
-  - See [docs/PROFILE_IMPLEMENTATION_SUMMARY.md](docs/PROFILE_IMPLEMENTATION_SUMMARY.md) for details
 
 - **Role-Based Access Control**
   - Four user roles: Admin, Manager, Employee, Customer
   - Admin panel for user, inventory, and order management
   - Default admin login: `admin@sjsu.edu` / `Admin@1234567890` (see Quick Start for all test accounts)
-  - See [docs/ADMIN.md](docs/ADMIN.md) for complete admin documentation
-  - See [docs/ORDER_MANAGEMENT.md](docs/ORDER_MANAGEMENT.md) for order management details
 
 - **AI-Powered Image Generation**
   - Generate product images from text descriptions using Google Gemini AI
@@ -250,7 +248,6 @@ cs160-project/
   - Specialized for food product photography
   - Automatic image optimization (JPEG, 85% quality)
   - Admin-only access with proper authentication
-  - See [docs/AI_IMAGE_GENERATION.md](docs/AI_IMAGE_GENERATION.md) for setup guide
 
 - **AI-Powered Video Generation** 
   - Generate professional marketing videos from text descriptions using Veo 3.1
@@ -259,7 +256,6 @@ cs160-project/
   - Two generation modes: Standard (best quality) and Fast (optimized speed)
   - Async and sync generation workflows
   - Perfect for product demos, ads, and social media content
-  - See [backend/docs/api/VIDEO_API.md](backend/docs/api/VIDEO_API.md) for API documentation
 
 - **Smart Search**
   - Real-time autocomplete suggestions
@@ -275,6 +271,207 @@ cs160-project/
 - **Modern UI**
   - Responsive design
   - Dark/light theme toggle
+
+---
+
+## 📖 User Guide
+
+This guide explains how to use the OFS (On-Demand Food Delivery Service) application.
+
+### Getting Started
+
+#### Landing Page
+When you first visit the application, you'll see the landing page featuring:
+- A video background showcasing OFS
+- **Sign In** and **Sign Up** buttons to access your account
+- A link to **view products** without logging in (guest browsing)
+- Information about OFS services and delivery area (San Jose, CA)
+
+#### Creating an Account
+1. Click **Sign Up** on the landing page
+2. Fill in your details:
+   - **Full Name** (optional)
+   - **Email** (required)
+   - **Password** (required) - must meet the following requirements:
+     - At least 14 characters long
+     - At least one uppercase letter (A-Z)
+     - At least one lowercase letter (a-z)
+     - At least one number (0-9)
+     - At least one special character (!@#$%^&*()_+-=[]{}|;:,.<>?)
+     - Cannot start or end with a space
+3. Alternatively, click **Sign up with Google** for quick registration
+4. After signup, you'll be redirected to the customer dashboard
+
+#### Signing In
+1. Click **Sign In** on the landing page
+2. Enter your email and password, or use **Sign in with Google**
+3. You'll be redirected to the appropriate dashboard based on your role:
+   - **Customers** → Home Dashboard
+   - **Employees** → Employee Dashboard
+   - **Managers** → Manager Dashboard
+   - **Admins** → Admin Dashboard
+
+---
+
+### Customer Experience
+
+#### Browsing Products
+The home dashboard displays products organized by category:
+- **Fruits** - Fresh fruits carousel
+- **Vegetables** - Fresh vegetables carousel
+- **Meat** - Meat products carousel
+- **Dairy** - Dairy products carousel
+- **Grains** - Grain products carousel
+
+Use the **circular carousel navigation** (arrows) to browse items within each category.
+
+#### Searching for Products
+The search bar at the top supports:
+- **Real-time autocomplete** - suggestions appear as you type
+- **Fuzzy matching** - handles typos (e.g., "oganic aples" finds "Organic Apples")
+- **Voice search** - click the microphone icon to search by voice (Chrome, Edge, Safari)
+- **Keyboard navigation** - use Arrow keys to navigate suggestions, Enter to select, Escape to close
+
+If your search matches exactly one item, you'll be taken directly to that item's page.
+
+#### Viewing Product Details
+Click on any product to see:
+- Large product image with **zoom on hover**
+- Product name, category, and price
+- Stock availability
+- Product description
+- **Nutrition Facts** (expandable panel)
+- **Product video** (if available)
+- **Add to Cart** button with quantity selector
+
+#### Adding Items to Cart
+- **From product cards**: Hover over a product and click the **+** button
+- **From product detail page**: Use the quantity selector and click **Add to Cart**
+- Items already in cart will show a notification - adjust quantity in the cart instead
+
+#### Managing Your Cart
+Click the **cart icon** in the top-right to open the cart preview:
+- View all items with images, prices, and weights
+- Adjust quantities using **+** and trash buttons
+- See total price and weight
+- **Free shipping** for orders under 20 lbs (otherwise $10 shipping fee)
+- Click **Continue** to proceed to checkout
+
+#### Favorites
+Save items for later by clicking the **star icon** on any product card:
+- Access your favorites from the sidebar: **Favorites**
+- Click the star again to remove from favorites
+- Requires login
+
+#### Setting Your Delivery Address
+Click the **location icon** in the top bar to set your delivery address:
+- **Use My Current Location** - auto-detect your address (must be in San Jose, CA)
+- **Manual entry** - type your address and select from Google Places suggestions
+- View your saved address on an interactive map
+- Edit your address anytime by clicking the location selector
+
+> **Note**: OFS currently delivers only to San Jose, CA addresses.
+
+#### Checkout Process
+1. From the cart, click **Continue** to go to checkout
+2. Review your order:
+   - Verify your delivery address (click **Change address** if needed)
+   - Review items and quantities (adjust if needed)
+   - Check shipping details and total weight
+3. Enter payment information via **Stripe**:
+   - Credit/debit card details
+   - Secure payment processing
+4. Click **Complete Purchase** to place your order
+
+#### Tracking Orders
+Access your orders from the sidebar: **Orders**
+
+**Active Orders** (Packing or Shipped):
+- Click on an order to view details and track delivery
+- See real-time delivery status and progress bar
+- View delivery route on an interactive map
+- Track the delivery robot's location
+
+**Completed Orders**:
+- View order history with all details
+- See items purchased, quantities, and totals
+
+---
+
+### Profile Management
+
+Access your profile by clicking your **My Account** button in the sidebar.
+
+#### View & Edit Profile
+- **Profile picture**: Upload an image file 
+- **Name**: Update your display name
+- **Phone**: Add or update phone number (auto-formatted)
+- **Address**: Update delivery address
+- **Password**: Change your password (email/password users only; not for users signed in through Google)
+
+---
+
+### Employee Experience
+
+Employees have access to inventory and order management tools.
+
+#### Employee Dashboard
+Shows quick stats:
+- Total items in inventory
+- Low stock items (≤10 units)
+- Out of stock items
+
+#### Quick Actions
+- **Query Inventory** - Search and view all products
+- **Update Stock Quantity** - Adjust inventory levels
+- **View Orders** - See orders assigned for packing/delivery
+- **View Stock Alerts** - Monitor low stock and out-of-stock items
+
+---
+
+### Manager Experience
+
+Managers can manage users and inventory within their team.
+
+#### Manager Dashboard
+Access via `/manager/dashboard` after login. Includes:
+- System statistics overview
+- Order statistics
+- User role breakdown
+- Quick action links
+
+#### Manager Capabilities
+- **Users** - Manage subordinate employees (block/unblock)
+- **Inventory** - Full CRUD for products (add, edit, delete, activate/deactivate, delete permanently)
+  - **AI Image Generation** - Generate product images using Gemini 2.5 Flash Image (Nano Banana)
+  - **AI Video Generation** - Generate marketing videos using Veo 3.1
+- **Orders** - View and manage orders
+- **Audit Logs** - View system activity logs of customers, subordinate employees, and themselves
+- **Customer View** - Preview the customer experience
+
+---
+
+### Admin Experience
+
+Admins have full system access and control.
+
+#### Admin Dashboard
+Access via `/admin/dashboard` after login. Displays:
+- Total users, orders, and items
+- Active/inactive items count
+- Low stock alerts
+- Order statistics (pending, delivered)
+- User role breakdown
+- Audit log activity (last 24 hours)
+
+#### Admin Capabilities
+- **Users** - Manage all users (change roles, block/unblock, assign managers)
+- **Inventory** - Full CRUD for products (add, edit, delete, activate/deactivate, delete permanently)
+  - **AI Image Generation** - Generate product images using Gemini 2.5 Flash Image (Nano Banana)
+  - **AI Video Generation** - Generate marketing videos using Veo 3.1
+- **Orders** - View all orders and update delivery status
+- **Audit Logs** - Complete system activity log with filtering of all users
+- **Customer View** - Preview the customer experience
 
 ---
 
@@ -436,14 +633,12 @@ CS160 Project Team 6
 - Verify `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` is set in `frontend/.env.local`
 - Ensure **Places API**, **Maps JavaScript API**, and **Geocoding API** are enabled in Google Cloud Console
 - Restart the frontend dev server after adding the API key: `npm run dev`
-- See [docs/GOOGLE_MAPS_SETUP.md](docs/GOOGLE_MAPS_SETUP.md) for complete setup guide
 
 ### AI image generation not working
 - Verify `GEMINI_API_KEY` is set in `backend/.env`
 - Check your API quota at https://ai.dev/usage?tab=rate-limit
 - Free tier has strict limits - wait 20-30 seconds between requests
 - Consider upgrading to paid tier for production use
-- See [docs/AI_IMAGE_GENERATION.md](docs/AI_IMAGE_GENERATION.md) for setup and troubleshooting
 
 ### AI video generation not working
 - Verify `GEMINI_API_KEY` is set in `backend/.env` (same key as image generation)
@@ -451,22 +646,13 @@ CS160 Project Team 6
 - Check your API quota and billing at https://ai.google.dev/pricing
 - Generation takes 30-60 seconds - use async endpoint for better UX
 - Test the API health: `GET /api/admin/video/health`
-- Run test script (from backend directory): `python test_video_generation.py`
-- See [backend/docs/api/VIDEO_API.md](backend/docs/api/VIDEO_API.md) for complete API documentation
 
 ---
 
 ## 📚 Documentation
 
-For more detailed information about specific features:
+For more detailed information about the API:
 
-- **[docs/AI_IMAGE_GENERATION.md](docs/AI_IMAGE_GENERATION.md)** - AI image generation setup and usage guide
-- **[backend/docs/api/VIDEO_API.md](backend/docs/api/VIDEO_API.md)** - AI video generation API documentation 
-- **[docs/PROFILE_IMPLEMENTATION_SUMMARY.md](docs/PROFILE_IMPLEMENTATION_SUMMARY.md)** - User profile, address selector, map integration
-- **[docs/GOOGLE_MAPS_SETUP.md](docs/GOOGLE_MAPS_SETUP.md)** - Google Maps API setup guide
-- **[docs/ADMIN.md](docs/ADMIN.md)** - Admin panel and role-based access control
-- **[docs/IMPLEMENTATION_SUMMARY.md](docs/IMPLEMENTATION_SUMMARY.md)** - Admin RBAC implementation details
-- **[docs/AUTHENTICATION_INTEGRATION.md](docs/AUTHENTICATION_INTEGRATION.md)** - Authentication system details
-- **[backend/docs/](backend/docs/)** - API documentation and search implementation
+- **[backend/docs/api/API.md](backend/docs/api/API.md)** - Complete API endpoint documentation
 
 ---
