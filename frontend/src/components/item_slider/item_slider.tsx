@@ -70,6 +70,7 @@ function Item({ item }: { item: ItemT }) {
 export default function ItemSlider({ title, items }: { title: string, items: ItemT[] }) {
     const swiperRef = useRef<SwiperClass>(null);
     const currItems: ItemT[] = items;
+    const canLoop = currItems.length > 3;
 
     const slideNext = () => {
         swiperRef.current?.slideNext();
@@ -97,7 +98,8 @@ export default function ItemSlider({ title, items }: { title: string, items: Ite
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.99 }}
                         onClick={slidePrev}
-                        className="rounded-full hover:bg-bg-medium p-1">
+                        disabled={!canLoop}
+                        className={`rounded-full hover:bg-bg-medium p-1 ${!canLoop ? 'opacity-30 cursor-not-allowed' : ''}`}>
                         <ChevronLeft width={20} height={20} className="text-fg-dark" />
                     </motion.button>
                 </div>
@@ -112,7 +114,7 @@ export default function ItemSlider({ title, items }: { title: string, items: Ite
                     mousewheel={true}
                     modules={[Navigation, Mousewheel]}
                     cssMode={true}
-                    loop={true}
+                    loop={canLoop}
                     className="w-full"
                     onSwiper={(swiper) => (swiperRef.current = swiper)}
                 >
@@ -127,7 +129,8 @@ export default function ItemSlider({ title, items }: { title: string, items: Ite
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.99 }}
                         onClick={slideNext}
-                        className="rounded-full hover:bg-bg-medium p-1">
+                        disabled={!canLoop}
+                        className={`rounded-full hover:bg-bg-medium p-1 ${!canLoop ? 'opacity-30 cursor-not-allowed' : ''}`}>
                         <ChevronRight width={20} height={20} className="text-fg-dark" />
                     </motion.button>
                 </div>
