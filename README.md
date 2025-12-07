@@ -247,7 +247,7 @@ cs160-project/
   - Three image options: URL, file upload, or AI generation
   - Specialized for food product photography
   - Automatic image optimization (JPEG, 85% quality)
-  - Admin-only access with proper authentication
+  - Admin and Manager access
 
 - **AI-Powered Video Generation** 
   - Generate professional marketing videos from text descriptions using Veo 3.1
@@ -256,6 +256,7 @@ cs160-project/
   - Two generation modes: Standard (best quality) and Fast (optimized speed)
   - Async and sync generation workflows
   - Perfect for product demos, ads, and social media content
+  - Admin and Manager access
 
 - **Smart Search**
   - Real-time autocomplete suggestions
@@ -644,7 +645,7 @@ CS160 Project Team 6
 - Verify `GEMINI_API_KEY` is set in `backend/.env` (same key as image generation)
 - Video generation requires paid API access - Veo is not available in free tier
 - Check your API quota and billing at https://ai.google.dev/pricing
-- Generation takes 30-60 seconds - use async endpoint for better UX
+- Generation takes 1-2 minutes - use async endpoint for better UX
 - Test the API health: `GET /api/admin/video/health`
 
 ---
