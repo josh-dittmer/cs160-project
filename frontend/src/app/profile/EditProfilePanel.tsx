@@ -1,11 +1,14 @@
+"use client";
+
 import "./profile.css";
 import "./profile_edit.css";
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useContext } from "react";
 import { UserInfo, updateProfile, changePassword } from "@/lib/api/profile";
 import GooglePlacesAutocomplete from "@/components/google_places_autocomplete/GooglePlacesAutocomplete";
 import toast from "react-hot-toast";
 import { validatePassword, PASSWORD_MIN_LENGTH } from "@/lib/util/password-validation";
 import { Check, X } from "lucide-react";
+import { MapsContext } from "@/contexts/maps";
 
 type Props = { 
   userData: UserInfo | null;
@@ -28,6 +31,8 @@ const states = [
 ];
 
 export default function EditProfilePanel({ userData, token, onCancel, onSuccess }: Props) {
+  const mapsContext = useContext(MapsContext);
+
   // Format phone number helper (defined before state so we can use it in initialization)
   const formatPhoneNumber = (value: string): string => {
     // Remove all non-digit characters
@@ -169,6 +174,28 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
     }
   };
 
+  const geocodeAddress = async (fullAddress: string): Promise<{ lat: number; lng: number }> => {
+    if (!mapsContext?.loaded || !window.google?.maps) {
+      throw new Error('Google Maps is not loaded. Please try again.');
+    }
+
+    const geocoder = new google.maps.Geocoder();
+    
+    return new Promise((resolve, reject) => {
+      geocoder.geocode({ address: fullAddress }, (results, status) => {
+        if (status === 'OK' && results && results[0]) {
+          const location = results[0].geometry.location;
+          resolve({
+            lat: location.lat(),
+            lng: location.lng()
+          });
+        } else {
+          reject(new Error('Failed to geocode address'));
+        }
+      });
+    });
+  };
+
   // Helper function to validate profile data
   const validateProfileData = (): boolean => {
     // Validate address was selected from autocomplete
@@ -260,10 +287,22 @@ export default function EditProfilePanel({ userData, token, onCancel, onSuccess 
     setSaving(true);
 
     try {
+      // Geocode the address to get coordinates
+      const fullAddress = [
+        formData.address,
+        formData.city,
+        formData.state,
+        formData.zipcode
+      ].filter(Boolean).join(', ');
+
+      const coords = await geocodeAddress(fullAddress);
+
       // Extract only digits from phone before sending to backend
       const dataToSend = {
         ...formData,
         phone: formData.phone ? formData.phone.replace(/\D/g, '') : formData.phone,
+        latitude: coords.lat,
+        longitude: coords.lng,
       };
       
       // Update profile
