@@ -23,7 +23,7 @@ export default function LoginPage() {
 
         try {
             const response = await login({
-                email,
+                email: email.trim().toLowerCase(),
                 password,
             });
 
