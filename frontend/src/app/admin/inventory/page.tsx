@@ -260,7 +260,12 @@ export default function InventoryManagement() {
                                     Inactive
                                 </div>
                             )}
-                            {item.stock_qty <= 10 && item.is_active && (
+                            {item.is_active && item.stock_qty === 0 && (
+                                <div className="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded text-xs font-semibold">
+                                    Out of Stock
+                                </div>
+                            )}
+                            {item.is_active && item.stock_qty > 0 && item.stock_qty <= 10 && (
                                 <div className="absolute top-2 right-2 bg-yellow-500 text-white px-2 py-1 rounded text-xs font-semibold">
                                     Low Stock
                                 </div>
