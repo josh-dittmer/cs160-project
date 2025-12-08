@@ -6,7 +6,6 @@ from google.auth.transport import requests as google_requests
 from authlib.integrations.starlette_client import OAuth
 from starlette.requests import Request
 from starlette.responses import RedirectResponse, Response
-from geopy.distance import geodesic
 
 from ..database import get_db
 from ..models import User
@@ -392,21 +391,8 @@ def update_profile(
             detail="User not found",
         )
     
-    # Validate address
+    # Validate address is in San Jose
     if profile_data.city != "San Jose":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid address",
-        )
-    
-    # Ensure reported latitude and longitude are near San Jose
-    san_jose_coords = (37.3387, -121.8853)
-    provided_coords = (profile_data.latitude, profile_data.longitude)
-
-    distance_miles = geodesic(san_jose_coords, provided_coords).miles
-
-    # Radius ~10 miles from center
-    if distance_miles >= 10:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid address",
