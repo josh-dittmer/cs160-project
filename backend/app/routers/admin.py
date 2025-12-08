@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, or_, func
 
 from ..database import get_db
-from ..models import User, Item, Order, OrderItem, AuditLog, CartItem, Review, OrderStatus
+from ..models import User, Item, Order, OrderItem, AuditLog, CartItem, Review, OrderStatus, Favorite
 from ..audit import create_audit_log, get_actor_ip
 from ..cart import adjust_carts_for_stock_change
 from ..schemas import (
@@ -1000,6 +1000,7 @@ def permanently_delete_item(
     review_count = db.query(func.count(Review.id)).filter(Review.item_id == item_id).scalar() or 0
     cart_count = db.query(func.count(CartItem.id)).filter(CartItem.item_id == item_id).scalar() or 0
     order_item_count = db.query(func.count(OrderItem.id)).filter(OrderItem.item_id == item_id).scalar() or 0
+    favorite_count = db.query(func.count()).select_from(Favorite).filter(Favorite.item_id == item_id).scalar() or 0
     
     # Store item details before deletion (important for permanent deletes!)
     item_details = {
@@ -1013,6 +1014,7 @@ def permanently_delete_item(
             "reviews": review_count,
             "cart_items": cart_count,
             "order_items": order_item_count,
+            "favorites": favorite_count,
         }
     }
     
@@ -1041,7 +1043,11 @@ def permanently_delete_item(
     if order_item_count > 0:
         db.query(OrderItem).filter(OrderItem.item_id == item_id).delete()
     
-    # 4. Finally delete the item itself
+    # 4. Delete favorites
+    if favorite_count > 0:
+        db.query(Favorite).filter(Favorite.item_id == item_id).delete()
+    
+    # 5. Finally delete the item itself
     db.delete(item)
     db.commit()
     
@@ -1063,6 +1069,7 @@ def permanently_delete_item(
             "reviews": review_count,
             "cart_items": cart_count,
             "order_items": order_item_count,
+            "favorites": favorite_count,
         }
     }
 
