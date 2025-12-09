@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, or_, func
 
 from ..database import get_db
-from ..models import User, Item, Order, OrderItem
+from ..models import User, Item, Order, OrderItem, OrderStatus
 from ..audit import create_audit_log, get_actor_ip
 from ..cart import adjust_carts_for_stock_change
 from ..schemas import (
@@ -162,7 +162,7 @@ def update_item_stock(
 @router.get("/orders", response_model=List[OrderListEmployee])
 def list_orders_employee(
     query: Optional[str] = Query(None, description="Search by order ID, user email, or payment intent ID"),
-    status_filter: str = Query("all", description="Filter by status: all, delivered, pending"),
+    status_filter: str = Query("all", description="Filter by status: all, delivered, pending, canceled"),
     user_id: Optional[int] = Query(None, description="Filter by user ID"),
     from_date: Optional[str] = Query(None, description="Filter orders from date (ISO format)"),
     to_date: Optional[str] = Query(None, description="Filter orders to date (ISO format)"),
@@ -186,20 +186,23 @@ def list_orders_employee(
             Order.created_at,
             Order.delivered_at,
             Order.payment_intent_id,
+            Order.status,
             func.count(OrderItem.id).label("total_items"),
             func.sum(Item.price_cents * OrderItem.quantity).label("total_cents"),
         )
         .join(User, Order.user_id == User.id)
         .join(OrderItem, Order.id == OrderItem.order_id)
         .join(Item, OrderItem.item_id == Item.id)
-        .group_by(Order.id, Order.user_id, User.email, User.full_name, Order.created_at, Order.delivered_at, Order.payment_intent_id)
+        .group_by(Order.id, Order.user_id, User.email, User.full_name, Order.created_at, Order.delivered_at, Order.payment_intent_id, Order.status)
     )
     
     # Filter by delivery status
     if status_filter == "delivered":
-        stmt = stmt.where(Order.delivered_at.isnot(None))
+        stmt = stmt.where(Order.status == OrderStatus.DELIVERED)
     elif status_filter == "pending":
-        stmt = stmt.where(Order.delivered_at.is_(None))
+        stmt = stmt.where(Order.status.in_([OrderStatus.PACKING, OrderStatus.SHIPPED]))
+    elif status_filter == "canceled":
+        stmt = stmt.where(Order.status == OrderStatus.CANCELED)
     
     # Filter by user ID
     if user_id:
@@ -261,6 +264,7 @@ def list_orders_employee(
             delivered_at=row.delivered_at,
             payment_intent_id=row.payment_intent_id,
             is_delivered=row.delivered_at is not None,
+            status=row.status.value,
         ))
     
     return orders
@@ -331,5 +335,6 @@ def get_order_detail_employee(
         delivered_at=order.delivered_at,
         payment_intent_id=order.payment_intent_id,
         is_delivered=order.delivered_at is not None,
+        status=order.status.value,
     )
 

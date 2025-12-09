@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useAuth } from '@/contexts/auth';
-import { listOrders, OrderListEmployee } from '@/lib/api/employee';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/auth";
+import { listOrders, OrderListEmployee } from "@/lib/api/employee";
+import { useRouter } from "next/navigation";
 
 export default function EmployeeOrdersPage() {
   const { token, user, isReady } = useAuth();
@@ -11,8 +11,10 @@ export default function EmployeeOrdersPage() {
   const [orders, setOrders] = useState<OrderListEmployee[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'delivered' | 'pending'>('all');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "delivered" | "pending" | "canceled"
+  >("all");
 
   useEffect(() => {
     if (!isReady) {
@@ -20,12 +22,12 @@ export default function EmployeeOrdersPage() {
     }
 
     if (!token) {
-      router.push('/login');
+      router.push("/login");
       return;
     }
 
-    if (user && !['employee', 'manager', 'admin'].includes(user.role)) {
-      router.push('/home/dashboard');
+    if (user && !["employee", "manager", "admin"].includes(user.role)) {
+      router.push("/home/dashboard");
       return;
     }
 
@@ -45,7 +47,7 @@ export default function EmployeeOrdersPage() {
       });
       setOrders(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load orders');
+      setError(err instanceof Error ? err.message : "Failed to load orders");
     } finally {
       setLoading(false);
     }
@@ -56,13 +58,13 @@ export default function EmployeeOrdersPage() {
   };
 
   const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -110,7 +112,7 @@ export default function EmployeeOrdersPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') handleSearch();
+              if (e.key === "Enter") handleSearch();
             }}
             className="px-4 py-2 border border-gray-300 rounded-lg w-80"
           />
@@ -124,12 +126,17 @@ export default function EmployeeOrdersPage() {
 
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as 'all' | 'delivered' | 'pending')}
+          onChange={(e) =>
+            setStatusFilter(
+              e.target.value as "all" | "delivered" | "pending" | "canceled"
+            )
+          }
           className="px-4 py-2 border border-gray-300 rounded-lg"
         >
           <option value="all">All Orders</option>
           <option value="pending">Pending</option>
           <option value="delivered">Delivered</option>
+          <option value="canceled">Cancelled</option>
         </select>
       </div>
 
@@ -173,12 +180,15 @@ export default function EmployeeOrdersPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
-                      {order.user_full_name || 'N/A'}
+                      {order.user_full_name || "N/A"}
                     </div>
-                    <div className="text-sm text-gray-500">{order.user_email}</div>
+                    <div className="text-sm text-gray-500">
+                      {order.user_email}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {order.total_items} {order.total_items === 1 ? 'item' : 'items'}
+                    {order.total_items}{" "}
+                    {order.total_items === 1 ? "item" : "items"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {formatCurrency(order.total_cents)}
@@ -187,7 +197,11 @@ export default function EmployeeOrdersPage() {
                     {formatDate(order.created_at)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {order.is_delivered ? (
+                    {order.status === "canceled" ? (
+                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                        CANCELLED
+                      </span>
+                    ) : order.status === "delivered" ? (
                       <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                         Delivered
                       </span>
@@ -207,11 +221,10 @@ export default function EmployeeOrdersPage() {
       {/* Info Message */}
       <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <p className="text-sm text-blue-800">
-          <strong>Note:</strong> You have read-only access to orders. You can view order information
-          but cannot modify order status.
+          <strong>Note:</strong> You have read-only access to orders. You can
+          view order information but cannot modify order status.
         </p>
       </div>
     </div>
   );
 }
-

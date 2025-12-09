@@ -1079,7 +1079,7 @@ def permanently_delete_item(
 @router.get("/orders", response_model=List[OrderListAdmin])
 def list_orders(
     query: Optional[str] = Query(None, description="Search by order ID, user email, or payment intent ID"),
-    status_filter: str = Query("all", description="Filter by status: all, delivered, pending"),
+    status_filter: str = Query("all", description="Filter by status: all, delivered, pending, canceled"),
     user_id: Optional[int] = Query(None, description="Filter by user ID"),
     from_date: Optional[str] = Query(None, description="Filter orders from date (ISO format)"),
     to_date: Optional[str] = Query(None, description="Filter orders to date (ISO format)"),
@@ -1102,20 +1102,23 @@ def list_orders(
             Order.created_at,
             Order.delivered_at,
             Order.payment_intent_id,
+            Order.status,
             func.count(OrderItem.id).label("total_items"),
             func.sum(Item.price_cents * OrderItem.quantity).label("total_cents"),
         )
         .join(User, Order.user_id == User.id)
         .join(OrderItem, Order.id == OrderItem.order_id)
         .join(Item, OrderItem.item_id == Item.id)
-        .group_by(Order.id, Order.user_id, User.email, User.full_name, Order.created_at, Order.delivered_at, Order.payment_intent_id)
+        .group_by(Order.id, Order.user_id, User.email, User.full_name, Order.created_at, Order.delivered_at, Order.payment_intent_id, Order.status)
     )
     
     # Filter by delivery status
     if status_filter == "delivered":
-        stmt = stmt.where(Order.delivered_at.isnot(None))
+        stmt = stmt.where(Order.status == OrderStatus.DELIVERED)
     elif status_filter == "pending":
-        stmt = stmt.where(Order.delivered_at.is_(None))
+        stmt = stmt.where(Order.status.in_([OrderStatus.PACKING, OrderStatus.SHIPPED]))
+    elif status_filter == "canceled":
+        stmt = stmt.where(Order.status == OrderStatus.CANCELED)
     
     # Filter by user ID
     if user_id:
@@ -1177,6 +1180,7 @@ def list_orders(
             delivered_at=row.delivered_at,
             payment_intent_id=row.payment_intent_id,
             is_delivered=row.delivered_at is not None,
+            status=row.status.value,
         ))
     
     return orders
@@ -1246,6 +1250,7 @@ def get_order_detail(
         delivered_at=order.delivered_at,
         payment_intent_id=order.payment_intent_id,
         is_delivered=order.delivered_at is not None,
+        status=order.status.value,
     )
 
 
@@ -1261,12 +1266,20 @@ def update_order_status(
     Update order delivery status.
     Sets delivered_at to current time if marking as delivered, or None if marking as pending.
     Manager or admin only.
+    Cannot update canceled orders.
     """
     order = db.get(Order, order_id)
     if not order:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Order not found",
+        )
+    
+    # Prevent updates to canceled orders
+    if order.status == OrderStatus.CANCELED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot update a canceled order. Canceled orders are final.",
         )
     
     # Store old values for audit log

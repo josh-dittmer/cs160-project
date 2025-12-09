@@ -121,6 +121,11 @@ async def vehicle_websocket(
                     for v in r.visits:
                         i = v.shipment_index
 
+                        # Safety check: ensure order is still in PACKING status (hasn't been canceled)
+                        if orders[i].status != OrderStatus.PACKING:
+                            print(f"Warning: Order {orders[i].id} status changed from PACKING, skipping...")
+                            continue
+
                         orders[i].delivery_vehicle_id = vehicle.id
                         orders[i].status = OrderStatus.SHIPPED
                         orders[i].polyline = r.route_polyline.points

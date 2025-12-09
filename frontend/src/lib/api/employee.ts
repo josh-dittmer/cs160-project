@@ -1,6 +1,6 @@
 // API utilities for employee operations
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // ============ Types ============
 
@@ -50,6 +50,7 @@ export interface OrderListEmployee {
   delivered_at: string | null;
   payment_intent_id: string | null;
   is_delivered: boolean;
+  status: string;
 }
 
 export interface OrderDetailEmployee {
@@ -62,6 +63,7 @@ export interface OrderDetailEmployee {
   delivered_at: string | null;
   payment_intent_id: string | null;
   is_delivered: boolean;
+  status: string;
 }
 
 // ============ Inventory Management (Limited Access) ============
@@ -69,7 +71,7 @@ export interface OrderDetailEmployee {
 export interface ListItemsParams {
   query?: string;
   category?: string;
-  status?: 'active' | 'inactive' | 'all';
+  status?: "active" | "inactive" | "all";
   low_stock_threshold?: number;
   limit?: number;
   offset?: number;
@@ -80,28 +82,33 @@ export async function listItems(
   params: ListItemsParams = {}
 ): Promise<ItemEmployee[]> {
   const searchParams = new URLSearchParams();
-  
-  if (params.query) searchParams.append('query', params.query);
-  if (params.category) searchParams.append('category', params.category);
-  if (params.status) searchParams.append('status', params.status);
-  if (params.low_stock_threshold !== undefined) {
-    searchParams.append('low_stock_threshold', params.low_stock_threshold.toString());
-  }
-  if (params.limit) searchParams.append('limit', params.limit.toString());
-  if (params.offset) searchParams.append('offset', params.offset.toString());
 
-  const url = `${API_BASE_URL}/api/employee/items${searchParams.toString() ? '?' + searchParams.toString() : ''}`;
-  
+  if (params.query) searchParams.append("query", params.query);
+  if (params.category) searchParams.append("category", params.category);
+  if (params.status) searchParams.append("status", params.status);
+  if (params.low_stock_threshold !== undefined) {
+    searchParams.append(
+      "low_stock_threshold",
+      params.low_stock_threshold.toString()
+    );
+  }
+  if (params.limit) searchParams.append("limit", params.limit.toString());
+  if (params.offset) searchParams.append("offset", params.offset.toString());
+
+  const url = `${API_BASE_URL}/api/employee/items${
+    searchParams.toString() ? "?" + searchParams.toString() : ""
+  }`;
+
   const response = await fetch(url, {
-    method: 'GET',
+    method: "GET",
     headers: {
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Failed to fetch items');
+    throw new Error(error.detail || "Failed to fetch items");
   }
 
   return response.json();
@@ -109,31 +116,34 @@ export async function listItems(
 
 export async function getCategories(token: string): Promise<string[]> {
   const response = await fetch(`${API_BASE_URL}/api/employee/categories`, {
-    method: 'GET',
+    method: "GET",
     headers: {
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Failed to fetch categories');
+    throw new Error(error.detail || "Failed to fetch categories");
   }
 
   return response.json();
 }
 
-export async function getItem(token: string, itemId: number): Promise<ItemEmployee> {
+export async function getItem(
+  token: string,
+  itemId: number
+): Promise<ItemEmployee> {
   const response = await fetch(`${API_BASE_URL}/api/employee/items/${itemId}`, {
-    method: 'GET',
+    method: "GET",
     headers: {
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Failed to fetch item');
+    throw new Error(error.detail || "Failed to fetch item");
   }
 
   return response.json();
@@ -144,18 +154,21 @@ export async function updateItemStock(
   itemId: number,
   stockQty: number
 ): Promise<ItemEmployee> {
-  const response = await fetch(`${API_BASE_URL}/api/employee/items/${itemId}/stock`, {
-    method: 'PUT',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ stock_qty: stockQty }),
-  });
+  const response = await fetch(
+    `${API_BASE_URL}/api/employee/items/${itemId}/stock`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ stock_qty: stockQty }),
+    }
+  );
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Failed to update item stock');
+    throw new Error(error.detail || "Failed to update item stock");
   }
 
   return response.json();
@@ -165,7 +178,7 @@ export async function updateItemStock(
 
 export interface ListOrdersParams {
   query?: string;
-  status_filter?: 'all' | 'delivered' | 'pending';
+  status_filter?: "all" | "delivered" | "pending" | "canceled";
   user_id?: number;
   from_date?: string;
   to_date?: string;
@@ -178,27 +191,30 @@ export async function listOrders(
   params: ListOrdersParams = {}
 ): Promise<OrderListEmployee[]> {
   const searchParams = new URLSearchParams();
-  
-  if (params.query) searchParams.append('query', params.query);
-  if (params.status_filter) searchParams.append('status_filter', params.status_filter);
-  if (params.user_id) searchParams.append('user_id', params.user_id.toString());
-  if (params.from_date) searchParams.append('from_date', params.from_date);
-  if (params.to_date) searchParams.append('to_date', params.to_date);
-  if (params.limit) searchParams.append('limit', params.limit.toString());
-  if (params.offset) searchParams.append('offset', params.offset.toString());
 
-  const url = `${API_BASE_URL}/api/employee/orders${searchParams.toString() ? '?' + searchParams.toString() : ''}`;
-  
+  if (params.query) searchParams.append("query", params.query);
+  if (params.status_filter)
+    searchParams.append("status_filter", params.status_filter);
+  if (params.user_id) searchParams.append("user_id", params.user_id.toString());
+  if (params.from_date) searchParams.append("from_date", params.from_date);
+  if (params.to_date) searchParams.append("to_date", params.to_date);
+  if (params.limit) searchParams.append("limit", params.limit.toString());
+  if (params.offset) searchParams.append("offset", params.offset.toString());
+
+  const url = `${API_BASE_URL}/api/employee/orders${
+    searchParams.toString() ? "?" + searchParams.toString() : ""
+  }`;
+
   const response = await fetch(url, {
-    method: 'GET',
+    method: "GET",
     headers: {
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Failed to fetch orders');
+    throw new Error(error.detail || "Failed to fetch orders");
   }
 
   return response.json();
@@ -208,18 +224,20 @@ export async function getOrderDetail(
   token: string,
   orderId: number
 ): Promise<OrderDetailEmployee> {
-  const response = await fetch(`${API_BASE_URL}/api/employee/orders/${orderId}`, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-  });
+  const response = await fetch(
+    `${API_BASE_URL}/api/employee/orders/${orderId}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Failed to fetch order details');
+    throw new Error(error.detail || "Failed to fetch order details");
   }
 
   return response.json();
 }
-

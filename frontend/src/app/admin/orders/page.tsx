@@ -1,30 +1,34 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { useAuth } from '@/contexts/auth';
-import toast from 'react-hot-toast';
-import { 
-  listOrders, 
-  getOrderDetail, 
+import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/auth";
+import toast from "react-hot-toast";
+import {
+  listOrders,
+  getOrderDetail,
   updateOrderStatus,
   OrderListAdmin,
-  OrderDetailAdmin 
-} from '@/lib/api/admin';
+  OrderDetailAdmin,
+} from "@/lib/api/admin";
 
 export default function OrdersManagement() {
   const { token } = useAuth();
   const [orders, setOrders] = useState<OrderListAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Filters
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'delivered' | 'pending'>('all');
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
-  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "delivered" | "pending" | "canceled"
+  >("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+
   // Selected order for detail modal
-  const [selectedOrder, setSelectedOrder] = useState<OrderDetailAdmin | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<OrderDetailAdmin | null>(
+    null
+  );
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
 
@@ -47,7 +51,7 @@ export default function OrdersManagement() {
       });
       setOrders(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch orders');
+      setError(err instanceof Error ? err.message : "Failed to fetch orders");
     } finally {
       setLoading(false);
     }
@@ -64,21 +68,30 @@ export default function OrdersManagement() {
       setSelectedOrder(detail);
       setShowDetailModal(true);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to fetch order details');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to fetch order details"
+      );
     } finally {
       setDetailLoading(false);
     }
   };
 
-  const handleToggleDeliveryStatus = async (orderId: number, currentStatus: boolean) => {
-    if (!confirm(`Mark order #${orderId} as ${currentStatus ? 'pending' : 'delivered'}?`)) {
+  const handleToggleDeliveryStatus = async (
+    orderId: number,
+    currentStatus: boolean
+  ) => {
+    if (
+      !confirm(
+        `Mark order #${orderId} as ${currentStatus ? "pending" : "delivered"}?`
+      )
+    ) {
       return;
     }
 
     try {
       const markingDelivered = !currentStatus;
       await updateOrderStatus(token!, orderId, markingDelivered, {
-        status: markingDelivered ? 'delivered' : 'packing',
+        status: markingDelivered ? "delivered" : "packing",
         deliveryVehicleId: markingDelivered ? null : undefined,
       });
       // Refresh the orders list
@@ -89,7 +102,9 @@ export default function OrdersManagement() {
         setSelectedOrder(detail);
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to update order status');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to update order status"
+      );
     }
   };
 
@@ -98,12 +113,12 @@ export default function OrdersManagement() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+    return new Date(dateString).toLocaleString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -120,7 +135,7 @@ export default function OrdersManagement() {
       {/* Filters */}
       <div className="bg-white shadow rounded-lg p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Filters</h3>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Search */}
           <div>
@@ -133,7 +148,7 @@ export default function OrdersManagement() {
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Order ID, email, payment ID"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
             />
           </div>
 
@@ -150,6 +165,7 @@ export default function OrdersManagement() {
               <option value="all">All Orders</option>
               <option value="pending">Pending Delivery</option>
               <option value="delivered">Delivered</option>
+              <option value="canceled">Cancelled</option>
             </select>
           </div>
 
@@ -189,10 +205,10 @@ export default function OrdersManagement() {
           </button>
           <button
             onClick={() => {
-              setSearchQuery('');
-              setStatusFilter('all');
-              setFromDate('');
-              setToDate('');
+              setSearchQuery("");
+              setStatusFilter("all");
+              setFromDate("");
+              setToDate("");
               fetchOrders();
             }}
             className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
@@ -218,13 +234,17 @@ export default function OrdersManagement() {
         <div className="bg-white shadow rounded-lg p-4 border-l-4 border-green-500">
           <p className="text-sm text-gray-600">Delivered</p>
           <p className="text-2xl font-bold text-gray-900">
-            {orders.filter(o => o.is_delivered).length}
+            {orders.filter((o) => o.status === "delivered").length}
           </p>
         </div>
         <div className="bg-white shadow rounded-lg p-4 border-l-4 border-yellow-500">
           <p className="text-sm text-gray-600">Pending</p>
           <p className="text-2xl font-bold text-gray-900">
-            {orders.filter(o => !o.is_delivered).length}
+            {
+              orders.filter(
+                (o) => o.status === "packing" || o.status === "shipped"
+              ).length
+            }
           </p>
         </div>
       </div>
@@ -232,7 +252,9 @@ export default function OrdersManagement() {
       {/* Orders Table */}
       <div className="bg-white shadow rounded-lg overflow-hidden">
         {loading ? (
-          <div className="text-center py-8 text-gray-500">Loading orders...</div>
+          <div className="text-center py-8 text-gray-500">
+            Loading orders...
+          </div>
         ) : orders.length === 0 ? (
           <div className="text-center py-8 text-gray-500">No orders found</div>
         ) : (
@@ -270,9 +292,13 @@ export default function OrdersManagement() {
                       #{order.id}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{order.user_email}</div>
+                      <div className="text-sm text-gray-900">
+                        {order.user_email}
+                      </div>
                       {order.user_full_name && (
-                        <div className="text-sm text-gray-500">{order.user_full_name}</div>
+                        <div className="text-sm text-gray-500">
+                          {order.user_full_name}
+                        </div>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -285,7 +311,11 @@ export default function OrdersManagement() {
                       {formatDate(order.created_at)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {order.is_delivered ? (
+                      {order.status === "canceled" ? (
+                        <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                          Canceled
+                        </span>
+                      ) : order.is_delivered ? (
                         <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                           Delivered
                         </span>
@@ -303,14 +333,22 @@ export default function OrdersManagement() {
                         View
                       </button>
                       <button
-                        onClick={() => handleToggleDeliveryStatus(order.id, order.is_delivered)}
+                        onClick={() =>
+                          handleToggleDeliveryStatus(
+                            order.id,
+                            order.is_delivered
+                          )
+                        }
+                        disabled={order.status === "canceled"}
                         className={`${
-                          order.is_delivered
-                            ? 'text-yellow-600 hover:text-yellow-900'
-                            : 'text-green-600 hover:text-green-900'
+                          order.status === "canceled"
+                            ? "text-gray-400 cursor-not-allowed"
+                            : order.is_delivered
+                            ? "text-yellow-600 hover:text-yellow-900"
+                            : "text-green-600 hover:text-green-900"
                         }`}
                       >
-                        {order.is_delivered ? 'Mark Pending' : 'Mark Delivered'}
+                        {order.is_delivered ? "Mark Pending" : "Mark Delivered"}
                       </button>
                     </td>
                   </tr>
@@ -327,9 +365,26 @@ export default function OrdersManagement() {
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
               <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold text-gray-900">
-                  Order #{selectedOrder.id}
-                </h3>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">
+                    Order #{selectedOrder.id}
+                  </h3>
+                  <div className="mt-2">
+                    {selectedOrder.status === "canceled" ? (
+                      <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                        Canceled
+                      </span>
+                    ) : selectedOrder.is_delivered ? (
+                      <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                        Delivered
+                      </span>
+                    ) : (
+                      <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                        Pending
+                      </span>
+                    )}
+                  </div>
+                </div>
                 <button
                   onClick={() => setShowDetailModal(false)}
                   className="text-gray-400 hover:text-gray-600 text-2xl"
@@ -342,14 +397,20 @@ export default function OrdersManagement() {
             <div className="p-6 space-y-6">
               {/* Customer Info */}
               <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">Customer Information</h4>
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                  Customer Information
+                </h4>
                 <div className="bg-gray-50 rounded-lg p-4">
                   <p className="text-sm text-gray-600">Email:</p>
-                  <p className="text-sm font-medium text-gray-900">{selectedOrder.user.email}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {selectedOrder.user.email}
+                  </p>
                   {selectedOrder.user.full_name && (
                     <>
                       <p className="text-sm text-gray-600 mt-2">Name:</p>
-                      <p className="text-sm font-medium text-gray-900">{selectedOrder.user.full_name}</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {selectedOrder.user.full_name}
+                      </p>
                     </>
                   )}
                 </div>
@@ -357,7 +418,9 @@ export default function OrdersManagement() {
 
               {/* Order Info */}
               <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">Order Information</h4>
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                  Order Information
+                </h4>
                 <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Created:</span>
@@ -368,7 +431,11 @@ export default function OrdersManagement() {
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Status:</span>
                     <span>
-                      {selectedOrder.is_delivered ? (
+                      {selectedOrder.status === "canceled" ? (
+                        <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                          CANCELLED
+                        </span>
+                      ) : selectedOrder.status === "delivered" ? (
                         <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                           Delivered
                         </span>
@@ -400,10 +467,15 @@ export default function OrdersManagement() {
 
               {/* Order Items */}
               <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">Order Items</h4>
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                  Order Items
+                </h4>
                 <div className="space-y-3">
                   {selectedOrder.items.map((item) => (
-                    <div key={item.id} className="flex items-center gap-4 bg-gray-50 rounded-lg p-4">
+                    <div
+                      key={item.id}
+                      className="flex items-center gap-4 bg-gray-50 rounded-lg p-4"
+                    >
                       {item.item_image_url && (
                         <img
                           src={item.item_image_url}
@@ -412,14 +484,19 @@ export default function OrdersManagement() {
                         />
                       )}
                       <div className="flex-1">
-                        <p className="font-medium text-gray-900">{item.item_name}</p>
+                        <p className="font-medium text-gray-900">
+                          {item.item_name}
+                        </p>
                         <p className="text-sm text-gray-600">
-                          Quantity: {item.quantity} × {formatCurrency(item.item_price_cents)}
+                          Quantity: {item.quantity} ×{" "}
+                          {formatCurrency(item.item_price_cents)}
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-gray-900">
-                          {formatCurrency(item.item_price_cents * item.quantity)}
+                          {formatCurrency(
+                            item.item_price_cents * item.quantity
+                          )}
                         </p>
                       </div>
                     </div>
@@ -430,7 +507,9 @@ export default function OrdersManagement() {
               {/* Totals */}
               <div className="border-t border-gray-200 pt-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold text-gray-900">Total:</span>
+                  <span className="text-lg font-semibold text-gray-900">
+                    Total:
+                  </span>
                   <span className="text-2xl font-bold text-gray-900">
                     {formatCurrency(selectedOrder.total_cents)}
                   </span>
@@ -450,15 +529,23 @@ export default function OrdersManagement() {
                 </button>
                 <button
                   onClick={() => {
-                    handleToggleDeliveryStatus(selectedOrder.id, selectedOrder.is_delivered);
+                    handleToggleDeliveryStatus(
+                      selectedOrder.id,
+                      selectedOrder.is_delivered
+                    );
                   }}
+                  disabled={selectedOrder.status === "canceled"}
                   className={`px-4 py-2 rounded-md transition-colors ${
-                    selectedOrder.is_delivered
-                      ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
-                      : 'bg-green-600 hover:bg-green-700 text-white'
+                    selectedOrder.status === "canceled"
+                      ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                      : selectedOrder.is_delivered
+                      ? "bg-yellow-600 hover:bg-yellow-700 text-white"
+                      : "bg-green-600 hover:bg-green-700 text-white"
                   }`}
                 >
-                  {selectedOrder.is_delivered ? 'Mark as Pending' : 'Mark as Delivered'}
+                  {selectedOrder.is_delivered
+                    ? "Mark as Pending"
+                    : "Mark as Delivered"}
                 </button>
               </div>
             </div>
@@ -468,4 +555,3 @@ export default function OrdersManagement() {
     </div>
   );
 }
-

@@ -213,7 +213,7 @@ class OrderOut(BaseModel):
     total_weight_oz: int
     created_at: datetime
     delivered_at: datetime | None
-    status: OrderStatus
+    status: str
     display_address: str
     latitude: float
     longitude: float
@@ -353,6 +353,7 @@ class OrderListAdmin(BaseModel):
     delivered_at: datetime | None
     payment_intent_id: str | None
     is_delivered: bool
+    status: str  # Order status: packing, shipped, delivered, canceled
     
     class Config:
         from_attributes = True
@@ -369,6 +370,7 @@ class OrderDetailAdmin(BaseModel):
     delivered_at: datetime | None
     payment_intent_id: str | None
     is_delivered: bool
+    status: str  # Order status: packing, shipped, delivered, canceled
     
     class Config:
         from_attributes = True
@@ -430,6 +432,7 @@ class OrderListEmployee(BaseModel):
     delivered_at: datetime | None
     payment_intent_id: str | None
     is_delivered: bool
+    status: str
     
     class Config:
         from_attributes = True
@@ -446,6 +449,7 @@ class OrderDetailEmployee(BaseModel):
     delivered_at: datetime | None
     payment_intent_id: str | None
     is_delivered: bool
+    status: str
     
     class Config:
         from_attributes = True

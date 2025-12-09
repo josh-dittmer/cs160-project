@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { useAuth } from '@/contexts/auth';
-import { listUsers, listItems, listOrders, getAuditLogStats } from '@/lib/api/admin';
-import Link from 'next/link';
+import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/auth";
+import {
+  listUsers,
+  listItems,
+  listOrders,
+  getAuditLogStats,
+} from "@/lib/api/admin";
+import Link from "next/link";
 
 export default function AdminDashboard() {
   const { token, user } = useAuth();
@@ -30,19 +35,19 @@ export default function AdminDashboard() {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        
+
         // Fetch users
         const users = await listUsers(token);
-        
+
         // Fetch all items (active and inactive)
-        const items = await listItems(token, { status: 'all', limit: 200 });
-        
+        const items = await listItems(token, { status: "all", limit: 200 });
+
         // Fetch orders
         const orders = await listOrders(token, { limit: 200 });
-        
+
         // Fetch audit log stats
         const auditStats = await getAuditLogStats(token);
-        
+
         // Calculate stats
         const roleCount = users.reduce((acc, user) => {
           acc[user.role] = (acc[user.role] || 0) + 1;
@@ -52,20 +57,26 @@ export default function AdminDashboard() {
         setStats({
           totalUsers: users.length,
           totalItems: items.length,
-          activeItems: items.filter(item => item.is_active).length,
-          inactiveItems: items.filter(item => !item.is_active).length,
-          lowStockItems: items.filter(item => item.stock_qty <= 10 && item.is_active).length,
-          adminCount: roleCount['admin'] || 0,
-          employeeCount: roleCount['employee'] || 0,
-          managerCount: roleCount['manager'] || 0,
-          customerCount: roleCount['customer'] || 0,
+          activeItems: items.filter((item) => item.is_active).length,
+          inactiveItems: items.filter((item) => !item.is_active).length,
+          lowStockItems: items.filter(
+            (item) => item.stock_qty <= 10 && item.is_active
+          ).length,
+          adminCount: roleCount["admin"] || 0,
+          employeeCount: roleCount["employee"] || 0,
+          managerCount: roleCount["manager"] || 0,
+          customerCount: roleCount["customer"] || 0,
           totalOrders: orders.length,
-          pendingOrders: orders.filter(order => !order.is_delivered).length,
-          deliveredOrders: orders.filter(order => order.is_delivered).length,
+          pendingOrders: orders.filter(
+            (order) => order.status === "packing" || order.status === "shipped"
+          ).length,
+          deliveredOrders: orders.filter(
+            (order) => order.status === "delivered"
+          ).length,
           auditLogsLast24h: auditStats.logs_last_24h,
         });
       } catch (error) {
-        console.error('Failed to fetch stats:', error);
+        console.error("Failed to fetch stats:", error);
       } finally {
         setLoading(false);
       }
@@ -76,11 +87,11 @@ export default function AdminDashboard() {
 
   const getColorClasses = (color: string) => {
     const colorMap: Record<string, { text: string; border: string }> = {
-      black: { text: 'text-gray-900', border: 'border-gray-900' },
-      yellow: { text: 'text-yellow-600', border: 'border-yellow-500' },
-      red: { text: 'text-red-600', border: 'border-red-500' },
-      green: { text: 'text-green-600', border: 'border-green-500' },
-      blue: { text: 'text-blue-600', border: 'border-blue-500' },
+      black: { text: "text-gray-900", border: "border-gray-900" },
+      yellow: { text: "text-yellow-600", border: "border-yellow-500" },
+      red: { text: "text-red-600", border: "border-red-500" },
+      green: { text: "text-green-600", border: "border-green-500" },
+      blue: { text: "text-blue-600", border: "border-blue-500" },
     };
     return colorMap[color] || colorMap.black;
   };
@@ -90,24 +101,79 @@ export default function AdminDashboard() {
   }
 
   const statCards = [
-    { label: 'Total Users', value: stats.totalUsers, color: 'black', link: '/admin/users' },
-    { label: 'Total Orders', value: stats.totalOrders, color: 'black', link: '/admin/orders' },
-    { label: 'Total Items', value: stats.totalItems, color: 'black', link: '/admin/inventory?status=all' },
-    { label: 'Active Items', value: stats.activeItems, color: 'black', link: '/admin/inventory?status=active' },
-    { label: 'Low Stock Items', value: stats.lowStockItems, color: stats.lowStockItems >= 1 ? 'yellow' : 'black', link: '/admin/inventory?lowStock=true' },
+    {
+      label: "Total Users",
+      value: stats.totalUsers,
+      color: "black",
+      link: "/admin/users",
+    },
+    {
+      label: "Total Orders",
+      value: stats.totalOrders,
+      color: "black",
+      link: "/admin/orders",
+    },
+    {
+      label: "Total Items",
+      value: stats.totalItems,
+      color: "black",
+      link: "/admin/inventory?status=all",
+    },
+    {
+      label: "Active Items",
+      value: stats.activeItems,
+      color: "black",
+      link: "/admin/inventory?status=active",
+    },
+    {
+      label: "Low Stock Items",
+      value: stats.lowStockItems,
+      color: stats.lowStockItems >= 1 ? "yellow" : "black",
+      link: "/admin/inventory?lowStock=true",
+    },
   ];
 
   const orderCards = [
-    { label: 'Total Orders', value: stats.totalOrders, color: 'black', link: '/admin/orders' },
-    { label: 'Pending Delivery', value: stats.pendingOrders, color: 'black', link: '/admin/orders?status=pending' },
-    { label: 'Delivered', value: stats.deliveredOrders, color: 'black', link: '/admin/orders?status=delivered' },
+    {
+      label: "Total Orders",
+      value: stats.totalOrders,
+      color: "black",
+      link: "/admin/orders",
+    },
+    {
+      label: "Pending Delivery",
+      value: stats.pendingOrders,
+      color: "black",
+      link: "/admin/orders?status=pending",
+    },
+    {
+      label: "Delivered",
+      value: stats.deliveredOrders,
+      color: "black",
+      link: "/admin/orders?status=delivered",
+    },
   ];
 
   const userRoleCards = [
-    { label: 'Admins', value: stats.adminCount, color: 'black', role: 'admin' },
-    { label: 'Employees', value: stats.employeeCount, color: 'black', role: 'employee' },
-    { label: 'Managers', value: stats.managerCount, color: 'black', role: 'manager' },
-    { label: 'Customers', value: stats.customerCount, color: 'black', role: 'customer' },
+    { label: "Admins", value: stats.adminCount, color: "black", role: "admin" },
+    {
+      label: "Employees",
+      value: stats.employeeCount,
+      color: "black",
+      role: "employee",
+    },
+    {
+      label: "Managers",
+      value: stats.managerCount,
+      color: "black",
+      role: "manager",
+    },
+    {
+      label: "Customers",
+      value: stats.customerCount,
+      color: "black",
+      role: "customer",
+    },
   ];
 
   return (
@@ -117,7 +183,8 @@ export default function AdminDashboard() {
           Dashboard Overview
         </h2>
         <p className="text-gray-600">
-          Welcome to the {user?.role === 'admin' ? 'admin' : 'manager'} dashboard. Manage users and inventory from here.
+          Welcome to the {user?.role === "admin" ? "admin" : "manager"}{" "}
+          dashboard. Manage users and inventory from here.
         </p>
       </div>
 
@@ -171,9 +238,7 @@ export default function AdminDashboard() {
 
       {/* User Roles Breakdown */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          User Roles
-        </h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">User Roles</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {userRoleCards.map((stat) => {
             const colors = getColorClasses(stat.color);
@@ -203,9 +268,7 @@ export default function AdminDashboard() {
             href="/admin/users"
             className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-all hover:scale-105"
           >
-            <h4 className="font-semibold text-gray-900 mb-2">
-              Manage Users
-            </h4>
+            <h4 className="font-semibold text-gray-900 mb-2">Manage Users</h4>
             <p className="text-sm text-gray-600">
               View, promote, demote, and block users
             </p>
@@ -214,9 +277,7 @@ export default function AdminDashboard() {
             href="/admin/orders"
             className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-all hover:scale-105"
           >
-            <h4 className="font-semibold text-gray-900 mb-2">
-              Manage Orders
-            </h4>
+            <h4 className="font-semibold text-gray-900 mb-2">Manage Orders</h4>
             <p className="text-sm text-gray-600">
               View and update order delivery status
             </p>
@@ -236,9 +297,7 @@ export default function AdminDashboard() {
             href="/home/dashboard"
             className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-all hover:scale-105"
           >
-            <h4 className="font-semibold text-gray-900 mb-2">
-              Customer View
-            </h4>
+            <h4 className="font-semibold text-gray-900 mb-2">Customer View</h4>
             <p className="text-sm text-gray-600">
               Preview the customer experience
             </p>
@@ -248,9 +307,7 @@ export default function AdminDashboard() {
             className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-all hover:scale-105"
           >
             <div className="flex items-center justify-between mb-2">
-              <h4 className="font-semibold text-gray-900">
-                Audit Logs
-              </h4>
+              <h4 className="font-semibold text-gray-900">Audit Logs</h4>
               <span className="text-xl font-bold text-blue-600">
                 {stats.auditLogsLast24h}
               </span>
@@ -264,4 +321,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
